@@ -1,0 +1,225 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "9e6a00f4_92ab48dd",
+        "filename": "LICENSE.txt",
+        "patchSetId": 1
+      },
+      "lineNbr": 1,
+      "author": {
+        "id": 4
+      },
+      "writtenOn": "2017-11-30T22:28:27Z",
+      "side": 1,
+      "message": "This is not the right version of the license, it needs a COPYRIGHT statement, please see the one in the common-dataservice or other project.",
+      "revId": "9ba66c2f9eac5034b8978dba547590e0f5d4fa4a",
+      "serverId": "655300a2-7a56-4504-9153-881edd907bea",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "135d7af5_c647a79b",
+        "filename": "lib/ajt-2.11.jar",
+        "patchSetId": 1
+      },
+      "lineNbr": 1,
+      "author": {
+        "id": 4
+      },
+      "writtenOn": "2017-11-30T22:28:27Z",
+      "side": 1,
+      "message": "Jar files must not be committed to git.",
+      "revId": "9ba66c2f9eac5034b8978dba547590e0f5d4fa4a",
+      "serverId": "655300a2-7a56-4504-9153-881edd907bea",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "ba1ed40d_a654da69",
+        "filename": "lib/javaml-0.1.7.jar",
+        "patchSetId": 1
+      },
+      "lineNbr": 1,
+      "author": {
+        "id": 4
+      },
+      "writtenOn": "2017-11-30T22:28:27Z",
+      "side": 1,
+      "message": "Jar files must not be committed to git.",
+      "revId": "9ba66c2f9eac5034b8978dba547590e0f5d4fa4a",
+      "serverId": "655300a2-7a56-4504-9153-881edd907bea",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "0c09ac6e_0e35b824",
+        "filename": "models/KnnModel.jar",
+        "patchSetId": 1
+      },
+      "lineNbr": 1,
+      "author": {
+        "id": 4
+      },
+      "writtenOn": "2017-11-30T22:28:27Z",
+      "side": 1,
+      "message": "Jar files must not be committed to git.",
+      "revId": "9ba66c2f9eac5034b8978dba547590e0f5d4fa4a",
+      "serverId": "655300a2-7a56-4504-9153-881edd907bea",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "edf481a5_e8e75bba",
+        "filename": "models/model.jar",
+        "patchSetId": 1
+      },
+      "lineNbr": 1,
+      "author": {
+        "id": 4
+      },
+      "writtenOn": "2017-11-30T22:28:27Z",
+      "side": 1,
+      "message": "Jar files must not be committed to git.",
+      "revId": "9ba66c2f9eac5034b8978dba547590e0f5d4fa4a",
+      "serverId": "655300a2-7a56-4504-9153-881edd907bea",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "0c609054_01626e3c",
+        "filename": "protobuf-java-3.4.0.jar",
+        "patchSetId": 1
+      },
+      "lineNbr": 1,
+      "author": {
+        "id": 4
+      },
+      "writtenOn": "2017-11-30T22:28:27Z",
+      "side": 1,
+      "message": "Jar files must not be committed to git.",
+      "revId": "9ba66c2f9eac5034b8978dba547590e0f5d4fa4a",
+      "serverId": "655300a2-7a56-4504-9153-881edd907bea",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "bdfb8868_7800421e",
+        "filename": "src/main/java/org/acumos/modelrunner/Application.java",
+        "patchSetId": 1
+      },
+      "lineNbr": 31,
+      "author": {
+        "id": 4
+      },
+      "writtenOn": "2017-11-30T22:28:27Z",
+      "side": 1,
+      "message": "I recommend copying the Application class from common-dataservice, it is verbose and validates the config.",
+      "revId": "9ba66c2f9eac5034b8978dba547590e0f5d4fa4a",
+      "serverId": "655300a2-7a56-4504-9153-881edd907bea",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "0222f651_221c3340",
+        "filename": "src/main/java/org/acumos/modelrunner/config/SwaggerConfig.java",
+        "patchSetId": 1
+      },
+      "lineNbr": 46,
+      "author": {
+        "id": 4
+      },
+      "writtenOn": "2017-11-30T22:28:27Z",
+      "side": 1,
+      "message": "This needs to assert a license (\"Apache 2.0\")",
+      "revId": "9ba66c2f9eac5034b8978dba547590e0f5d4fa4a",
+      "serverId": "655300a2-7a56-4504-9153-881edd907bea",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "42cd3556_f312517e",
+        "filename": "src/main/java/org/acumos/modelrunner/controller/RunnerController.java",
+        "patchSetId": 1
+      },
+      "lineNbr": 113,
+      "author": {
+        "id": 4
+      },
+      "writtenOn": "2017-11-30T22:28:27Z",
+      "side": 1,
+      "message": "This is dangerous practice; should use the Java method to get the temp directory instead",
+      "revId": "9ba66c2f9eac5034b8978dba547590e0f5d4fa4a",
+      "serverId": "655300a2-7a56-4504-9153-881edd907bea",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "470c9019_08fa8e12",
+        "filename": "src/main/resources/application.properties",
+        "patchSetId": 1
+      },
+      "lineNbr": 29,
+      "author": {
+        "id": 4
+      },
+      "writtenOn": "2017-11-30T22:28:27Z",
+      "side": 1,
+      "message": "Please remove personal userid and path",
+      "revId": "9ba66c2f9eac5034b8978dba547590e0f5d4fa4a",
+      "serverId": "655300a2-7a56-4504-9153-881edd907bea",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "7a125fb9_8834eb3d",
+        "filename": "src/main/resources/application.properties",
+        "patchSetId": 1
+      },
+      "lineNbr": 30,
+      "author": {
+        "id": 4
+      },
+      "writtenOn": "2017-11-30T22:28:27Z",
+      "side": 1,
+      "message": "Ditto",
+      "revId": "9ba66c2f9eac5034b8978dba547590e0f5d4fa4a",
+      "serverId": "655300a2-7a56-4504-9153-881edd907bea",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "46e90519_214ef343",
+        "filename": "src/main/resources/application.properties",
+        "patchSetId": 1
+      },
+      "lineNbr": 32,
+      "author": {
+        "id": 4
+      },
+      "writtenOn": "2017-11-30T22:28:27Z",
+      "side": 1,
+      "message": "Ditto",
+      "revId": "9ba66c2f9eac5034b8978dba547590e0f5d4fa4a",
+      "serverId": "655300a2-7a56-4504-9153-881edd907bea",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "f5c174e5_323b7fab",
+        "filename": "src/test/java/org/acumos/modelrunner/controller/SpringRunnerControllerTest.java",
+        "patchSetId": 1
+      },
+      "lineNbr": 40,
+      "author": {
+        "id": 4
+      },
+      "writtenOn": "2017-11-30T22:28:27Z",
+      "side": 1,
+      "message": "This is a place to use a logger to report the error",
+      "revId": "9ba66c2f9eac5034b8978dba547590e0f5d4fa4a",
+      "serverId": "655300a2-7a56-4504-9153-881edd907bea",
+      "unresolved": false
+    }
+  ]
+}
