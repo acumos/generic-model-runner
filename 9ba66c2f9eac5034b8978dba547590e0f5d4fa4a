@@ -220,6 +220,40 @@
       "revId": "9ba66c2f9eac5034b8978dba547590e0f5d4fa4a",
       "serverId": "655300a2-7a56-4504-9153-881edd907bea",
       "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "3e571399_f75fdb55",
+        "filename": "testdata/iris5.bin",
+        "patchSetId": 1
+      },
+      "lineNbr": 1,
+      "author": {
+        "id": 4
+      },
+      "writtenOn": "2017-12-04T21:22:04Z",
+      "side": 1,
+      "message": "can this file be deleted?",
+      "revId": "9ba66c2f9eac5034b8978dba547590e0f5d4fa4a",
+      "serverId": "655300a2-7a56-4504-9153-881edd907bea",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "00672443_12d3a1fd",
+        "filename": "testdata/irisoutput.bin",
+        "patchSetId": 1
+      },
+      "lineNbr": 1,
+      "author": {
+        "id": 4
+      },
+      "writtenOn": "2017-12-04T21:22:04Z",
+      "side": 1,
+      "message": "Can this file be deleted?",
+      "revId": "9ba66c2f9eac5034b8978dba547590e0f5d4fa4a",
+      "serverId": "655300a2-7a56-4504-9153-881edd907bea",
+      "unresolved": false
     }
   ]
 }
