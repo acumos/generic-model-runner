@@ -1,0 +1,16 @@
+syntax = "proto3";
+option java_package = "com.google.protobuf";
+option java_outer_classname = "DatasetProto";
+
+message DataInputs {
+  int32 a = 1;
+  int32 b = 2;
+}
+
+message Sum {
+   int32 sum = 1;
+}
+
+service Adder {
+  rpc add (DataInputs) returns (Sum);
+}
