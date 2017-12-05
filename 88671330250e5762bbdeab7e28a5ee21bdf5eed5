@@ -1,0 +1,38 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "abb8ac86_5018ec1d",
+        "filename": "docs/index.rst",
+        "patchSetId": 1
+      },
+      "lineNbr": 9,
+      "author": {
+        "id": 4
+      },
+      "writtenOn": "2017-12-05T12:22:02Z",
+      "side": 1,
+      "message": "Please remove this tutorials line, you don\u0027t have any",
+      "revId": "88671330250e5762bbdeab7e28a5ee21bdf5eed5",
+      "serverId": "655300a2-7a56-4504-9153-881edd907bea",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "34c4ffe9_88a5a241",
+        "filename": "src/main/resources/application.template",
+        "patchSetId": 1
+      },
+      "lineNbr": 8,
+      "author": {
+        "id": 4
+      },
+      "writtenOn": "2017-12-05T12:22:02Z",
+      "side": 1,
+      "message": "Can this property be removed?",
+      "revId": "88671330250e5762bbdeab7e28a5ee21bdf5eed5",
+      "serverId": "655300a2-7a56-4504-9153-881edd907bea",
+      "unresolved": false
+    }
+  ]
+}
