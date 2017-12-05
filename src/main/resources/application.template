@@ -1,0 +1,33 @@
+server.contextPath=/modelrunner
+server.port=8334
+
+spring.http.multipart.max-file-size=100MB
+spring.http.multipart.max-request-size=100MB
+
+# Linux version
+rel_model_zip=/models/KnnModel.jar
+rel_default_protofile=/models/default.proto
+logging.file = ./logs/modelrunner.log 
+
+# The value of model_type can be H or G
+# if model_type is H, then the /predict method will use H2O model; otherwise, it will use generic Model
+# if model_type is not present, then the default is H
+
+model_type=G
+model_config=/models/modelConfig.properties
+
+# Linux some properties are specific to java generic models
+
+# The plugin_root path has to be outside of ModelRunner root or the code won't work 
+# Default proto java file, classes and jar
+# DatasetProto.java will be in $plugin_root\src
+# DatasetProto$*.classes will be in $plugin_root\classes
+# pbuff.jar will be in $plugin_root\classes
+
+plugin_root=/plugins
+
+
+
+
+
+

@@ -1,0 +1,19 @@
+syntax = "proto3";
+option java_package = "com.google.protobuf";
+option java_outer_classname = "DatasetProto";
+message DataFrameRow {
+string sepal_len = 1;
+string sepal_wid = 2;
+string petal_len = 3;
+string petal_wid = 4;
+string iris_type = 5;
+}
+message DataFrame {
+ 	repeated DataFrameRow rows = 1;
+}
+message Prediction {
+	repeated string prediction= 1;
+}
+service ClassifyModel {
+	rpc predict(DataFrame) returns (Prediction);
+}
