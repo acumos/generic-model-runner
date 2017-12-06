@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "446e090e_1cb4ed9a",
+        "filename": "index.rst",
+        "patchSetId": 2
+      },
+      "lineNbr": 1,
+      "author": {
+        "id": 4
+      },
+      "writtenOn": "2017-12-06T20:16:18Z",
+      "side": 1,
+      "message": "Please move to the docs/ area",
+      "revId": "a936bd6ed624efc575c38e74197d0f681c3314f0",
+      "serverId": "655300a2-7a56-4504-9153-881edd907bea",
+      "unresolved": false
+    }
+  ]
+}
