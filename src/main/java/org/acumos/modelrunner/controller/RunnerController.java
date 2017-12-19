@@ -1345,5 +1345,13 @@ public class RunnerController {
 	public static void addFile(File f) throws IOException {
 		addURL(f.toURI().toURL());
 	}
+	
+	@ApiOperation(value = "Gets a binary stream in protobuf format based on the provided csv file and .proto file as inputs for the predictor")
+	@RequestMapping(value = "/getBinary", method = RequestMethod.POST, produces = MediaType.APPLICATION_OCTET_STREAM)
+	public byte[] curlTest( @RequestBody String dataset) {
+		logger.info("Receiving /getBinary POST request...");
+
+		return getBinary_(csvFile, proto);
+	}
 
 }
