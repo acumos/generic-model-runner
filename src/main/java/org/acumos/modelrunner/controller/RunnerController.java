@@ -27,7 +27,6 @@ import java.io.BufferedWriter;
 import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.FileInputStream;
-import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.FileWriter;
 import java.io.IOException;
@@ -57,7 +56,6 @@ import java.util.*;
 import org.springframework.beans.factory.annotation.Value;
 import org.apache.commons.io.IOUtils;
 import org.metawidget.util.simple.StringUtils;
-import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
@@ -127,13 +125,6 @@ public class RunnerController {
 	private Class<?> prediction;
 	private Class<?> dataframeBuilder;
 
-	
-	//private String propFile = new String(projectRoot + modelConfig);
-	// Load property
-	private Properties prop = new Properties();
-	
-	
-	
 	private boolean isProtobufRuntimeDownloaded = false;
 	private String protoRTVersion = null;
 	private ClassLoader cl = null;
@@ -482,11 +473,11 @@ public class RunnerController {
 			ff.write(rowString.toString());
 			ff.close();
 
-		/*	String propFile = new String(projectRoot + modelConfig);
+			String propFile = new String(projectRoot + modelConfig);
 			// Load property
 			Properties prop = new Properties();
 			InputStream input = new FileInputStream(propFile);
-			prop.load(input);*/
+			prop.load(input);
 
 			String modelMethodName = prop.getProperty("modelMethod");
 			String modelClassName = prop.getProperty("modelClassName");
@@ -821,27 +812,13 @@ public class RunnerController {
 	 * @return prediction results in protobuf format
 	 */
 	@ApiOperation(value = "Gets a prediction binary stream in protobuf format based on the binary stream input also in protobuf format.")
-	@RequestMapping(value = "/model/{methodname}", method = RequestMethod.POST)
-	public byte[] predict(@RequestBody byte[] dataset , @PathVariable("methodname") String methodname) {
+	@RequestMapping(value = "/predict", method = RequestMethod.POST)
+	public byte[] predict(@RequestBody byte[] dataset) {
 		logger.info("/predict GETTING POST REQUEST:");
 
 		try {
-			
-            // methodname should match from modelConfig.properties. if provided method does not match it will
-			// return with invalid method message  
-			if (modelType.equalsIgnoreCase("G")) {
-				
-				loadModelProp();
-				String modelMethodName = prop.getProperty("modelMethod");
-
-				if (!modelMethodName.equalsIgnoreCase(methodname)) {
-					logger.info("Expected model method name is =" + modelMethodName);
-					return "Model method name is invalid".getBytes();
-				}
-			}
-			
 			init(null);
-		
+
 			// dframe = DataFrame.parseFrom(datain);
 			Method method = dataframe.getMethod("parseFrom", new Class[] { byte[].class });
 
@@ -872,6 +849,7 @@ public class RunnerController {
 		setProjectRoot();
 		logger.info("Project Root is " + projectRoot);
 		protoFilePath = new String(projectRoot);
+
 		String protoJarPath = null;
 		pluginClassPath = new String(pluginRoot + SEP + "classes");
 		protoJarPath = pluginClassPath + SEP + "pbuff.jar";
@@ -911,29 +889,6 @@ public class RunnerController {
 		dataframe = cl.loadClass("com.google.protobuf.DatasetProto$DataFrame");
 		prediction = cl.loadClass("com.google.protobuf.DatasetProto$Prediction");
 		dataframeBuilder = cl.loadClass("com.google.protobuf.DatasetProto$DataFrame$Builder");
-	}
-
-	/**
-	 * load modelConfig properties
-	 */
-	private void loadModelProp() {
-		InputStream input;
-		try {
-			setProjectRoot();
-			String propFile = new String(projectRoot + modelConfig);
-			input = new FileInputStream(propFile);
-			prop.load(input);
-		
-		} catch (FileNotFoundException e) {
-			logger.error(e.getMessage());
-			e.printStackTrace();
-		} catch (IOException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		}
-		
-		
-
 	}
 
 	/**
@@ -1096,14 +1051,10 @@ public class RunnerController {
 		try {
 			String cmd0 = projectRoot + SEP + "bin" + SEP + "getVersion.sh";
 			protoRTVersion = execCommand(cmd0);
-		
 
 			String mavenUrl = "https://repo1.maven.org/maven2/com/google/protobuf/protobuf-java/" + protoRTVersion
 					+ "/protobuf-java-" + protoRTVersion + ".jar";
-			
-			logger.info("mavenurl="+mavenUrl);
 			logger.info("Protobuf Runtime Version is " + protoRTVersion);
-			
 
 			String cmd = "curl -o " + pluginRoot + SEP + "protobuf-java-" + protoRTVersion + ".jar " + mavenUrl;
 			logger.info("executing command " + cmd);
@@ -1117,8 +1068,7 @@ public class RunnerController {
 				isProtobufRuntimeDownloaded = true;
 			}
 		} catch (Exception ex) {
-				logger.error("Failed in downloading the latest protobuf Java runtime library from maven:" + ex);
-				ex.printStackTrace();
+			logger.error("Failed in downloading the latest protobuf Java runtime library from maven:" + ex);
 			
 		}
 
@@ -1344,14 +1294,6 @@ public class RunnerController {
 	 */
 	public static void addFile(File f) throws IOException {
 		addURL(f.toURI().toURL());
-	}
-	
-	@ApiOperation(value = "Gets a binary stream in protobuf format based on the provided csv file and .proto file as inputs for the predictor")
-	@RequestMapping(value = "/getBinary", method = RequestMethod.POST, produces = MediaType.APPLICATION_OCTET_STREAM)
-	public byte[] curlTest( @RequestBody String dataset) {
-		logger.info("Receiving /getBinary POST request...");
-
-		return getBinary_(csvFile, proto);
 	}
 
 }
