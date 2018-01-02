@@ -2,10 +2,9 @@
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
 	xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
 	<modelVersion>4.0.0</modelVersion>
-
 	<groupId>org.acumos.generic-model-runner</groupId>
 	<artifactId>h2o-genericjava-modelrunner</artifactId>
-	<version>1.0.2-SNAPSHOT</version>
+	<version>1.0.3-SNAPSHOT</version>
 	<packaging>jar</packaging>
 
 	<name>Acumos H2O/Generic Java Model Runner</name>
@@ -23,11 +22,11 @@
 		<start-class>org.acumos.modelrunner.Application</start-class>
 		<!-- Client jar is in nexus repo -->
 		<client.version>${project.version}-SNAPSHOT</client.version>
-		<swagger.version>2.6.1</swagger.version>
+		<springfox.version>2.7.0</springfox.version>
 		<!-- URL is overridden by Jenkins settings -->
-		<mlp.nexus.url>http://cognita-nexus01.eastus.cloudapp.azure.com:8081</mlp.nexus.url>
-		<mlp.nexus.snapshot.path>repository/repo_cognita_platform_maven_snapshots</mlp.nexus.snapshot.path>
-		<mlp.nexus.release.path>repository/repo_cognita_platform_maven</mlp.nexus.release.path>
+		<acumos.nexus.url>Set by Jenkins</acumos.nexus.url>
+		<acumos.nexus.snapshot.path>Set by Jenkins</acumos.nexus.snapshot.path>
+		<acumos.nexus.release.path>Set by Jenkins</acumos.nexus.release.path>
 		<!-- EELF jar is in ONAP nexus repo -->
 		<onap.nexus.url>https://nexus.onap.org</onap.nexus.url>
 		<onap.nexus.snapshot.path>content/repositories/snapshots/</onap.nexus.snapshot.path>
@@ -41,7 +40,7 @@
 		<docker.registry.login>set by Jenkins</docker.registry.login>
 		<docker.registry.password>set by Jenkins</docker.registry.password>
 	</properties>
-
+	
 	<dependencies>
 
 		<dependency>
@@ -69,13 +68,13 @@
 		<dependency>
 			<groupId>io.springfox</groupId>
 			<artifactId>springfox-swagger2</artifactId>
-			<version>2.4.0</version>
+			<version>${springfox.version}</version>
 		</dependency>
 
 		<dependency>
 			<groupId>io.springfox</groupId>
 			<artifactId>springfox-swagger-ui</artifactId>
-			<version>2.4.0</version>
+			<version>${springfox.version}</version>
 		</dependency>
 		<dependency>
 			<groupId>javax.ws.rs</groupId>
