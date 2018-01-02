@@ -41,22 +41,22 @@ import java.net.URL;
 import java.net.URLClassLoader;
 import java.nio.charset.StandardCharsets;
 
+import java.util.*;
 import java.util.jar.JarEntry;
 import java.util.jar.JarOutputStream;
-
 import javax.ws.rs.core.MediaType;
 
 import hex.genmodel.easy.RowData;
 import hex.genmodel.easy.EasyPredictModelWrapper;
 import hex.genmodel.easy.prediction.*;
-import io.swagger.annotations.ApiOperation;
 import hex.genmodel.MojoModel;
 import hex.genmodel.easy.exception.PredictException;
-import java.util.*;
+import io.swagger.annotations.ApiOperation;
 
 import org.springframework.beans.factory.annotation.Value;
 import org.apache.commons.io.IOUtils;
 import org.metawidget.util.simple.StringUtils;
+
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -64,6 +64,8 @@ import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.RequestPart;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 
 import com.google.common.io.Files;
 
@@ -75,11 +77,11 @@ public class RunnerController {
 	@Value("${plugin_root}")
 	private String pluginRoot;
 
-	@Value("${rel_model_zip}")
-	private String relModelZip;
+	@Value("${default_model}")
+	private String defaultModel;
 
-	@Value("${rel_default_protofile}")
-	private String relDefaultProtofile;
+	@Value("${default_protofile}")
+	private String defaultProto;
 
 	@Value("${model_type}")
 	private String modelType;
@@ -92,6 +94,8 @@ public class RunnerController {
 	private static final String SEP = File.separator;
 	private static final String NEWLINE = System.lineSeparator();
 	private static final String TMPPATH = System.getProperty("java.io.tmpdir");
+
+	private static final String PROJECTROOT = System.getProperty("user.dir");
 	private static final String FLOAT = "float";
 	private static final String DOUBLE = "double";
 	private static final String INT32 = "int32";
@@ -109,31 +113,17 @@ public class RunnerController {
 	private static final String BYTES = "bytes";
 
 	private String modelZip = null;
-
 	private String defaultProtofile;
-
-	private String projectRoot;
-
 	private String protoFilePath = null;
-
 	private String protoOutputPath = null;
-
 	private String pluginClassPath = null;
-
 	private ArrayList<String> attributes = new ArrayList<>();
 	private ArrayList<String> attributeTypes = new ArrayList<>();
 	private Class<?> dataframerow;
 	private Class<?> dataframe;
 	private Class<?> prediction;
 	private Class<?> dataframeBuilder;
-
-	
-	//private String propFile = new String(projectRoot + modelConfig);
-	// Load property
 	private Properties prop = new Properties();
-	
-	
-	
 	private boolean isProtobufRuntimeDownloaded = false;
 	private String protoRTVersion = null;
 	private ClassLoader cl = null;
@@ -142,6 +132,76 @@ public class RunnerController {
 	public String hello() {
 		return "HelloWorld";
 
+	}
+
+	/**
+	 * End point for a modeler to upload a model
+	 * 
+	 * @param model
+	 * @return ResponseEntity
+	 */
+	@ApiOperation(value = "Upload a machine learning model", response = Map.class)
+	@RequestMapping(value = "/putModel", method = RequestMethod.PUT)
+	public ResponseEntity<Map<String, String>> putModel(@RequestPart("model") MultipartFile model) {
+		logger.info("Receiving /putModel PUT request...");
+		Map<String, String> results = new LinkedHashMap<>();
+
+		try {
+			if (model != null && !model.isEmpty()) {
+				byte[] bytes = model.getBytes();
+
+				// Create the file on server
+				File modelFile = new File(PROJECTROOT + SEP + "models" + SEP + model.getOriginalFilename());
+				BufferedOutputStream stream = new BufferedOutputStream(new FileOutputStream(modelFile));
+				stream.write(bytes);
+				stream.close();
+
+				logger.info("Model File Location=" + modelFile.getAbsolutePath());
+			}
+		} catch (Exception ex) {
+			logger.error("Failed in uploading model: ", ex);
+			results.put("status", "bad request");
+			results.put("message", ex.getMessage());
+			return new ResponseEntity<>(HttpStatus.BAD_REQUEST);
+		}
+
+		results.put("status", "ok");
+		return new ResponseEntity<>(results, HttpStatus.OK);
+	}
+
+	/**
+	 * End point to upload a proto file
+	 * 
+	 * @param proto
+	 * @return ResponseEntity
+	 */
+	@ApiOperation(value = "Upload a protofile", response = ResponseEntity.class)
+	@RequestMapping(value = "/putProto", method = RequestMethod.PUT)
+	public ResponseEntity<Map<String, String>> putProto(@RequestPart("proto") MultipartFile proto) {
+		logger.info("Receiving /putProto PUT request...");
+		Map<String, String> results = new LinkedHashMap<>();
+
+		try {
+			if (proto != null && !proto.isEmpty()) {
+				byte[] bytes = proto.getBytes();
+
+				// Create the file on server
+				File protoFile = new File(PROJECTROOT + SEP + "models" + SEP + proto.getOriginalFilename());
+				BufferedOutputStream stream = new BufferedOutputStream(new FileOutputStream(protoFile));
+				stream.write(bytes);
+				stream.close();
+
+				logger.info("Proto File Location=" + protoFile.getAbsolutePath());
+			}
+		} catch (Exception ex) {
+			logger.error("Failed in uploading protofile: ", ex);
+			results.put("status", "bad request");
+			results.put("message", ex.getMessage());
+			return new ResponseEntity<>(results, HttpStatus.BAD_REQUEST);
+		}
+
+		results.put("status", "ok");
+		return new ResponseEntity<>(results, HttpStatus.OK);
 	}
 
 	/**
@@ -187,7 +247,7 @@ public class RunnerController {
 			return (byte[]) tobytearray.invoke(obj);
 
 		} catch (Exception ex) {
-			logger.error("Failed getting binary stream inputs:" + ex);
+			logger.error("Failed getting binary stream inputs:", ex);
 			return new byte[0];
 		}
 	}
@@ -247,7 +307,9 @@ public class RunnerController {
 					dir.mkdirs();
 
 				// Create the file on server
-				File modelFile = new File(dir.getAbsolutePath() + SEP + "mode_" + UUID.randomUUID() + ".zip");
+
+				File modelFile = new File(dir.getAbsolutePath() + SEP + "model_" + UUID.randomUUID() + ".zip");
+
 				BufferedOutputStream stream = new BufferedOutputStream(new FileOutputStream(modelFile));
 				stream.write(bytes);
 				stream.close();
@@ -260,7 +322,7 @@ public class RunnerController {
 			else
 				return doPredictJavaGeneric(df, modelLoc);
 		} catch (Exception ex) {
-			logger.error("Failed transforming csv file and getting prediction results: " + ex);
+			logger.error("Failed transforming csv file and getting prediction results: ", ex);
 
 		}
 
@@ -328,7 +390,9 @@ public class RunnerController {
 
 		for (String line : lines) {
 			String[] array = line.split(",");
-			System.out.println("Current line is: " + line);
+
+			logger.info("Current line is: " + line);
+
 			for (int i = 0; i < array.length; i++) {
 				if (array[i].length() == 0) // skip missing field
 					continue;
@@ -389,7 +453,7 @@ public class RunnerController {
 
 		return df;
 	}
-	
+
 	/**
 	 * This procedure uses Java ML model to do prediction
 	 * 
@@ -399,11 +463,7 @@ public class RunnerController {
 	 */
 	private byte[] doPredictJavaGeneric(Object df, String modelLoc) {
 		try {
-			/*
-			 * if (modelLoc != null) mojo = MojoModel.load(modelLoc); else mojo
-			 * = MojoModel.load(modelZip);
-			 */
-
+			
 			Method getRowsCount = dataframe.getMethod("getRowsCount");
 			int row_count = (int) getRowsCount.invoke(df);
 			logger.info("We have: " + row_count + " rows.");
@@ -482,11 +542,12 @@ public class RunnerController {
 			ff.write(rowString.toString());
 			ff.close();
 
-		/*	String propFile = new String(projectRoot + modelConfig);
+
+			String propFile = new String(PROJECTROOT + modelConfig);
 			// Load property
 			Properties prop = new Properties();
 			InputStream input = new FileInputStream(propFile);
-			prop.load(input);*/
+			prop.load(input);
 
 			String modelMethodName = prop.getProperty("modelMethod");
 			String modelClassName = prop.getProperty("modelClassName");
@@ -495,7 +556,8 @@ public class RunnerController {
 
 			// model invoke and preparation
 
-			File modelSource = new File(projectRoot + relModelZip);
+			File modelSource = new File(PROJECTROOT + defaultModel);
+
 			File modelJarPath = new File(pluginClassPath + SEP + modelSource.getName());
 			Files.copy(modelSource, modelJarPath);
 
@@ -540,6 +602,13 @@ public class RunnerController {
 			Method newBuilder = prediction.getMethod("newBuilder");
 			Object object = newBuilder.invoke(null);
 			Method addPrediction = object.getClass().getMethod("addPrediction", String.class);
+
+			if(predictlist == null) {
+				logger.debug("predictlist is null");
+			
+				return null;
+			}
+			
 			for (int i = 1; i <= row_count; i++) {
 				addPrediction.invoke(object, predictlist.get(i - 1));
 
@@ -553,9 +622,8 @@ public class RunnerController {
 			logger.info("In predict method: Done Prediction, returning binary serialization of prediction. ");
 			return (byte[]) (toByteArray.invoke(pobj));
 
-		} catch (Exception e) {
-			logger.error("ERROR " + e.getMessage());
-			e.printStackTrace();
+		} catch (Exception ex) {
+			logger.error("Failed in doPredictGenericJava: ", ex);
 			return null;
 		}
 
@@ -622,7 +690,9 @@ public class RunnerController {
 			} // try ends
 
 			catch (IOException ie) {
-				ie.getMessage();
+				logger.error("Failed in loading H2O Model: ", ie);
+				return null;
+
 			} // catch ends
 
 			Method getRowsCount = dataframe.getMethod("getRowsCount");
@@ -690,9 +760,8 @@ public class RunnerController {
 				}
 
 				/*
-				 * We handle the following model categories: Binomial
-				 * Multinomial Regression Clustering AutoEncoder DimReduction
-				 * WordEmbedding Unknown
+				 * We handle the following model categories: Binomial Multinomial Regression
+				 * Clustering AutoEncoder DimReduction WordEmbedding Unknown
 				 */
 
 				String current_model_category = mojo.getModelCategory().toString();
@@ -743,7 +812,7 @@ public class RunnerController {
 					case "AutoEncoder":
 						p = model.predictAutoEncoder(row);
 						double[] autopred = ((AutoEncoderModelPrediction) p).reconstructed;
-						pr = autopred.toString();
+						pr = Arrays.toString(autopred);
 						break;
 
 					case "DimReduction":
@@ -775,7 +844,7 @@ public class RunnerController {
 				} // try ends
 
 				catch (PredictException pe) {
-					logger.error("Failed getting prediction results from H2O model:" + pe);
+					logger.error("Failed getting prediction results from H2O model:", pe);
 					pe.getMessage();
 				} // catch ends
 
@@ -806,9 +875,8 @@ public class RunnerController {
 			logger.info("In predict method: Done Prediction, returning binary serialization of prediction. ");
 			return (byte[]) (toByteArray.invoke(pobj));
 
-		} catch (Exception e) {
-			logger.error("ERROR " + e.getMessage());
-			e.printStackTrace();
+		} catch (Exception ex) {
+			logger.error("Failed in doPredict() ", ex);
 			return null;
 
 		}
@@ -821,27 +889,13 @@ public class RunnerController {
 	 * @return prediction results in protobuf format
 	 */
 	@ApiOperation(value = "Gets a prediction binary stream in protobuf format based on the binary stream input also in protobuf format.")
-	@RequestMapping(value = "/model/{methodname}", method = RequestMethod.POST)
-	public byte[] predict(@RequestBody byte[] dataset , @PathVariable("methodname") String methodname) {
+	@RequestMapping(value = "/predict", method = RequestMethod.POST)
+	public byte[] predict(@RequestBody byte[] dataset) {
 		logger.info("/predict GETTING POST REQUEST:");
 
 		try {
-			
-            // methodname should match from modelConfig.properties. if provided method does not match it will
-			// return with invalid method message  
-			if (modelType.equalsIgnoreCase("G")) {
-				
-				loadModelProp();
-				String modelMethodName = prop.getProperty("modelMethod");
-
-				if (!modelMethodName.equalsIgnoreCase(methodname)) {
-					logger.info("Expected model method name is =" + modelMethodName);
-					return "Model method name is invalid".getBytes();
-				}
-			}
-			
 			init(null);
-		
+
 			// dframe = DataFrame.parseFrom(datain);
 			Method method = dataframe.getMethod("parseFrom", new Class[] { byte[].class });
 
@@ -853,12 +907,51 @@ public class RunnerController {
 				return doPredictJavaGeneric(df, null);
 
 		} catch (Exception ex) {
-			logger.error("Failed getting prediction results: " + ex);
-
+			logger.error("Failed getting prediction results: ", ex);
 		}
 
 		return null;
 	}
+
+	@RequestMapping(value = "/model/{methodname}", method = RequestMethod.POST)
+	public byte[] operate(@RequestBody byte[] dataset , @PathVariable("methodname") String methodname) {
+	logger.info("/model/" + methodname + " GETTING POST REQUEST:");
+
+	try {
+		
+        // methodname should match from modelConfig.properties. if provided method does not match it will
+		// return with invalid method message  
+		if (modelType.equalsIgnoreCase("G")) {
+			
+			loadModelProp();
+			String modelMethodName = prop.getProperty("modelMethod");
+
+			if (!modelMethodName.equalsIgnoreCase(methodname)) {
+				logger.info("Expected model method name is =" + modelMethodName);
+				return "Model method name is invalid".getBytes();
+			}
+		}
+		
+		init(null);
+	
+		// dframe = DataFrame.parseFrom(datain);
+		Method method = dataframe.getMethod("parseFrom", new Class[] { byte[].class });
+
+		Object df = method.invoke(null, dataset);
+
+		if (!modelType.equalsIgnoreCase("G"))
+			return doPredict(df, null);
+		else
+			return doPredictJavaGeneric(df, null);
+
+	} catch (Exception ex) {
+		logger.error("Failed getting prediction results: ", ex);
+
+	}
+
+	return null;
+}
+
 
 	/**
 	 * This procedure will prepare the plugin directory, generate JAVA protobuf
@@ -869,9 +962,9 @@ public class RunnerController {
 	 */
 	private void init(String protoString) throws Exception {
 
-		setProjectRoot();
-		logger.info("Project Root is " + projectRoot);
-		protoFilePath = new String(projectRoot);
+		logger.info("Project Root is " + PROJECTROOT);
+		protoFilePath = new String(PROJECTROOT);
+
 		String protoJarPath = null;
 		pluginClassPath = new String(pluginRoot + SEP + "classes");
 		protoJarPath = pluginClassPath + SEP + "pbuff.jar";
@@ -896,8 +989,9 @@ public class RunnerController {
 			logger.info("Creating plugin src directory: " + protoOutputPath);
 		}
 
-		modelZip = new String(projectRoot + relModelZip);
-		defaultProtofile = new String(projectRoot + relDefaultProtofile);
+
+		modelZip = new String(PROJECTROOT + defaultModel);
+		defaultProtofile = new String(PROJECTROOT + defaultProto);
 
 		downloadProtoJavaRuntimeJar();
 		generateProto(protoString); // Use null for now.
@@ -919,20 +1013,17 @@ public class RunnerController {
 	private void loadModelProp() {
 		InputStream input;
 		try {
-			setProjectRoot();
-			String propFile = new String(projectRoot + modelConfig);
+			
+			String propFile = new String(PROJECTROOT + modelConfig);
 			input = new FileInputStream(propFile);
 			prop.load(input);
-		
+
 		} catch (FileNotFoundException e) {
-			logger.error(e.getMessage());
-			e.printStackTrace();
+			logger.error("loadModelProp FileNotFoundException: ", e);
+			
 		} catch (IOException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
+			logger.error("loadModelProp IOException: ", e);
 		}
-		
-		
 
 	}
 
@@ -948,8 +1039,9 @@ public class RunnerController {
 		attributes = new ArrayList<String>();
 		attributeTypes = new ArrayList<String>();
 
-		String[] types = { DOUBLE, FLOAT, INT32, INT64, UINT32, UINT64, SINT32, "sint64", FIXED32,
-				FIXED64, SFIXED32, SFIXED64, BOOL, STRING, BYTES };
+
+		String[] types = { DOUBLE, FLOAT, INT32, INT64, UINT32, UINT64, SINT32, SINT64, FIXED32, FIXED64, SFIXED32,
+				SFIXED64, BOOL, STRING, BYTES };
 
 		int idx_msg1 = protoString.indexOf("message DataFrameRow");
 		int idx_begincurly1 = protoString.indexOf("{", idx_msg1);
@@ -1022,7 +1114,9 @@ public class RunnerController {
 
 	private String getDefaultProtoString() throws IOException {
 		String result = null;
-		defaultProtofile = new String(projectRoot + relDefaultProtofile);
+
+		defaultProtofile = new String(PROJECTROOT + defaultProto);
+
 		InputStream is = new FileInputStream(defaultProtofile);
 		logger.info("finding default proto:" + defaultProtofile);
 		result = IOUtils.toString(is, StandardCharsets.UTF_8);
@@ -1078,7 +1172,7 @@ public class RunnerController {
 			exitVal = runCommand(cmd);
 
 		} catch (Exception ex) {
-			logger.error("Failed generating Java Protobuf source code: " + ex);
+			logger.error("Failed generating Java Protobuf source code: ", ex);
 		}
 
 		if (exitVal != 0)
@@ -1094,16 +1188,14 @@ public class RunnerController {
 		if (isProtobufRuntimeDownloaded)
 			return;
 		try {
-			String cmd0 = projectRoot + SEP + "bin" + SEP + "getVersion.sh";
+			String cmd0 = PROJECTROOT + SEP + "bin" + SEP + "getVersion.sh";
 			protoRTVersion = execCommand(cmd0);
-		
 
 			String mavenUrl = "https://repo1.maven.org/maven2/com/google/protobuf/protobuf-java/" + protoRTVersion
 					+ "/protobuf-java-" + protoRTVersion + ".jar";
-			
 			logger.info("mavenurl="+mavenUrl);
 			logger.info("Protobuf Runtime Version is " + protoRTVersion);
-			
+
 
 			String cmd = "curl -o " + pluginRoot + SEP + "protobuf-java-" + protoRTVersion + ".jar " + mavenUrl;
 			logger.info("executing command " + cmd);
@@ -1117,9 +1209,8 @@ public class RunnerController {
 				isProtobufRuntimeDownloaded = true;
 			}
 		} catch (Exception ex) {
-				logger.error("Failed in downloading the latest protobuf Java runtime library from maven:" + ex);
-				ex.printStackTrace();
-			
+
+			logger.error("Failed in downloading the latest protobuf Java runtime library from maven:", ex);
 		}
 
 	}
@@ -1142,8 +1233,7 @@ public class RunnerController {
 			exitVal = runCommand(cmd);
 
 		} catch (Exception ex) {
-			
-			logger.error("Failed in building Proto classes:" + ex);
+			logger.error("Failed in buildProtoClasses(): ", ex);
 		}
 		if (exitVal != 0)
 			logger.error("Failed creating proto class files");
@@ -1184,8 +1274,8 @@ public class RunnerController {
 			target.close();
 
 		} catch (Exception ex) {
-			
-			logger.error("Failed producing/updating pbuff.jar " + ex);
+
+			logger.error("Failed producing/updating pbuff.jar ", ex);
 			return;
 		}
 		if (exitVal != 0)
@@ -1297,13 +1387,6 @@ public class RunnerController {
 	}
 
 	/**
-	 * Set project root directory
-	 */
-	private void setProjectRoot() {
-		projectRoot = System.getProperty("user.dir");
-	}
-
-	/**
 	 * Adds the content pointed by the URL to the classpath.
 	 * 
 	 * @param u:
@@ -1318,7 +1401,7 @@ public class RunnerController {
 			method.setAccessible(true);
 			method.invoke(sysloader, new Object[] { u });
 		} catch (Throwable t) {
-			t.printStackTrace();
+			logger.error("Failed in addURL(): ", t);
 			throw new IOException("Error, could not add URL to system classloader");
 		}
 	}
