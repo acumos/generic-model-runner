@@ -5,7 +5,6 @@
 	<groupId>org.acumos.generic-model-runner</groupId>
 	<artifactId>h2o-genericjava-modelrunner</artifactId>
 	<version>1.0.3-SNAPSHOT</version>
-	<packaging>jar</packaging>
 
 	<name>Acumos H2O/Generic Java Model Runner</name>
 	<description>Acumos H2O/Generic Java Model Runner</description>
@@ -17,48 +16,35 @@
 	</parent>
 
 	<properties>
-		<encoding>UTF-8</encoding>
+		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+		<project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
 		<!-- Stand-alone RESTFul application -->
 		<start-class>org.acumos.modelrunner.Application</start-class>
-		<!-- Client jar is in nexus repo -->
-		<client.version>${project.version}-SNAPSHOT</client.version>
 		<springfox.version>2.7.0</springfox.version>
-		<!-- URL is overridden by Jenkins settings -->
-		<acumos.nexus.url>Set by Jenkins</acumos.nexus.url>
-		<acumos.nexus.snapshot.path>Set by Jenkins</acumos.nexus.snapshot.path>
-		<acumos.nexus.release.path>Set by Jenkins</acumos.nexus.release.path>
-		<!-- EELF jar is in ONAP nexus repo -->
-		<onap.nexus.url>https://nexus.onap.org</onap.nexus.url>
-		<onap.nexus.snapshot.path>content/repositories/snapshots/</onap.nexus.snapshot.path>
-		<onap.nexus.release.path>content/repositories/releases/</onap.nexus.release.path>
 		<!-- Jenkins invokes mvn with argument -Dbuild.number=${BUILD_NUMBER} -->
 		<build.number>0</build.number>
-		<!-- Docker daemon; overridden by Jenkins settings -->
-		<docker.host.url>unix:/var/run/docker.sock</docker.host.url>
-		<!-- Docker image registry; all overriden by Jenkins settings -->
-		<docker.registry.url>set by Jenkins</docker.registry.url>
-		<docker.registry.login>set by Jenkins</docker.registry.login>
-		<docker.registry.password>set by Jenkins</docker.registry.password>
+		<!-- Port 10001 is a proxy for external images -->
+		<docker.pull.registry>nexus3.acumos.org:10001</docker.pull.registry>
+		<!-- Port 10003 is the LF snapshot repository -->
+		<docker.push.registry>nexus3.acumos.org:10003</docker.push.registry>
 	</properties>
-	
-	<dependencies>
 
+	<!-- No repositories section. -->
+
+	<dependencies>
 		<dependency>
 			<groupId>org.springframework.boot</groupId>
 			<artifactId>spring-boot-starter</artifactId>
 		</dependency>
-
 		<dependency>
 			<groupId>org.springframework.boot</groupId>
 			<artifactId>spring-boot-starter-web</artifactId>
 		</dependency>
-
 		<dependency>
 			<groupId>org.springframework.boot</groupId>
 			<artifactId>spring-boot-starter-test</artifactId>
 			<scope>test</scope>
 		</dependency>
-
 		<dependency>
 			<groupId>junit</groupId>
 			<artifactId>junit</artifactId>
@@ -70,7 +56,6 @@
 			<artifactId>springfox-swagger2</artifactId>
 			<version>${springfox.version}</version>
 		</dependency>
-
 		<dependency>
 			<groupId>io.springfox</groupId>
 			<artifactId>springfox-swagger-ui</artifactId>
@@ -91,25 +76,21 @@
 			<artifactId>protobuf-java</artifactId>
 			<version>3.4.0</version>
 		</dependency>
-
 		<dependency>
 			<groupId>commons-io</groupId>
 			<artifactId>commons-io</artifactId>
 			<version>2.5</version>
 		</dependency>
-
 		<dependency>
 			<groupId>org.apache.commons</groupId>
 			<artifactId>commons-lang3</artifactId>
 			<version>3.0</version>
 		</dependency>
-
 		<dependency>
 			<groupId>commons-fileupload</groupId>
 			<artifactId>commons-fileupload</artifactId>
 			<version>1.3</version>
 		</dependency>
-
 		<dependency>
 			<groupId>ai.h2o</groupId>
 			<artifactId>h2o-genmodel</artifactId>
@@ -120,20 +101,16 @@
 					<artifactId>slf4j-log4j12</artifactId>
 				</exclusion>
 			</exclusions>
-
 		</dependency>
-
 		<dependency>
 			<groupId>org.metawidget.modules</groupId>
 			<artifactId>metawidget-all</artifactId>
 			<version>1.20</version>
 		</dependency>
-
 		<dependency>
 			<groupId>org.springframework.boot</groupId>
 			<artifactId>spring-boot-autoconfigure</artifactId>
 		</dependency>
-
 	</dependencies>
 
 	<build>
@@ -158,7 +135,6 @@
 					<emptyLineAfterHeader>true</emptyLineAfterHeader>
 				</configuration>
 			</plugin>
-
 			<plugin>
 				<groupId>org.springframework.boot</groupId>
 				<artifactId>spring-boot-maven-plugin</artifactId>
@@ -172,11 +148,29 @@
 					<fork>true</fork>
 				</configuration>
 			</plugin>
-
+			<!-- Add the build number to the jar manifest. Spring-Boot uses a complex 
+				packaging process that makes access to the original Manifest.MF very difficult. 
+				However, Java provides access to the implementation version for a package, 
+				so cram the build number into there. -->
+			<plugin>
+				<groupId>org.apache.maven.plugins</groupId>
+				<artifactId>maven-jar-plugin</artifactId>
+				<!-- Spring sets the <version>2.5</version> -->
+				<configuration>
+					<archive>
+						<manifest>
+							<addDefaultImplementationEntries>true</addDefaultImplementationEntries>
+						</manifest>
+						<manifestEntries>
+							<Implementation-Version>${project.version}-b${build.number}</Implementation-Version>
+						</manifestEntries>
+					</archive>
+				</configuration>
+			</plugin>
 			<plugin>
 				<groupId>org.jacoco</groupId>
 				<artifactId>jacoco-maven-plugin</artifactId>
-				<version>0.7.6.201602180812</version>
+				<version>0.7.9</version>
 				<executions>
 					<execution>
 						<id>default-prepare-agent</id>
@@ -193,7 +187,15 @@
 					</execution>
 				</executions>
 			</plugin>
-
+			<!-- Skip the deploy-jar-to-nexus step -->
+			<plugin>
+				<groupId>org.apache.maven.plugins</groupId>
+				<artifactId>maven-deploy-plugin</artifactId>
+				<!-- Spring sets the <version>2.8</version> -->
+				<configuration>
+					<skip>true</skip>
+				</configuration>
+			</plugin>
 			<!-- https://stackoverflow.com/questions/39126226/fabric8-springboot-full-example -->
 			<plugin>
 				<groupId>io.fabric8</groupId>
@@ -201,17 +203,21 @@
 				<version>0.21.0</version>
 				<configuration>
 					<verbose>true</verbose>
-					<dockerHost>${docker.host.url}</dockerHost>
-					<registry>${docker.registry.url}</registry>
-					<authConfig>
-						<username>${docker.registry.login}</username>
-						<password>${docker.registry.password}</password>
-					</authConfig>
+					<!-- docker runs on the LF build minion so the default value is ok -->
+					<!-- LF <dockerHost>unix:///var/run/docker.sock</dockerHost> LF -->
+					<pullRegistry>${docker.pull.registry}</pullRegistry>
+					<pushRegistry>${docker.push.registry}</pushRegistry>
+					<!-- LF credentials are not supplied here -->
 					<images>
 						<image>
-							<name>h2o-genericjava-modelrunner:${project.version}</name>
+							<!-- Specify a tag to avoid default tag "latest" -->
+							<name>${project.artifactId}:${project.version}</name>
 							<build>
 								<from>frolvlad/alpine-oraclejdk8:slim</from>
+								<tags>
+									<!-- Add tag with build number -->
+									<tag>${project.version}-b${build.number}</tag>
+								</tags>
 								<assembly>
 									<descriptorRef>artifact</descriptorRef>
 								</assembly>
@@ -223,6 +229,15 @@
 						</image>
 					</images>
 				</configuration>
+				<!-- build Docker images in install phase, push in deploy phase -->
+				<executions>
+					<execution>
+						<goals>
+							<goal>build</goal>
+							<goal>push</goal>
+						</goals>
+					</execution>
+				</executions>
 			</plugin>
 		</plugins>
 

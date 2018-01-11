@@ -24,7 +24,6 @@ import java.io.BufferedInputStream;
 import java.io.BufferedOutputStream;
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
-import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
@@ -33,30 +32,33 @@ import java.io.FileWriter;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
-import java.io.ObjectOutputStream;
 import java.io.PrintWriter;
 import java.lang.reflect.Method;
 import java.lang.reflect.Type;
 import java.net.URL;
 import java.net.URLClassLoader;
 import java.nio.charset.StandardCharsets;
-
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.HashMap;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Properties;
+import java.util.Scanner;
+import java.util.UUID;
 import java.util.jar.JarEntry;
 import java.util.jar.JarOutputStream;
+
 import javax.ws.rs.core.MediaType;
 
-import hex.genmodel.easy.RowData;
-import hex.genmodel.easy.EasyPredictModelWrapper;
-import hex.genmodel.easy.prediction.*;
-import hex.genmodel.MojoModel;
-import hex.genmodel.easy.exception.PredictException;
-import io.swagger.annotations.ApiOperation;
-
-import org.springframework.beans.factory.annotation.Value;
 import org.apache.commons.io.IOUtils;
 import org.metawidget.util.simple.StringUtils;
-
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -64,13 +66,21 @@ import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.RequestPart;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
-import org.springframework.http.HttpStatus;
-import org.springframework.http.ResponseEntity;
 
 import com.google.common.io.Files;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import hex.genmodel.MojoModel;
+import hex.genmodel.easy.EasyPredictModelWrapper;
+import hex.genmodel.easy.RowData;
+import hex.genmodel.easy.exception.PredictException;
+import hex.genmodel.easy.prediction.AutoEncoderModelPrediction;
+import hex.genmodel.easy.prediction.BinomialModelPrediction;
+import hex.genmodel.easy.prediction.ClusteringModelPrediction;
+import hex.genmodel.easy.prediction.DimReductionModelPrediction;
+import hex.genmodel.easy.prediction.MultinomialModelPrediction;
+import hex.genmodel.easy.prediction.RegressionModelPrediction;
+import hex.genmodel.easy.prediction.Word2VecPrediction;
+import io.swagger.annotations.ApiOperation;
 
 @RestController
 public class RunnerController {
@@ -138,6 +148,7 @@ public class RunnerController {
 	 * End point for a modeler to upload a model
 	 * 
 	 * @param model
+	 *            Uploaded model
 	 * @return ResponseEntity
 	 */
 	@ApiOperation(value = "Upload a machine learning model", response = Map.class)
@@ -173,6 +184,7 @@ public class RunnerController {
 	 * End point to upload a proto file
 	 * 
 	 * @param proto
+	 *            Protobuf file
 	 * @return ResponseEntity
 	 */
 	@ApiOperation(value = "Upload a protofile", response = ResponseEntity.class)
@@ -205,10 +217,11 @@ public class RunnerController {
 	}
 
 	/**
-	 * getBinaryDefault converts the uploaded csv file based on the default
-	 * .proto file
+	 * getBinaryDefault converts the uploaded csv file based on the default .proto
+	 * file
 	 * 
 	 * @param csvFile
+	 *            CSV file
 	 * @return binary stream in protobuf format as inputs for the predictor
 	 */
 	@ApiOperation(value = "Converts the csv file based on the default .proto to a binary stream in protobuf format.")
@@ -223,7 +236,9 @@ public class RunnerController {
 	 * getBinary converts the uploaded csv file based on the uploaded proto file
 	 * 
 	 * @param csvFile
+	 *            CSV file
 	 * @param proto
+	 *            Protobuf file
 	 * @return binary stream in protobuf format as inputs to the predictor
 	 */
 	@ApiOperation(value = "Gets a binary stream in protobuf format based on the provided csv file and .proto file as inputs for the predictor")
@@ -255,6 +270,7 @@ public class RunnerController {
 	/**
 	 * 
 	 * @param csvFile
+	 *            CSV file
 	 * @return prediction binary stream in protobuf format
 	 */
 	@ApiOperation(value = "Gets a prediction binary stream in protobuf format based on the provided csv file and .proto file")
@@ -267,9 +283,11 @@ public class RunnerController {
 
 	/**
 	 * @param csvFile
+	 *            CSV File
 	 * @param model
-	 *            - H2O model
+	 *            H2O model
 	 * @param proto
+	 *            Protobuf file
 	 * @return prediction binary stream in protobuf format
 	 */
 	@ApiOperation(value = "Gets a prediction binary stream in protobuf format based on the provided csv file, H2O model, and .proto file")
@@ -283,8 +301,11 @@ public class RunnerController {
 	/**
 	 * 
 	 * @param file
+	 *            Data
 	 * @param model
+	 *            Model
 	 * @param proto
+	 *            Protobuf
 	 * @return prediction binary stream in protobuf format
 	 */
 	public byte[] transform_(MultipartFile file, MultipartFile model, MultipartFile proto) {
@@ -463,7 +484,7 @@ public class RunnerController {
 	 */
 	private byte[] doPredictJavaGeneric(Object df, String modelLoc) {
 		try {
-			
+
 			Method getRowsCount = dataframe.getMethod("getRowsCount");
 			int row_count = (int) getRowsCount.invoke(df);
 			logger.info("We have: " + row_count + " rows.");
@@ -518,7 +539,7 @@ public class RunnerController {
 
 					case STRING:
 						String attrValStr = (String) attrValObj;
-						rowString.append(attrValObj);
+						rowString.append(attrValStr);
 						break;
 					case BYTES:
 						byte attrValByte = ((Byte) attrValObj).byteValue();
@@ -541,7 +562,6 @@ public class RunnerController {
 			FileWriter ff = new FileWriter(genfile);
 			ff.write(rowString.toString());
 			ff.close();
-
 
 			String propFile = new String(PROJECTROOT + modelConfig);
 			// Load property
@@ -603,12 +623,12 @@ public class RunnerController {
 			Object object = newBuilder.invoke(null);
 			Method addPrediction = object.getClass().getMethod("addPrediction", String.class);
 
-			if(predictlist == null) {
+			if (predictlist == null) {
 				logger.debug("predictlist is null");
-			
+
 				return null;
 			}
-			
+
 			for (int i = 1; i <= row_count; i++) {
 				addPrediction.invoke(object, predictlist.get(i - 1));
 
@@ -658,15 +678,6 @@ public class RunnerController {
 
 		}
 		return paramType;
-	}
-
-	private byte[] serialize(Object obj) throws IOException {
-		try (ByteArrayOutputStream b = new ByteArrayOutputStream()) {
-			try (ObjectOutputStream o = new ObjectOutputStream(b)) {
-				o.writeObject(obj);
-			}
-			return b.toByteArray();
-		}
 	}
 
 	/**
@@ -886,6 +897,7 @@ public class RunnerController {
 	/**
 	 * 
 	 * @param dataset
+	 *            Data set
 	 * @return prediction results in protobuf format
 	 */
 	@ApiOperation(value = "Gets a prediction binary stream in protobuf format based on the binary stream input also in protobuf format.")
@@ -914,44 +926,44 @@ public class RunnerController {
 	}
 
 	@RequestMapping(value = "/model/{methodname}", method = RequestMethod.POST)
-	public byte[] operate(@RequestBody byte[] dataset , @PathVariable("methodname") String methodname) {
-	logger.info("/model/" + methodname + " GETTING POST REQUEST:");
+	public byte[] operate(@RequestBody byte[] dataset, @PathVariable("methodname") String methodname) {
+		logger.info("/model/" + methodname + " GETTING POST REQUEST:");
 
-	try {
-		
-        // methodname should match from modelConfig.properties. if provided method does not match it will
-		// return with invalid method message  
-		if (modelType.equalsIgnoreCase("G")) {
-			
-			loadModelProp();
-			String modelMethodName = prop.getProperty("modelMethod");
+		try {
 
-			if (!modelMethodName.equalsIgnoreCase(methodname)) {
-				logger.info("Expected model method name is =" + modelMethodName);
-				return "Model method name is invalid".getBytes();
+			// methodname should match from modelConfig.properties. if provided method does
+			// not match it will
+			// return with invalid method message
+			if (modelType.equalsIgnoreCase("G")) {
+
+				loadModelProp();
+				String modelMethodName = prop.getProperty("modelMethod");
+
+				if (!modelMethodName.equalsIgnoreCase(methodname)) {
+					logger.info("Expected model method name is =" + modelMethodName);
+					return "Model method name is invalid".getBytes();
+				}
 			}
+
+			init(null);
+
+			// dframe = DataFrame.parseFrom(datain);
+			Method method = dataframe.getMethod("parseFrom", new Class[] { byte[].class });
+
+			Object df = method.invoke(null, dataset);
+
+			if (!modelType.equalsIgnoreCase("G"))
+				return doPredict(df, null);
+			else
+				return doPredictJavaGeneric(df, null);
+
+		} catch (Exception ex) {
+			logger.error("Failed getting prediction results: ", ex);
+
 		}
-		
-		init(null);
-	
-		// dframe = DataFrame.parseFrom(datain);
-		Method method = dataframe.getMethod("parseFrom", new Class[] { byte[].class });
 
-		Object df = method.invoke(null, dataset);
-
-		if (!modelType.equalsIgnoreCase("G"))
-			return doPredict(df, null);
-		else
-			return doPredictJavaGeneric(df, null);
-
-	} catch (Exception ex) {
-		logger.error("Failed getting prediction results: ", ex);
-
+		return null;
 	}
-
-	return null;
-}
-
 
 	/**
 	 * This procedure will prepare the plugin directory, generate JAVA protobuf
@@ -989,7 +1001,6 @@ public class RunnerController {
 			logger.info("Creating plugin src directory: " + protoOutputPath);
 		}
 
-
 		modelZip = new String(PROJECTROOT + defaultModel);
 		defaultProtofile = new String(PROJECTROOT + defaultProto);
 
@@ -1013,14 +1024,14 @@ public class RunnerController {
 	private void loadModelProp() {
 		InputStream input;
 		try {
-			
+
 			String propFile = new String(PROJECTROOT + modelConfig);
 			input = new FileInputStream(propFile);
 			prop.load(input);
 
 		} catch (FileNotFoundException e) {
 			logger.error("loadModelProp FileNotFoundException: ", e);
-			
+
 		} catch (IOException e) {
 			logger.error("loadModelProp IOException: ", e);
 		}
@@ -1038,7 +1049,6 @@ public class RunnerController {
 
 		attributes = new ArrayList<String>();
 		attributeTypes = new ArrayList<String>();
-
 
 		String[] types = { DOUBLE, FLOAT, INT32, INT64, UINT32, UINT64, SINT32, SINT64, FIXED32, FIXED64, SFIXED32,
 				SFIXED64, BOOL, STRING, BYTES };
@@ -1193,9 +1203,8 @@ public class RunnerController {
 
 			String mavenUrl = "https://repo1.maven.org/maven2/com/google/protobuf/protobuf-java/" + protoRTVersion
 					+ "/protobuf-java-" + protoRTVersion + ".jar";
-			logger.info("mavenurl="+mavenUrl);
+			logger.info("mavenurl=" + mavenUrl);
 			logger.info("Protobuf Runtime Version is " + protoRTVersion);
-
 
 			String cmd = "curl -o " + pluginRoot + SEP + "protobuf-java-" + protoRTVersion + ".jar " + mavenUrl;
 			logger.info("executing command " + cmd);
@@ -1367,7 +1376,8 @@ public class RunnerController {
 	 * @param cmd
 	 *            command to be executed
 	 * @return result of executing command
-	 * @throws java.io.IOException
+	 * @throws IOException
+	 *             On failure
 	 */
 	public String execCommand(String cmd) throws IOException {
 
@@ -1389,9 +1399,10 @@ public class RunnerController {
 	/**
 	 * Adds the content pointed by the URL to the classpath.
 	 * 
-	 * @param u:
+	 * @param u
 	 *            the URL pointing to the content to be added
 	 * @throws IOException
+	 *             On failure
 	 */
 	public static void addURL(URL u) throws IOException {
 		URLClassLoader sysloader = (URLClassLoader) ClassLoader.getSystemClassLoader();
@@ -1409,9 +1420,10 @@ public class RunnerController {
 	/**
 	 * Adds a file to the classpath.
 	 * 
-	 * @param s:
+	 * @param s
 	 *            a String pointing to the file
 	 * @throws IOException
+	 *             On failure
 	 */
 	public static void addFile(String s) throws IOException {
 		File f = new File(s);
@@ -1421,9 +1433,10 @@ public class RunnerController {
 	/**
 	 * Adds a file to the classpath
 	 * 
-	 * @param f:
+	 * @param f
 	 *            the file to be added
 	 * @throws IOException
+	 *             On failure
 	 */
 	public static void addFile(File f) throws IOException {
 		addURL(f.toURI().toURL());
