@@ -187,15 +187,11 @@
 					</execution>
 				</executions>
 			</plugin>
-			<!-- Skip the deploy-jar-to-nexus step -->
-			<plugin>
-				<groupId>org.apache.maven.plugins</groupId>
-				<artifactId>maven-deploy-plugin</artifactId>
-				<!-- Spring sets the <version>2.8</version> -->
-				<configuration>
-					<skip>true</skip>
-				</configuration>
-			</plugin>
+			<!--
+				No "skip" configuration for maven-deploy-plugin.
+				Let the jar be deployed to LF Nexus repo, so that
+				the final deploy step finds a jar then succeeds.
+			-->
 			<!-- https://stackoverflow.com/questions/39126226/fabric8-springboot-full-example -->
 			<plugin>
 				<groupId>io.fabric8</groupId>
