@@ -5,6 +5,8 @@
 	<groupId>org.acumos.generic-model-runner</groupId>
 	<artifactId>h2o-genericjava-modelrunner</artifactId>
 	<version>1.0.3-SNAPSHOT</version>
+	<!-- deploys only a docker image -->
+	<packaging>pom</packaging>
 
 	<name>Acumos H2O/Generic Java Model Runner</name>
 	<description>Acumos H2O/Generic Java Model Runner</description>
