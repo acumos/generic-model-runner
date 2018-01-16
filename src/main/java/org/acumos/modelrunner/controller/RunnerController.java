@@ -38,6 +38,7 @@ import java.lang.reflect.Type;
 import java.net.URL;
 import java.net.URLClassLoader;
 import java.nio.charset.StandardCharsets;
+
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
@@ -134,14 +135,12 @@ public class RunnerController {
 	private Class<?> prediction;
 	private Class<?> dataframeBuilder;
 	private Properties prop = new Properties();
-	private boolean isProtobufRuntimeDownloaded = false;
 	private String protoRTVersion = null;
 	private ClassLoader cl = null;
 
 	@RequestMapping(value = "/hello", method = RequestMethod.GET)
 	public String hello() {
 		return "HelloWorld";
-
 	}
 
 	/**
@@ -259,7 +258,10 @@ public class RunnerController {
 
 			Method tobytearray = obj.getClass().getSuperclass().getSuperclass().getSuperclass()
 					.getDeclaredMethod("toByteArray");
-			return (byte[]) tobytearray.invoke(obj);
+			byte[] barray = (byte[]) tobytearray.invoke(obj);
+			logger.info("Returning the following byte[] :");
+			logger.info(Arrays.toString(barray));
+			return barray;
 
 		} catch (Exception ex) {
 			logger.error("Failed getting binary stream inputs:", ex);
@@ -328,8 +330,11 @@ public class RunnerController {
 					dir.mkdirs();
 
 				// Create the file on server
-
-				File modelFile = new File(dir.getAbsolutePath() + SEP + "model_" + UUID.randomUUID() + ".zip");
+				File modelFile;
+				if (!modelType.equalsIgnoreCase("G"))
+					modelFile = new File(dir.getAbsolutePath() + SEP + "model_" + UUID.randomUUID() + ".zip");
+				else
+					modelFile = new File(dir.getAbsolutePath() + SEP + "model_" + UUID.randomUUID() + ".jar");
 
 				BufferedOutputStream stream = new BufferedOutputStream(new FileOutputStream(modelFile));
 				stream.write(bytes);
@@ -341,7 +346,7 @@ public class RunnerController {
 			if (!modelType.equalsIgnoreCase("G"))
 				return doPredict(obj, modelLoc);
 			else
-				return doPredictJavaGeneric(df, modelLoc);
+				return doPredictJavaGeneric(obj, modelLoc);
 		} catch (Exception ex) {
 			logger.error("Failed transforming csv file and getting prediction results: ", ex);
 
@@ -900,10 +905,11 @@ public class RunnerController {
 	 *            Data set
 	 * @return prediction results in protobuf format
 	 */
-	@ApiOperation(value = "Gets a prediction binary stream in protobuf format based on the binary stream input also in protobuf format.")
+	@ApiOperation(value = "Gets a prediction binary stream in protobuf format based on the binary stream input also in protobuf format.", consumes = "application/x-protobuf", response = Object.class)
 	@RequestMapping(value = "/predict", method = RequestMethod.POST)
 	public byte[] predict(@RequestBody byte[] dataset) {
 		logger.info("/predict GETTING POST REQUEST:");
+		logger.info(Arrays.toString(dataset));
 
 		try {
 			init(null);
@@ -982,12 +988,15 @@ public class RunnerController {
 		protoJarPath = pluginClassPath + SEP + "pbuff.jar";
 		protoOutputPath = new String(pluginRoot + SEP + "src");
 
-		// Make sure plugin Root directories exist. If not, create them.
+		// purge plugin root directories if already existed
 		File dir = new File(pluginRoot);
-		if (!dir.exists()) {
-			dir.mkdirs();
-			logger.info("Creating pluginRoot directory: " + pluginRoot);
+		if (dir.exists()) {
+			boolean deleted = deleteDirectory(dir);
+			logger.info("plugin root directory " + pluginRoot + " is deleted? " + deleted);
 		}
+		// Now (re)create plugin root directories
+		dir.mkdirs();
+		logger.info("Creating pluginRoot directory: " + pluginRoot);
 
 		File classdir = new File(pluginClassPath);
 		if (!classdir.exists()) {
@@ -1011,11 +1020,11 @@ public class RunnerController {
 
 		addFile(protoJarPath);
 
-		// loading DatasetProto$ classes
 		dataframerow = cl.loadClass("com.google.protobuf.DatasetProto$DataFrameRow");
 		dataframe = cl.loadClass("com.google.protobuf.DatasetProto$DataFrame");
 		prediction = cl.loadClass("com.google.protobuf.DatasetProto$Prediction");
 		dataframeBuilder = cl.loadClass("com.google.protobuf.DatasetProto$DataFrame$Builder");
+
 	}
 
 	/**
@@ -1186,17 +1195,16 @@ public class RunnerController {
 		}
 
 		if (exitVal != 0)
-			logger.error("Failed generating DataframeProto.java");
+			logger.error("Failed generating DatasetProto.java");
 		else
-			logger.info("Complete generating DataframeProto.java!");
+			logger.info("Complete generating DatasetProto.java!");
 	}
 
 	/**
 	 * Download Protobuf Java Runtime Jar
 	 */
 	private void downloadProtoJavaRuntimeJar() {
-		if (isProtobufRuntimeDownloaded)
-			return;
+
 		try {
 			String cmd0 = PROJECTROOT + SEP + "bin" + SEP + "getVersion.sh";
 			protoRTVersion = execCommand(cmd0);
@@ -1213,15 +1221,13 @@ public class RunnerController {
 
 			if (exitVal != 0)
 				logger.error("Failed downloading Protobuf Runtime Library!");
-			else {
+			else
 				logger.info("Completed downloading Protobuf Runtime Library!");
-				isProtobufRuntimeDownloaded = true;
-			}
+
 		} catch (Exception ex) {
 
 			logger.error("Failed in downloading the latest protobuf Java runtime library from maven:", ex);
 		}
-
 	}
 
 	/**
@@ -1394,6 +1400,23 @@ public class RunnerController {
 		}
 		s.close();
 		return val;
+	}
+
+	/**
+	 * Deleting a directory recursively :
+	 * http://www.baeldung.com/java-delete-directory
+	 * 
+	 * @param directoryToBeDeleted
+	 * @return true or false
+	 */
+	boolean deleteDirectory(File directoryToBeDeleted) {
+		File[] allContents = directoryToBeDeleted.listFiles();
+		if (allContents != null) {
+			for (File file : allContents) {
+				deleteDirectory(file);
+			}
+		}
+		return directoryToBeDeleted.delete();
 	}
 
 	/**

@@ -1,0 +1,15 @@
+syntax = "proto3";
+option java_package = "com.google.protobuf";
+option java_outer_classname = "DatasetProto";
+message DataFrameRow {
+string multiplier_data = 1;
+}
+message DataFrame {
+ 	repeated DataFrameRow rows = 1;
+}
+message Prediction {
+	repeated string prediction= 1;
+}
+service Multiplier {
+	rpc predict(DataFrame) returns (Prediction);
+}
