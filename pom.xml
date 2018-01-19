@@ -23,10 +23,10 @@
 		<springfox.version>2.7.0</springfox.version>
 		<!-- Jenkins invokes mvn with argument -Dbuild.number=${BUILD_NUMBER} -->
 		<build.number>0</build.number>
-		<!-- Port 10001 is a proxy for external images -->
+		<!-- Not supplied to all jobs; e.g., Javadoc -->
 		<docker.pull.registry>nexus3.acumos.org:10001</docker.pull.registry>
-		<!-- Port 10003 is the LF snapshot repository -->
-		<docker.push.registry>nexus3.acumos.org:10003</docker.push.registry>
+		<!-- Supplied by Jenkins -->
+		<docker.push.registry>${env.NEXUS3_PUSH_REGISTRY}</docker.push.registry>
 	</properties>
 
 	<!-- No repositories section. -->
