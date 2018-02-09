@@ -1,5 +1,5 @@
 syntax = "proto3";
-option java_package = "com.google.protobuf";
+option java_package = "org.acumos";
 option java_outer_classname = "DatasetProto";
 message DataFrameRow {
 string multiplier_data = 1;
@@ -12,4 +12,5 @@ message Prediction {
 }
 service Multiplier {
 	rpc predict(DataFrame) returns (Prediction);
+
 }

@@ -25,7 +25,7 @@ model_config=/models/modelConfig.properties
 # DatasetProto$*.classes will be in $plugin_root\classes
 # pbuff.jar will be in $plugin_root\classes
 
-plugin_root=/plugins
+plugin_root=/tmp/plugins
 
 
 
