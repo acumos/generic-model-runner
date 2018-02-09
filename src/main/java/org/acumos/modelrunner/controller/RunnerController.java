@@ -33,12 +33,13 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.PrintWriter;
+import java.io.Writer;
 import java.lang.reflect.Method;
 import java.lang.reflect.Type;
 import java.net.URL;
 import java.net.URLClassLoader;
 import java.nio.charset.StandardCharsets;
-
+import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
@@ -46,13 +47,19 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Properties;
+import java.util.Random;
 import java.util.Scanner;
+import java.util.StringTokenizer;
 import java.util.UUID;
 import java.util.jar.JarEntry;
 import java.util.jar.JarOutputStream;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 import javax.ws.rs.core.MediaType;
 
+import org.acumos.modelrunner.domain.*;
+import org.acumos.modelrunner.domain.MessageObject.AttributeEntity;
 import org.apache.commons.io.IOUtils;
 import org.metawidget.util.simple.StringUtils;
 import org.slf4j.Logger;
@@ -128,15 +135,26 @@ public class RunnerController {
 	private String protoFilePath = null;
 	private String protoOutputPath = null;
 	private String pluginClassPath = null;
+	private String pluginPkgName = null;
+	private String protoJarPath = null;
+	private String inputClassName = null;
+	private String outputClassName = null;
+	private String serviceName = null;
 	private ArrayList<String> attributes = new ArrayList<>();
 	private ArrayList<String> attributeTypes = new ArrayList<>();
 	private Class<?> dataframerow;
 	private Class<?> dataframe;
 	private Class<?> prediction;
 	private Class<?> dataframeBuilder;
+	private HashMap<String, MessageObject> classList = new HashMap<>();
+	private HashMap<String, ServiceObject> serviceList = new HashMap<>();
+	private ArrayList<String> classNames = new ArrayList<>();
 	private Properties prop = new Properties();
 	private String protoRTVersion = null;
 	private ClassLoader cl = null;
+
+	private String[] types = { DOUBLE, FLOAT, INT32, INT64, UINT32, UINT64, SINT32, SINT64, FIXED32, FIXED64, SFIXED32,
+			SFIXED64, BOOL, STRING, BYTES };
 
 	@RequestMapping(value = "/hello", method = RequestMethod.GET)
 	public String hello() {
@@ -353,7 +371,6 @@ public class RunnerController {
 		}
 
 		return new byte[0];
-
 	}
 
 	/**
@@ -373,7 +390,7 @@ public class RunnerController {
 
 		String contentType = file.getContentType();
 		if (!"application/vnd.ms-excel".equalsIgnoreCase(contentType) && !"text/csv".equalsIgnoreCase(contentType)) {
-			logger.error("Wrong file type");
+			logger.error("Wrong file type. Current content type is " + contentType);
 			return null;
 		}
 
@@ -480,6 +497,524 @@ public class RunnerController {
 		return df;
 	}
 
+	//
+	/**
+	 * Get {InputClass}.Builder class based on uploaded data file and proto file
+	 * 
+	 * @param file
+	 * @param proto
+	 * @return {InputClass}.Builder
+	 * @throws Exception
+	 */
+	private Object getInputClassBuilder(MultipartFile file, MultipartFile proto) throws Exception {
+		if (file.isEmpty()) {
+			logger.error("You failed to upload " + file.getOriginalFilename() + " because the file was empty.");
+			return null;
+		}
+
+		Object df = null;
+
+		String contentType = file.getContentType();
+		if (!"application/vnd.ms-excel".equalsIgnoreCase(contentType) && !"text/csv".equalsIgnoreCase(contentType)) {
+			logger.error("Wrong file type. Current content type is " + contentType);
+			return null;
+		}
+
+		String protoString = null;
+		if (proto != null && !proto.isEmpty()) {
+			long protosize = proto.getSize();
+
+			InputStream protoInput = new BufferedInputStream(proto.getInputStream());
+			byte[] protodata = new byte[(int) protosize];
+			char[] protoChar = new char[(int) protosize];
+			int bytesRead = protoInput.read(protodata);
+			for (int i = 0; i < bytesRead; i++) {
+				protoChar[i] = (char) protodata[i];
+			}
+
+			protoString = new String(protoChar);
+		}
+
+		init(protoString);
+		Method newBuilder = dataframerow.getMethod("newBuilder");
+		Object dfr = newBuilder.invoke(null); // dfr is of
+												// DataFrameRow.Builder type
+		Method dfNewBuilder = dataframe.getMethod("newBuilder");
+		df = dfNewBuilder.invoke(null); // df is of DataFrame.Builder
+										// type
+		Method dfAddRows = dataframeBuilder.getMethod("addRows", dfr.getClass());
+
+		long size = file.getSize();
+
+		InputStream csvInput = new BufferedInputStream(file.getInputStream());
+		byte[] data = new byte[(int) size];
+		char[] dataChar = new char[(int) size];
+		int bytesRead = csvInput.read(data);
+		for (int i = 0; i < bytesRead; i++) {
+			dataChar[i] = (char) data[i];
+		}
+
+		String dataString = new String(dataChar);
+		String[] lines = dataString.split(NEWLINE);
+
+		for (String line : lines) {
+			String[] array = line.split(",");
+
+			logger.info("Current line is: " + line);
+
+			for (int i = 0; i < array.length; i++) {
+				if (array[i].length() == 0) // skip missing field
+					continue;
+
+				String attr = attributes.get(i);
+				String attrMethodName = StringUtils.camelCase("set_" + attr, '_');
+				Method attrMethod = null;
+				switch (attributeTypes.get(i)) {
+				case DOUBLE:
+					attrMethod = dfr.getClass().getMethod(attrMethodName, double.class);
+					attrMethod.invoke(dfr, Double.parseDouble(array[i]));
+					break;
+
+				case FLOAT:
+					attrMethod = dfr.getClass().getMethod(attrMethodName, float.class);
+					attrMethod.invoke(dfr, Float.parseFloat(array[i]));
+					break;
+
+				case INT32:
+				case UINT32:
+				case SINT32:
+				case FIXED32:
+				case SFIXED32:
+					attrMethod = dfr.getClass().getMethod(attrMethodName, int.class);
+					attrMethod.invoke(dfr, Integer.parseInt(array[i]));
+					break;
+
+				case INT64:
+				case UINT64:
+				case SINT64:
+				case FIXED64:
+				case SFIXED64:
+					attrMethod = dfr.getClass().getMethod(attrMethodName, long.class);
+					attrMethod.invoke(dfr, Long.parseLong(array[i]));
+					break;
+
+				case BOOL:
+					attrMethod = dfr.getClass().getMethod(attrMethodName, boolean.class);
+					attrMethod.invoke(dfr, Boolean.parseBoolean(array[i]));
+					break;
+
+				case STRING:
+					attrMethod = dfr.getClass().getMethod(attrMethodName, String.class);
+					attrMethod.invoke(dfr, array[i]);
+					break;
+
+				case BYTES:
+					attrMethod = dfr.getClass().getMethod(attrMethodName, byte.class);
+					attrMethod.invoke(dfr, Byte.parseByte(array[i]));
+					break;
+				default:
+					break;
+				}
+
+			}
+			dfAddRows.invoke(df, dfr);
+		}
+
+		return df;
+	}
+
+	/*
+	 * in the case of nestedmsg.proto First iteration : parent - DataFrame, child -
+	 * DataFrameRow Second iteration: parent - DataFrameRow, child - SubFrameRow
+	 */
+	private void getRowString(Object df, String parentName, String attributeName, String childName,
+			StringBuffer rowStr) {
+		try {
+			logger.info("getRowString: " + parentName + " | " + childName);
+			MessageObject parentMsg = classList.get(parentName);
+			Class<?> parentCls = parentMsg.getCls();
+			ArrayList<AttributeEntity> parentAttributes = parentMsg.getAttributes();
+
+			MessageObject childMsg = null;
+			Class<?> childCls = null;
+			ArrayList<AttributeEntity> childAttributes = null;
+			if (childName != null) {
+				childMsg = classList.get(childName);
+				childCls = childMsg.getCls();
+				childAttributes = childMsg.getAttributes();
+			}
+
+			for (AttributeEntity ae : parentAttributes) {
+				if (attributeName != null && !attributeName.equals(ae.getName()))
+					continue;
+
+				if (ae.isRepeated()) {
+					String pAttrMethodName = StringUtils.camelCase("get_" + ae.getName(), '_');
+					Method getCount = parentCls.getMethod(pAttrMethodName + "Count");
+					int rowCount = (int) getCount.invoke(df);
+					logger.info("We have: " + rowCount + " rows of " + ae.getName());
+
+					Method getList = parentCls.getMethod(pAttrMethodName + "List");
+					List<?> list = (List<?>) getList.invoke(df); // list of child objects or list of primitive types
+
+					Object obj;
+					for (int j = 0; j < rowCount; j++) {
+						obj = list.get(j);
+						
+						switch (ae.getType()) {
+						case DOUBLE:
+							double attrValDouble = ((Double) obj).doubleValue();
+							if(rowStr.length() != 0)
+								rowStr.append(","); 
+							rowStr.append(attrValDouble);
+							break;
+
+						case FLOAT:
+							float attrValFloat = ((Float) obj).floatValue();
+							if(rowStr.length() != 0)
+								rowStr.append(","); 
+							rowStr.append(attrValFloat);
+							break;
+
+						case INT32:
+						case UINT32:
+						case SINT32:
+						case FIXED32:
+						case SFIXED32:
+							int attrValInt = ((Integer) obj).intValue();
+							if(rowStr.length() != 0)
+								rowStr.append(","); 
+							rowStr.append(attrValInt);
+							break;
+
+						case INT64:
+						case UINT64:
+						case SINT64:
+						case FIXED64:
+						case SFIXED64:
+							long attrValLong = ((Long) obj).longValue();
+							if(rowStr.length() != 0)
+								rowStr.append(","); 
+							rowStr.append(attrValLong);
+							break;
+
+						case BOOL:
+							boolean attrValBool = ((Boolean) obj).booleanValue();
+							if(rowStr.length() != 0)
+								rowStr.append(","); 
+							rowStr.append(attrValBool);
+							break;
+
+						case STRING:
+							String attrValStr = (String) obj;
+							if(rowStr.length() != 0)
+								rowStr.append(","); 
+							rowStr.append(attrValStr);
+							break;
+
+						case BYTES:
+							byte attrValByte = ((Byte) obj).byteValue();
+							if(rowStr.length() != 0)
+								rowStr.append(","); 
+							rowStr.append(attrValByte);
+							break;
+
+						default:
+							if (childName == null) {
+								childName = ae.getType();
+								childMsg = classList.get(ae.getType());
+								childCls = childMsg.getCls();
+								childAttributes = childMsg.getAttributes();
+							}
+
+							for (AttributeEntity cae : childAttributes) {
+								String cAttrMethodName = StringUtils.camelCase("get_" + cae.getName(), '_');
+								Method cAttrMethod = childCls.getMethod(cAttrMethodName);
+								Object gcObj = cAttrMethod.invoke(obj);
+								
+								switch (cae.getType()) {
+								case DOUBLE:
+									double gcValDouble = ((Double) gcObj).doubleValue();
+									if(rowStr.length() != 0)
+										rowStr.append(","); 
+									rowStr.append(gcValDouble);
+									break;
+
+								case FLOAT:
+									float gcValFloat = ((Float) gcObj).floatValue();
+									if(rowStr.length() != 0)
+										rowStr.append(","); 
+									rowStr.append(gcValFloat);
+									break;
+
+								case INT32:
+								case UINT32:
+								case SINT32:
+								case FIXED32:
+								case SFIXED32:
+									int gcValInt = ((Integer) gcObj).intValue();
+									if(rowStr.length() != 0)
+										rowStr.append(","); 
+									rowStr.append(gcValInt);
+									break;
+
+								case INT64:
+								case UINT64:
+								case SINT64:
+								case FIXED64:
+								case SFIXED64:
+									long gcValLong = ((Long) gcObj).longValue();
+									if(rowStr.length() != 0)
+										rowStr.append(","); 
+									rowStr.append(gcValLong);
+									break;
+
+								case BOOL:
+									boolean gcValBool = ((Boolean) gcObj).booleanValue();
+									if(rowStr.length() != 0)
+										rowStr.append(","); 
+									rowStr.append(gcValBool);
+									break;
+
+								case STRING:
+									String gcValStr = (String) gcObj;
+									if(rowStr.length() != 0)
+										rowStr.append(","); 
+									rowStr.append(gcValStr);
+									break;
+
+								case BYTES:
+									byte gcValByte = ((Byte) gcObj).byteValue();
+									if(rowStr.length() != 0)
+										rowStr.append(","); 
+									rowStr.append(gcValByte);
+									break;
+
+								default:
+									getRowString(gcObj, cae.getType(), null, null, rowStr); // use df instead of gcobj first
+//									getRowString(df, childName, cae.getName(), cae.getType(), rowStr); // use df instead of gcobj first
+									break;
+								}
+
+							}
+							break;
+						}
+					}
+				} else {
+					String pAttrMethodName = StringUtils.camelCase("get_" + ae.getName(), '_');
+					Method pAttrMethod = parentCls.getMethod(pAttrMethodName);
+					Object cObj = pAttrMethod.invoke(df);
+					
+					for (AttributeEntity cae : childAttributes) {
+						String cAttrMethodName = StringUtils.camelCase("get_" + cae.getName(), '_');
+						Method cAttrMethod = childCls.getMethod(cAttrMethodName);
+						Object gcObj = cAttrMethod.invoke(cObj);
+						
+						switch (cae.getType()) {
+						case DOUBLE:
+							double gcValDouble = ((Double) gcObj).doubleValue();
+							if(rowStr.length() != 0)
+								rowStr.append(","); 
+							rowStr.append(gcValDouble);
+							break;
+
+						case FLOAT:
+							float gcValFloat = ((Float) gcObj).floatValue();
+							if(rowStr.length() != 0)
+								rowStr.append(","); 
+							rowStr.append(gcValFloat);
+							break;
+
+						case INT32:
+						case UINT32:
+						case SINT32:
+						case FIXED32:
+						case SFIXED32:
+							int gcValInt = ((Integer) gcObj).intValue();
+							if(rowStr.length() != 0)
+								rowStr.append(","); 
+							rowStr.append(gcValInt);
+							break;
+
+						case INT64:
+						case UINT64:
+						case SINT64:
+						case FIXED64:
+						case SFIXED64:
+							long gcValLong = ((Long) gcObj).longValue();
+							if(rowStr.length() != 0)
+								rowStr.append(","); 
+							rowStr.append(gcValLong);
+							break;
+
+						case BOOL:
+							boolean gcValBool = ((Boolean) gcObj).booleanValue();
+							if(rowStr.length() != 0)
+								rowStr.append(","); 
+							rowStr.append(gcValBool);
+							break;
+
+						case STRING:
+							String gcValStr = (String) gcObj;
+							if(rowStr.length() != 0)
+								rowStr.append(","); 
+							rowStr.append(gcValStr);
+							break;
+						case BYTES:
+							byte gcValByte = ((Byte) gcObj).byteValue();
+							if(rowStr.length() != 0)
+								rowStr.append(","); 
+							rowStr.append(gcValByte);
+							break;
+						default: // TODO
+							getRowString(gcObj, childName, cae.getName(), cae.getType(), rowStr);
+							break;
+						}
+					}
+					rowStr.append("\n");// TODO: is it done yet?
+				}
+				logger.info(rowStr.toString());
+			}
+		} catch (Exception ex) {
+			logger.error("Failed in getRowString(): ", ex);
+		}
+	}
+
+	/**
+	 * This procedure uses Java ML model to do prediction
+	 * 
+	 * @param df
+	 * @param modelLoc
+	 * @return prediction binary stream in protobuf format
+	 */
+	private byte[] doPredictGeneric(Object df, String modelLoc) {
+		try {
+			StringBuffer rowString = new StringBuffer();
+			
+			getRowString(df, inputClassName, null, null, rowString);
+			logger.info(rowString.toString());
+			String tempPath = TMPPATH + SEP + "tmpFiles";
+			File dir = new File(tempPath);
+			if (!dir.exists())
+				dir.mkdirs();
+			String genfile = tempPath + SEP + UUID.randomUUID() + "_genfile.csv";
+			FileWriter ff = new FileWriter(genfile);
+			ff.write(rowString.toString());
+			ff.close();
+
+			String propFile = new String(PROJECTROOT + modelConfig);
+			// Load property
+			Properties prop = new Properties();
+			InputStream input = new FileInputStream(propFile);
+			prop.load(input);
+
+			String modelMethodName = prop.getProperty("modelMethod");
+			String modelClassName = prop.getProperty("modelClassName");
+
+			logger.info("model class name and method=" + modelClassName + "  " + modelMethodName);
+
+			// model invoke and preparation
+
+			File modelSource = new File(PROJECTROOT + defaultModel);
+
+			File modelJarPath = new File(pluginClassPath + SEP + UUID.randomUUID() + modelSource.getName());
+			Files.copy(modelSource, modelJarPath);
+
+			cl = RunnerController.class.getClassLoader();
+			addFile(modelJarPath);
+			logger.info("Jar file path=" + modelJarPath);
+			List<?> predictlist = null;
+
+			Class<?> modelClass = cl.loadClass(modelClassName);
+
+			logger.info("getDeclaredMethods: " + Arrays.toString(modelClass.getDeclaredMethods()));
+			logger.info("getMethods: " + Arrays.toString(modelClass.getMethods()));
+
+			String paramType = getMethodParamType(modelClass, modelMethodName);
+
+			Method methodPredict = null;
+
+			logger.info(modelMethodName + " method parameter type=" + paramType);
+
+			switch (paramType) {
+
+			case "java.io.File":
+
+				File file = new File(genfile);
+				methodPredict = modelClass.getDeclaredMethod(modelMethodName, File.class);
+				predictlist = (List<?>) methodPredict.invoke(null, file);
+				break;
+
+			case "java.lang.String":
+				methodPredict = modelClass.getDeclaredMethod(modelMethodName, String.class);
+				predictlist = (List<?>) methodPredict.invoke(null, rowString.toString());
+				break;
+
+			default:
+				break;
+			}
+
+			if (predictlist == null) {
+				logger.debug("predictlist is null");
+				return null;
+			}
+			int row_count = 10;
+			Object[] predictor = new Object[row_count + 2];
+			for (int i = 0; i <= row_count + 1; i++)
+				predictor[i] = null;
+
+			Class<?> prediction = classList.get(outputClassName).getCls();
+			Method newBuilder = prediction.getMethod("newBuilder");
+			Object object = newBuilder.invoke(null);
+			Method addPrediction;
+			// Method addPrediction = object.getClass().getMethod("addPrediction",
+			// String.class);
+			ArrayList<AttributeEntity> outputAttributes = classList.get(outputClassName).getAttributes();
+			for (AttributeEntity ae : outputAttributes) {
+				String predictMethodName;
+				switch (predictlist.get(0).getClass().getSimpleName()) {
+				case "Integer":
+				case "Float":
+				case "Double":
+				case "Boolean":
+				case "Long":
+				case "Byte":
+					predictMethodName = StringUtils.camelCase("add_all_" + ae.getName(), '_');
+					addPrediction = object.getClass().getMethod(predictMethodName, java.lang.Iterable.class);
+					// addPrediction = object.getClass().getMethod("addAllPrediction",
+					// java.lang.Iterable.class);
+					addPrediction.invoke(object, predictlist);
+					break;
+
+				default:
+					predictMethodName = StringUtils.camelCase("add_" + ae.getName(), '_');
+					addPrediction = object.getClass().getMethod(predictMethodName, predictlist.get(0).getClass());
+					// addPrediction = object.getClass().getMethod("addPrediction",
+					// predictlist.get(0).getClass());
+					for (int i = 1; i <= row_count; i++) {
+						addPrediction.invoke(object, predictlist.get(i - 1));
+						// addPrediction.invoke(object, String.valueOf(predictlist.get(i - 1)));
+					}
+					break;
+				}
+			}
+
+			Method build = object.getClass().getMethod("build");
+
+			Object pobj = build.invoke(object);
+
+			Method toByteArray = pobj.getClass().getMethod("toByteArray");
+
+			logger.info("In predict method: Done Prediction, returning binary serialization of prediction. ");
+			return (byte[]) (toByteArray.invoke(pobj));
+
+		} catch (Exception ex) {
+			logger.error("Failed in doPredictGeneric: ", ex);
+			return null;
+		}
+
+	}
+
 	/**
 	 * This procedure uses Java ML model to do prediction
 	 * 
@@ -583,7 +1118,7 @@ public class RunnerController {
 
 			File modelSource = new File(PROJECTROOT + defaultModel);
 
-			File modelJarPath = new File(pluginClassPath + SEP + modelSource.getName());
+			File modelJarPath = new File(pluginClassPath + SEP + UUID.randomUUID() + modelSource.getName());
 			Files.copy(modelSource, modelJarPath);
 
 			cl = RunnerController.class.getClassLoader();
@@ -620,24 +1155,41 @@ public class RunnerController {
 				break;
 			}
 
+			if (predictlist == null) {
+				logger.debug("predictlist is null");
+				return null;
+			}
+
 			Object[] predictor = new Object[row_count + 2];
 			for (int i = 0; i <= row_count + 1; i++)
 				predictor[i] = null;
 
 			Method newBuilder = prediction.getMethod("newBuilder");
 			Object object = newBuilder.invoke(null);
-			Method addPrediction = object.getClass().getMethod("addPrediction", String.class);
+			Method addPrediction;
+			// Method addPrediction = object.getClass().getMethod("addPrediction",
+			// String.class);
 
-			if (predictlist == null) {
-				logger.debug("predictlist is null");
+			switch (predictlist.get(0).getClass().getSimpleName()) {
+			case "Integer":
+			case "Float":
+			case "Double":
+			case "Boolean":
+			case "Long":
+			case "Byte":
+				addPrediction = object.getClass().getMethod("addAllPrediction", java.lang.Iterable.class);
+				addPrediction.invoke(object, predictlist);
+				break;
 
-				return null;
+			default:
+				addPrediction = object.getClass().getMethod("addPrediction", predictlist.get(0).getClass());
+				for (int i = 1; i <= row_count; i++) {
+					addPrediction.invoke(object, predictlist.get(i - 1));
+					// addPrediction.invoke(object, String.valueOf(predictlist.get(i - 1)));
+				}
+				break;
 			}
 
-			for (int i = 1; i <= row_count; i++) {
-				addPrediction.invoke(object, predictlist.get(i - 1));
-
-			}
 			Method build = object.getClass().getMethod("build");
 
 			Object pobj = build.invoke(object);
@@ -899,6 +1451,44 @@ public class RunnerController {
 
 	}
 
+	@RequestMapping(value = "/operation/{operation}", method = RequestMethod.POST)
+	public byte[] operation(@RequestBody byte[] dataset, @PathVariable("operation") String operation) {
+		logger.info("/operation/" + operation + " GETTING POST REQUEST:");
+
+		try {
+			if (modelType.equalsIgnoreCase("G"))
+				loadModelProp();
+
+			init(null);
+
+			if (serviceList.isEmpty() || classList.isEmpty()) {
+				logger.error("Wrong protofile format - must specify message and service!");
+				return null;
+			}
+
+			ServiceObject so = serviceList.get(operation);
+			inputClassName = so.getInputClass();
+			outputClassName = so.getOutputClass();
+			serviceName = operation;
+
+			// dframe = DataFrame.parseFrom(datain);
+			Class<?> inputClass = classList.get(inputClassName).getCls();
+			Method method = inputClass.getMethod("parseFrom", new Class[] { byte[].class });
+
+			Object df = method.invoke(null, dataset);
+
+			if (!modelType.equalsIgnoreCase("G"))
+				return doPredict(df, null);
+			else
+				return doPredictGeneric(df, null);
+
+		} catch (Exception ex) {
+			logger.error("Failed getting prediction results: ", ex);
+		}
+
+		return null;
+	}
+
 	/**
 	 * 
 	 * @param dataset
@@ -982,10 +1572,12 @@ public class RunnerController {
 
 		logger.info("Project Root is " + PROJECTROOT);
 		protoFilePath = new String(PROJECTROOT);
+		Random rand = new Random();
 
-		String protoJarPath = null;
+		int n = rand.nextInt(100) + 1;
+
 		pluginClassPath = new String(pluginRoot + SEP + "classes");
-		protoJarPath = pluginClassPath + SEP + "pbuff.jar";
+		protoJarPath = pluginClassPath + SEP + "pbuff" + n + ".jar";
 		protoOutputPath = new String(pluginRoot + SEP + "src");
 
 		// purge plugin root directories if already existed
@@ -1020,11 +1612,21 @@ public class RunnerController {
 
 		addFile(protoJarPath);
 
-		dataframerow = cl.loadClass("com.google.protobuf.DatasetProto$DataFrameRow");
-		dataframe = cl.loadClass("com.google.protobuf.DatasetProto$DataFrame");
-		prediction = cl.loadClass("com.google.protobuf.DatasetProto$Prediction");
-		dataframeBuilder = cl.loadClass("com.google.protobuf.DatasetProto$DataFrame$Builder");
+		dataframerow = cl.loadClass(pluginPkgName + ".DatasetProto$DataFrameRow");
+		dataframe = cl.loadClass(pluginPkgName + ".DatasetProto$DataFrame");
+		prediction = cl.loadClass(pluginPkgName + ".DatasetProto$Prediction");
+		dataframeBuilder = cl.loadClass(pluginPkgName + ".DatasetProto$DataFrame$Builder");
 
+		for (String cname : classNames) {
+			MessageObject mobj = classList.get(cname);
+			if (mobj == null) {
+				classList.put(cname, mobj);
+			}
+
+			String className = pluginPkgName + ".DatasetProto$" + cname;
+			Class<?> thisClass = cl.loadClass(className);
+			mobj.setCls(thisClass);
+		}
 	}
 
 	/**
@@ -1044,7 +1646,122 @@ public class RunnerController {
 		} catch (IOException e) {
 			logger.error("loadModelProp IOException: ", e);
 		}
+	}
 
+	/**
+	 * 
+	 * @param protoString
+	 * @return true of false
+	 * @throws Exception
+	 */
+	private boolean setProtoClasses(String protoString) throws Exception {
+		logger.info("Inside setProtoClasses(): \n" + protoString);
+
+		if (protoString == null)
+			return false;
+
+		String[] arr = protoString.split("\\s+");
+
+		int total_len = arr.length;
+		int idx = 0;
+		while (idx < total_len) {
+			if (arr[idx].equals("message")) {
+				idx = processMessage(arr, idx);
+			} else if (arr[idx].equals("rpc")) {
+				StringBuilder builder = new StringBuilder(arr[idx++]);
+				while (idx < total_len) {
+					builder.append(" ").append(arr[idx]);
+					if (arr[idx].contains(";")) {
+						break;
+					}
+					idx++;
+				}
+				processRPCLine(builder.toString());
+			} else if (arr[idx].startsWith("java_package")) {
+				idx = processPackage(arr, idx);
+			}
+			idx++;
+		}
+
+		logger.info("Plugin package: " + pluginPkgName);
+		for (String cname : classNames) {
+			logger.info("plugin class = " + cname);
+		}
+
+		return true;
+	}
+
+	/**
+	 * Process line that contains "rpc" to extract service info
+	 * 
+	 * @param line
+	 *            : such as "rpc GetAcl(GetAclRequest) returns (Acl)"
+	 */
+	private void processRPCLine(String line) {
+		logger.info("processRPCLine(): " + line);
+		// Create a Pattern object
+		String pattern = "rpc (\\w+\\s*)\\((\\s*\\w+\\s*)(\\)\\s*)returns(\\s*\\()(\\s*\\w+\\s*)\\);";
+		Pattern r = Pattern.compile(pattern);
+
+		// Now create matcher object.
+		Matcher m = r.matcher(line);
+		if (m.find()) {
+			String service = m.group(1).trim();
+			String inputClass = m.group(2).trim();
+			String outputClass = m.group(5).trim();
+			ServiceObject so = new ServiceObject(service, inputClass, outputClass);
+			serviceList.put(service, so);
+			logger.info("processRPCLine(): Service: " + service + " inputClass: " + inputClass + " outputClass: "
+					+ outputClass);
+
+		} else {
+			logger.info("processRPCLine(): NO MATCH");
+		}
+	}
+
+	/**
+	 * Extract message information based on proto file
+	 * 
+	 * @param arr
+	 * @param idx
+	 * @return
+	 */
+	private int processMessage(String[] arr, int idx) {
+		logger.info("Inside processMessage(): ");
+
+		String msgname = arr[idx + 1].endsWith("{") ? arr[idx + 1].substring(0, arr[idx + 1].length() - 1)
+				: arr[idx + 1];
+		logger.info("Adding message: " + msgname);
+		classNames.add(msgname);
+		for (int i = idx + 1; i < arr.length; i++) {
+			if (arr[i].indexOf("}") >= 0) {
+				idx = i;
+				break;
+			}
+		}
+		return idx;
+	}
+
+	/**
+	 * Extract package information from proto file
+	 * 
+	 * @param arr
+	 * @param idx
+	 * @return
+	 */
+	private int processPackage(String[] arr, int idx) {
+		for (int i = idx; i <= idx + 2; i++) {
+			int first = arr[i].indexOf("\"");
+			if (first >= 0) {
+				int second = arr[i].indexOf("\"", first + 1);
+				if (second >= 0) {
+					pluginPkgName = arr[i].substring(first + 1, second);
+					logger.info("Plugin package name : " + pluginPkgName);
+					idx = i;
+				}
+			}
+		}
+		return idx;
 	}
 
 	/**
@@ -1058,9 +1775,6 @@ public class RunnerController {
 
 		attributes = new ArrayList<String>();
 		attributeTypes = new ArrayList<String>();
-
-		String[] types = { DOUBLE, FLOAT, INT32, INT64, UINT32, UINT64, SINT32, SINT64, FIXED32, FIXED64, SFIXED32,
-				SFIXED64, BOOL, STRING, BYTES };
 
 		int idx_msg1 = protoString.indexOf("message DataFrameRow");
 		int idx_begincurly1 = protoString.indexOf("{", idx_msg1);
@@ -1116,6 +1830,99 @@ public class RunnerController {
 
 	}
 
+	/**
+	 * @param protoString
+	 * @return boolean
+	 * @throws Exception
+	 */
+	private boolean setAllProtoAttributes(String protoString) throws Exception {
+		if (protoString == null)
+			return false;
+		for (String cname : classNames) {
+			setMessageProtoAttributes(cname, protoString);
+		}
+		return true;
+	}
+
+	private boolean setMessageProtoAttributes(String cname, String protoString) throws Exception {
+		String pattern = "(message\\s+" + cname + "\\s+)";
+
+		Pattern p = Pattern.compile(pattern);
+		Matcher m = p.matcher(protoString);
+		if (!m.find()) {
+			logger.error("Cannot find message " + cname);
+			return false;
+		}
+		String search = m.group(0);
+		logger.info("SetMessageProtoAttributes: search pattern = [" + search + "]");
+
+		int idx_msg1 = protoString.indexOf(search);
+		int idx_begincurly1 = protoString.indexOf("{", idx_msg1);
+		int idx_endcurly1 = protoString.indexOf("}", idx_begincurly1);
+		if (idx_msg1 == -1 || idx_begincurly1 == -1 || idx_endcurly1 == -1) {
+			logger.error("Wrong proto String format!");
+			return false;
+		}
+		MessageObject mobj = classList.get(cname);
+		if (mobj == null) {
+			mobj = new MessageObject(cname);
+			classList.put(cname, mobj);
+		}
+
+		String curMsg = protoString.substring(idx_begincurly1 + 2, idx_endcurly1 - 1);
+		StringTokenizer st = new StringTokenizer(curMsg, ";");
+
+		while (st.hasMoreTokens()) {
+			boolean isRepeated = false;
+			boolean isOptional = false;
+			boolean isRequired = false;
+			String attribute = null;
+			String type = null;
+
+			String line = st.nextToken();
+			int idx_equal = line.indexOf("=");
+			if (idx_equal == -1) {
+				logger.error("Wrong proto string format!");
+				return false;
+			}
+			String subline = line.substring(0, idx_equal);
+			String pat = null;
+			if(subline.indexOf("repeated") != -1) {
+				pat = "(\\s*)repeated(\\s*)(\\w+\\s*)(\\w+\\s*)";
+				isRepeated = true;
+			}
+			else if(subline.indexOf("optional") != -1) {
+				pat = "(\\s*)optional(\\s*)(\\w+\\s*)(\\w+\\s*)";
+				isOptional = true;
+			}
+			else if(subline.indexOf("required") != -1) {
+				pat = "(\\s*)required(\\s*)(\\w+\\s*)(\\w+\\s*)";
+				isRequired = true;
+			}
+			else 
+				pat = "(\\s*)(\\w+\\s*)(\\w+\\s*)";
+			
+			Pattern r = Pattern.compile(pat);
+			Matcher mproto = r.matcher(subline);
+			if(mproto.find()) {
+				if(!isRepeated && !isOptional && !isRequired) {
+					type = mproto.group(2).trim();
+					attribute = mproto.group(3).trim();
+					logger.info("setMessageProtoAttributes(): type = [" + type + "] attribute = [" + attribute + "]");
+				}
+				else {
+					type = mproto.group(3).trim();
+					attribute = mproto.group(4).trim();
+					logger.info("setMessageProtoAttributes(): type = [" + type + "] attribute = [" + attribute + "]");
+				}
+			}
+			if (attribute != null && type != null)
+				mobj.addAttribute(attribute, type, isRepeated);
+		}
+
+		return true;
+	}
+
 	private void generateProto(String protoString) throws Exception {
 		if (protoString == null)
 			protoString = getDefaultProtoString();
@@ -1123,7 +1930,13 @@ public class RunnerController {
 		if (protoString == null)
 			protoString = generateMockMessage();
 
+		classList.clear();
+		classNames.clear();
+		serviceList.clear();
+
+		setProtoClasses(protoString);
 		setProtoAttributes(protoString);
+		setAllProtoAttributes(protoString);
 		String protoFilename = protoFilePath + SEP + "dataset.proto";
 		writeProtoFile(protoString, protoFilename);
 		generateJavaProtoCode();
@@ -1184,11 +1997,16 @@ public class RunnerController {
 		String cmd;
 		int exitVal = -1;
 
-		cmd = PROJECTROOT + SEP + "bin" + SEP + "protoc -I=" + protoFilePath + " --java_out=" + protoOutputPath + " " + protoFilePath + SEP
-				+ "dataset.proto";
+		cmd = PROJECTROOT + SEP + "bin" + SEP + "protoc -I=" + protoFilePath + " --java_out=" + protoOutputPath + " "
+				+ protoFilePath + SEP + "dataset.proto";
 
 		try {
 			exitVal = runCommand(cmd);
+			String path = (pluginPkgName == null) ? protoOutputPath
+					: protoOutputPath + SEP + pluginPkgName.replaceAll("\\.", SEP);
+
+			if (!pluginPkgName.equals("com.google.protobuf"))
+				insertImport(path + SEP + "DatasetProto.java");
 
 		} catch (Exception ex) {
 			logger.error("Failed generating Java Protobuf source code: ", ex);
@@ -1198,6 +2016,42 @@ public class RunnerController {
 			logger.error("Failed generating DatasetProto.java");
 		else
 			logger.info("Complete generating DatasetProto.java!");
+	}
+
+	/**
+	 * 
+	 * @param filename
+	 *            : Java source file generated by the protocol buffer compiler
+	 */
+	public void insertImport(String filename) {
+		try {
+			List<String> old_list = java.nio.file.Files.readAllLines(Paths.get(filename));
+			List<String> new_list = new ArrayList<>();
+
+			String import_line = "import com.google.protobuf.*;";
+			int index = 0;
+			for (String line : old_list) {
+				new_list.add(line);
+				if (index == 2) {
+					new_list.add(import_line);
+				}
+				if (line.startsWith("package")) {
+					new_list.remove(3);
+					new_list.add("");
+					new_list.add(import_line);
+				}
+				index++;
+			}
+
+			Writer fileWriter = new FileWriter(filename, false); // overwrites file
+			for (String out_line : new_list) {
+				fileWriter.write(out_line);
+				fileWriter.write(System.lineSeparator());
+			}
+			fileWriter.close();
+		} catch (Exception e) {
+			logger.error("Failed to process file:" + filename);
+		}
 	}
 
 	/**
@@ -1211,7 +2065,7 @@ public class RunnerController {
 
 			String mavenUrl = "https://repo1.maven.org/maven2/com/google/protobuf/protobuf-java/" + protoRTVersion
 					+ "/protobuf-java-" + protoRTVersion + ".jar";
-			logger.info("mavenurl=" + mavenUrl);
+			logger.info("mavenurl = " + mavenUrl);
 			logger.info("Protobuf Runtime Version is " + protoRTVersion);
 
 			String cmd = "curl -o " + pluginRoot + SEP + "protobuf-java-" + protoRTVersion + ".jar " + mavenUrl;
@@ -1239,7 +2093,9 @@ public class RunnerController {
 		String cmd;
 		int exitVal = -1;
 
-		buildPath = protoOutputPath + SEP + "com" + SEP + "google" + SEP + "protobuf" + SEP;
+		// buildPath = protoOutputPath + SEP + "com" + SEP + "google" + SEP + "protobuf"
+		// + SEP;
+		buildPath = protoOutputPath + SEP + pluginPkgName.replaceAll("\\.", SEP);
 		protoJavaRuntimeJar = pluginRoot;
 		cmd = "javac -cp " + protoJavaRuntimeJar + SEP + "protobuf-java-" + protoRTVersion + ".jar " + buildPath + SEP
 				+ "DatasetProto.java -d " + pluginClassPath;
@@ -1284,7 +2140,7 @@ public class RunnerController {
 
 			logger.info("Exit Value: " + exitVal);
 			File plugin = new File(pluginClassPath);
-			JarOutputStream target = new JarOutputStream(new FileOutputStream(pluginClassPath + SEP + "pbuff.jar"));
+			JarOutputStream target = new JarOutputStream(new FileOutputStream(protoJarPath));
 			add(plugin, plugin, target);
 			target.close();
 
