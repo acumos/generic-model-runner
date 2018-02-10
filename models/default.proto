@@ -1,5 +1,5 @@
 syntax = "proto3";
-option java_package = "com.google.protobuf";
+option java_package = "org.random.domain";
 option java_outer_classname = "DatasetProto";
 message DataFrameRow {
 string multiplier_data = 1;
