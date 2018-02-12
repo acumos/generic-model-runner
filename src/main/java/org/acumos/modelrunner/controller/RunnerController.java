@@ -55,6 +55,7 @@ import java.util.jar.JarEntry;
 import java.util.jar.JarOutputStream;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import java.util.stream.Collectors;
 
 import javax.ws.rs.core.MediaType;
 
@@ -76,6 +77,7 @@ import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
 
 import com.google.common.io.Files;
+import com.google.protobuf.ByteString;
 
 import hex.genmodel.MojoModel;
 import hex.genmodel.easy.EasyPredictModelWrapper;
@@ -660,19 +662,19 @@ public class RunnerController {
 					Object obj;
 					for (int j = 0; j < rowCount; j++) {
 						obj = list.get(j);
-						
+
 						switch (ae.getType()) {
 						case DOUBLE:
 							double attrValDouble = ((Double) obj).doubleValue();
-							if(rowStr.length() != 0)
-								rowStr.append(","); 
+							if (rowStr.length() != 0)
+								rowStr.append(",");
 							rowStr.append(attrValDouble);
 							break;
 
 						case FLOAT:
 							float attrValFloat = ((Float) obj).floatValue();
-							if(rowStr.length() != 0)
-								rowStr.append(","); 
+							if (rowStr.length() != 0)
+								rowStr.append(",");
 							rowStr.append(attrValFloat);
 							break;
 
@@ -682,8 +684,8 @@ public class RunnerController {
 						case FIXED32:
 						case SFIXED32:
 							int attrValInt = ((Integer) obj).intValue();
-							if(rowStr.length() != 0)
-								rowStr.append(","); 
+							if (rowStr.length() != 0)
+								rowStr.append(",");
 							rowStr.append(attrValInt);
 							break;
 
@@ -693,29 +695,29 @@ public class RunnerController {
 						case FIXED64:
 						case SFIXED64:
 							long attrValLong = ((Long) obj).longValue();
-							if(rowStr.length() != 0)
-								rowStr.append(","); 
+							if (rowStr.length() != 0)
+								rowStr.append(",");
 							rowStr.append(attrValLong);
 							break;
 
 						case BOOL:
 							boolean attrValBool = ((Boolean) obj).booleanValue();
-							if(rowStr.length() != 0)
-								rowStr.append(","); 
+							if (rowStr.length() != 0)
+								rowStr.append(",");
 							rowStr.append(attrValBool);
 							break;
 
 						case STRING:
 							String attrValStr = (String) obj;
-							if(rowStr.length() != 0)
-								rowStr.append(","); 
+							if (rowStr.length() != 0)
+								rowStr.append(",");
 							rowStr.append(attrValStr);
 							break;
 
 						case BYTES:
 							byte attrValByte = ((Byte) obj).byteValue();
-							if(rowStr.length() != 0)
-								rowStr.append(","); 
+							if (rowStr.length() != 0)
+								rowStr.append(",");
 							rowStr.append(attrValByte);
 							break;
 
@@ -731,19 +733,19 @@ public class RunnerController {
 								String cAttrMethodName = StringUtils.camelCase("get_" + cae.getName(), '_');
 								Method cAttrMethod = childCls.getMethod(cAttrMethodName);
 								Object gcObj = cAttrMethod.invoke(obj);
-								
+
 								switch (cae.getType()) {
 								case DOUBLE:
 									double gcValDouble = ((Double) gcObj).doubleValue();
-									if(rowStr.length() != 0)
-										rowStr.append(","); 
+									if (rowStr.length() != 0)
+										rowStr.append(",");
 									rowStr.append(gcValDouble);
 									break;
 
 								case FLOAT:
 									float gcValFloat = ((Float) gcObj).floatValue();
-									if(rowStr.length() != 0)
-										rowStr.append(","); 
+									if (rowStr.length() != 0)
+										rowStr.append(",");
 									rowStr.append(gcValFloat);
 									break;
 
@@ -753,8 +755,8 @@ public class RunnerController {
 								case FIXED32:
 								case SFIXED32:
 									int gcValInt = ((Integer) gcObj).intValue();
-									if(rowStr.length() != 0)
-										rowStr.append(","); 
+									if (rowStr.length() != 0)
+										rowStr.append(",");
 									rowStr.append(gcValInt);
 									break;
 
@@ -764,35 +766,37 @@ public class RunnerController {
 								case FIXED64:
 								case SFIXED64:
 									long gcValLong = ((Long) gcObj).longValue();
-									if(rowStr.length() != 0)
-										rowStr.append(","); 
+									if (rowStr.length() != 0)
+										rowStr.append(",");
 									rowStr.append(gcValLong);
 									break;
 
 								case BOOL:
 									boolean gcValBool = ((Boolean) gcObj).booleanValue();
-									if(rowStr.length() != 0)
-										rowStr.append(","); 
+									if (rowStr.length() != 0)
+										rowStr.append(",");
 									rowStr.append(gcValBool);
 									break;
 
 								case STRING:
 									String gcValStr = (String) gcObj;
-									if(rowStr.length() != 0)
-										rowStr.append(","); 
+									if (rowStr.length() != 0)
+										rowStr.append(",");
 									rowStr.append(gcValStr);
 									break;
 
 								case BYTES:
 									byte gcValByte = ((Byte) gcObj).byteValue();
-									if(rowStr.length() != 0)
-										rowStr.append(","); 
+									if (rowStr.length() != 0)
+										rowStr.append(",");
 									rowStr.append(gcValByte);
 									break;
 
 								default:
-									getRowString(gcObj, cae.getType(), null, null, rowStr); // use df instead of gcobj first
-//									getRowString(df, childName, cae.getName(), cae.getType(), rowStr); // use df instead of gcobj first
+									getRowString(gcObj, cae.getType(), null, null, rowStr); // use df instead of gcobj
+																							// first
+									// getRowString(df, childName, cae.getName(), cae.getType(), rowStr); // use df
+									// instead of gcobj first
 									break;
 								}
 
@@ -804,24 +808,24 @@ public class RunnerController {
 					String pAttrMethodName = StringUtils.camelCase("get_" + ae.getName(), '_');
 					Method pAttrMethod = parentCls.getMethod(pAttrMethodName);
 					Object cObj = pAttrMethod.invoke(df);
-					
+
 					for (AttributeEntity cae : childAttributes) {
 						String cAttrMethodName = StringUtils.camelCase("get_" + cae.getName(), '_');
 						Method cAttrMethod = childCls.getMethod(cAttrMethodName);
 						Object gcObj = cAttrMethod.invoke(cObj);
-						
+
 						switch (cae.getType()) {
 						case DOUBLE:
 							double gcValDouble = ((Double) gcObj).doubleValue();
-							if(rowStr.length() != 0)
-								rowStr.append(","); 
+							if (rowStr.length() != 0)
+								rowStr.append(",");
 							rowStr.append(gcValDouble);
 							break;
 
 						case FLOAT:
 							float gcValFloat = ((Float) gcObj).floatValue();
-							if(rowStr.length() != 0)
-								rowStr.append(","); 
+							if (rowStr.length() != 0)
+								rowStr.append(",");
 							rowStr.append(gcValFloat);
 							break;
 
@@ -831,8 +835,8 @@ public class RunnerController {
 						case FIXED32:
 						case SFIXED32:
 							int gcValInt = ((Integer) gcObj).intValue();
-							if(rowStr.length() != 0)
-								rowStr.append(","); 
+							if (rowStr.length() != 0)
+								rowStr.append(",");
 							rowStr.append(gcValInt);
 							break;
 
@@ -842,28 +846,28 @@ public class RunnerController {
 						case FIXED64:
 						case SFIXED64:
 							long gcValLong = ((Long) gcObj).longValue();
-							if(rowStr.length() != 0)
-								rowStr.append(","); 
+							if (rowStr.length() != 0)
+								rowStr.append(",");
 							rowStr.append(gcValLong);
 							break;
 
 						case BOOL:
 							boolean gcValBool = ((Boolean) gcObj).booleanValue();
-							if(rowStr.length() != 0)
-								rowStr.append(","); 
+							if (rowStr.length() != 0)
+								rowStr.append(",");
 							rowStr.append(gcValBool);
 							break;
 
 						case STRING:
 							String gcValStr = (String) gcObj;
-							if(rowStr.length() != 0)
-								rowStr.append(","); 
+							if (rowStr.length() != 0)
+								rowStr.append(",");
 							rowStr.append(gcValStr);
 							break;
 						case BYTES:
 							byte gcValByte = ((Byte) gcObj).byteValue();
-							if(rowStr.length() != 0)
-								rowStr.append(","); 
+							if (rowStr.length() != 0)
+								rowStr.append(",");
 							rowStr.append(gcValByte);
 							break;
 						default: // TODO
@@ -890,7 +894,7 @@ public class RunnerController {
 	private byte[] doPredictGeneric(Object df, String modelLoc) {
 		try {
 			StringBuffer rowString = new StringBuffer();
-			
+
 			getRowString(df, inputClassName, null, null, rowString);
 			logger.info(rowString.toString());
 			String tempPath = TMPPATH + SEP + "tmpFiles";
@@ -958,7 +962,7 @@ public class RunnerController {
 				logger.debug("predictlist is null");
 				return null;
 			}
-			int row_count = 10;
+			int row_count = predictlist.size();
 			Object[] predictor = new Object[row_count + 2];
 			for (int i = 0; i <= row_count + 1; i++)
 				predictor[i] = null;
@@ -1448,9 +1452,476 @@ public class RunnerController {
 			return null;
 
 		}
+	}
+
+	private void getH2ORowData(Object df, String outerClassName, List<RowData> rows) {
+		try {
+			logger.info("getH2ORowData() : " + outputClassName);
+			RowData row = new RowData();
+			MessageObject outerMsg = classList.get(outerClassName);
+			Class<?> outerCls = outerMsg.getCls();
+			ArrayList<AttributeEntity> outerAttributes = outerMsg.getAttributes();
+
+			String innerClassName = null;
+			MessageObject innerMsg = null;
+			Class<?> innerCls = null;
+			ArrayList<AttributeEntity> innerAttributes = null;
+
+			for (AttributeEntity oae : outerAttributes) {
+				if (oae.isRepeated()) {
+					String oAttrMethodName = StringUtils.camelCase("get_" + oae.getName(), '_');
+					Method getCount = outerCls.getMethod(oAttrMethodName + "Count");
+					int rowCount = (int) getCount.invoke(df);
+					logger.info("We have: " + rowCount + " row(s) of " + oae.getName());
+					Method getList = outerCls.getMethod(oAttrMethodName + "List");
+					List<?> list = (List<?>) getList.invoke(df); // list of inner objects or list of primitive types
+
+					Object obj;
+					for (int j = 0; j < rowCount; j++) {
+						obj = list.get(j);
+
+						switch (oae.getType()) {
+						case DOUBLE:
+							double attrValDouble = ((Double) obj).doubleValue();
+							row.put(oae.getName(), attrValDouble);
+							break;
+
+						case FLOAT:
+							float attrValFloat = ((Float) obj).floatValue();
+							row.put(oae.getName(), attrValFloat);
+							break;
+
+						case INT32:
+						case UINT32:
+						case SINT32:
+						case FIXED32:
+						case SFIXED32:
+							int attrValInt = ((Integer) obj).intValue();
+							row.put(oae.getName(), attrValInt);
+							break;
+
+						case INT64:
+						case UINT64:
+						case SINT64:
+						case FIXED64:
+						case SFIXED64:
+							long attrValLong = ((Long) obj).longValue();
+							row.put(oae.getName(), attrValLong);
+							break;
+
+						case BOOL:
+							boolean attrValBool = ((Boolean) obj).booleanValue();
+							row.put(oae.getName(), attrValBool);
+							break;
+
+						case STRING:
+							String attrValStr = (String) obj;
+							row.put(oae.getName(), attrValStr);
+							break;
+						case BYTES:
+							byte attrValByte = ((Byte) obj).byteValue();
+							row.put(oae.getName(), attrValByte);
+							break;
+						default:
+							innerClassName = oae.getType();
+							innerMsg = classList.get(innerClassName);
+							innerCls = innerMsg.getCls();
+							innerAttributes = innerMsg.getAttributes();
+							for (AttributeEntity iae : innerAttributes) {
+								String iAttrMethodName = StringUtils.camelCase("get_" + iae.getName(), '_');
+								Method iAttrMethod = innerCls.getMethod(iAttrMethodName);
+								Object iobj = iAttrMethod.invoke(obj);
+								switch (iae.getType()) {
+								case DOUBLE:
+									double iValDouble = ((Double) iobj).doubleValue();
+									row.put(iae.getName(), iValDouble);
+									break;
+								case FLOAT:
+									break;
+								case INT32:
+								case UINT32:
+								case SINT32:
+								case FIXED32:
+								case SFIXED32:
+									int iValInt = ((Integer) iobj).intValue();
+									row.put(iae.getName(), iValInt);
+									break;
+								case INT64:
+								case UINT64:
+								case SINT64:
+								case FIXED64:
+								case SFIXED64:
+									long iValLong = ((Long) iobj).longValue();
+									row.put(iae.getName(), iValLong);
+									break;
+								case BOOL:
+									boolean iValBool = ((Boolean) iobj).booleanValue();
+									row.put(iae.getName(), iValBool);
+									break;
+								case STRING:
+									String iValStr = (String) iobj;
+									row.put(iae.getName(), iValStr);
+									break;
+
+								case BYTES:
+									byte iValByte = ((Byte) iobj).byteValue();
+									row.put(iae.getName(), iValByte);
+									break;
+
+								default:
+									getH2ORowData(iobj, iae.getType(), rows);
+
+									break;
+								}
+							}
+							break;
+						}
+					}
+				} else {
+					String oAttrMethodName = StringUtils.camelCase("get_" + oae.getName(), '_');
+					Method oAttrMethod = outerCls.getMethod(oAttrMethodName);
+					Object obj = oAttrMethod.invoke(df);
+
+					switch (oae.getType()) {
+					case DOUBLE:
+						double attrValDouble = ((Double) obj).doubleValue();
+						row.put(oae.getName(), attrValDouble);
+						break;
+
+					case FLOAT:
+					case INT32:
+					case UINT32:
+					case SINT32:
+					case FIXED32:
+					case SFIXED32:
+						int attrValInt = ((Integer) obj).intValue();
+						row.put(oae.getName(), attrValInt);
+						break;
+
+					case INT64:
+					case UINT64:
+					case SINT64:
+					case FIXED64:
+					case SFIXED64:
+						long attrValLong = ((Long) obj).longValue();
+						row.put(oae.getName(), attrValLong);
+						break;
+
+					case BOOL:
+						boolean attrValBool = ((Boolean) obj).booleanValue();
+						row.put(oae.getName(), attrValBool);
+						break;
+
+					case STRING:
+						String attrValStr = (String) obj;
+						row.put(oae.getName(), attrValStr);
+						break;
+					case BYTES:
+						byte attrValByte = ((Byte) obj).byteValue();
+						row.put(oae.getName(), attrValByte);
+						break;
+					default:
+						innerClassName = oae.getType();
+						innerMsg = classList.get(innerClassName);
+						innerCls = innerMsg.getCls();
+						innerAttributes = innerMsg.getAttributes();
+						for (AttributeEntity iae : innerAttributes) {
+							String iAttrMethodName = StringUtils.camelCase("get_" + iae.getName(), '_');
+							Method iAttrMethod = innerCls.getMethod(iAttrMethodName);
+							Object iobj = iAttrMethod.invoke(obj);
+							switch (iae.getType()) {
+							case DOUBLE:
+								double iValDouble = ((Double) iobj).doubleValue();
+								row.put(iae.getName(), iValDouble);
+								break;
+							case FLOAT:
+								break;
+							case INT32:
+							case UINT32:
+							case SINT32:
+							case FIXED32:
+							case SFIXED32:
+								int iValInt = ((Integer) iobj).intValue();
+								row.put(iae.getName(), iValInt);
+								break;
+							case INT64:
+							case UINT64:
+							case SINT64:
+							case FIXED64:
+							case SFIXED64:
+								long iValLong = ((Long) iobj).longValue();
+								row.put(iae.getName(), iValLong);
+								break;
+							case BOOL:
+								boolean iValBool = ((Boolean) iobj).booleanValue();
+								row.put(iae.getName(), iValBool);
+								break;
+							case STRING:
+								String iValStr = (String) iobj;
+								row.put(iae.getName(), iValStr);
+								break;
+
+							case BYTES:
+								byte iValByte = ((Byte) iobj).byteValue();
+								row.put(iae.getName(), iValByte);
+								break;
+
+							default:
+								getH2ORowData(iobj, iae.getType(), rows);
+								break;
+							}
+						}
+						logger.info(row.toString());
+						// rows.add(row);
+					}
+					logger.info(row.toString());
+				}
+			}
+			rows.add(row);
+		} catch (Exception ex) {
+			logger.error("Failed in getH2ORowData(): ", ex);
+		}
 
 	}
 
+	/**
+	 * This procedure uses H2O model to do prediction
+	 * 
+	 * @param df
+	 * @param modelLoc
+	 * @return prediction results in protobuf format
+	 */
+	private byte[] doPredictH2O(Object df, String modelLoc) {
+		try {
+			/* start prediction */
+			MojoModel mojo = null;
+			EasyPredictModelWrapper model = null;
+			try {
+				if (modelLoc != null)
+					mojo = MojoModel.load(modelLoc);
+				else
+					mojo = MojoModel.load(modelZip);
+				model = new EasyPredictModelWrapper(mojo);
+			} // try ends
+
+			catch (IOException ie) {
+				logger.error("Failed in loading H2O Model: ", ie);
+				return null;
+
+			} // catch ends
+
+			ArrayList<RowData> rows = new ArrayList<>();
+			getH2ORowData(df, inputClassName, rows);
+
+			ArrayList<Object> predictList = new ArrayList<>();
+			
+			for (RowData row : rows) {
+				/*
+				 * We handle the following model categories: Binomial Multinomial Regression
+				 * Clustering AutoEncoder DimReduction WordEmbedding Unknown
+				 */
+
+				String current_model_category = mojo.getModelCategory().toString();
+				logger.info("model category again: " + current_model_category);
+
+				String pr = null;
+				Object p = null;
+
+				try {
+
+					switch (current_model_category) {
+
+					case "Binomial":
+						p = model.predictBinomial(row);
+						String bnmpred = ((BinomialModelPrediction) p).label;
+						pr = bnmpred;
+						break;
+
+					case "Multinomial":
+						p = model.predictMultinomial(row);
+						String mnmpred = ((MultinomialModelPrediction) p).label;
+						pr = mnmpred;
+						break;
+
+					case "Regression":
+						p = model.predictRegression(row);
+						double regpred = ((RegressionModelPrediction) p).value;
+						pr = Double.toString(regpred);
+						break;
+
+					case "Clustering":
+						p = model.predictClustering(row);
+						int clspred = ((ClusteringModelPrediction) p).cluster;
+						pr = Integer.toString(clspred);
+						break;
+
+					case "AutoEncoder":
+						p = model.predictAutoEncoder(row);
+						double[] autopred = ((AutoEncoderModelPrediction) p).reconstructed;
+						pr = Arrays.toString(autopred);
+						break;
+
+					case "DimReduction":
+						p = model.predictDimReduction(row);
+						double[] dimredpred = ((DimReductionModelPrediction) p).dimensions;
+						pr = Arrays.toString(dimredpred);
+						break;
+
+					// TODO: See if this works
+					case "WordEmbedding":
+						p = model.predictWord2Vec(row);
+						HashMap<String, float[]> word2vecpred = ((Word2VecPrediction) p).wordEmbeddings;
+						pr = word2vecpred.toString();
+						break;
+
+					case "Unknown":
+						logger.error(
+								"Unknown model category. Results not available. Refer to http://docs.h2o.ai/h2o/latest-stable/h2o-genmodel/javadoc/hex ModelCategory.html");
+						pr = "Unknown h2o model category. Results not available. Refer to http://docs.h2o.ai/h2o/latest-stable/h2o-genmodel/javadoc/hex/ModelCategory.html";
+						break;
+
+					default:
+						logger.error(
+								"Model category not recognized. Results not guaranteed.Refer to http://docs.h2o.ai/h2o/latest-stable/h2o-genmodel/javadoc/hex/ModelCategory.html");
+						pr = "Your model did not match any supported category. Results not available.Refer to http://docs.h2o.ai/h2o/latest-stable/h2o-genmodel/javadoc/hex/ModelCategory.html";
+
+					}
+
+				} // try ends
+				catch (PredictException pe) {
+					logger.error("Failed getting prediction results from H2O model:", pe);
+					pe.getMessage();
+				} // catch ends
+
+				logger.info("The prediction is  " + pr);
+
+				if (p != null) {
+					predictList.add(p);
+					p = null;
+				}
+			}
+
+			// get Prediction
+			Class<?> prediction = classList.get(outputClassName).getCls();
+			Method newBuilder = prediction.getMethod("newBuilder");
+			Object object = newBuilder.invoke(null);
+			Method addPrediction;
+			ArrayList<AttributeEntity> outputAttributes = classList.get(outputClassName).getAttributes();
+			for (AttributeEntity ae : outputAttributes) {
+				String predictMethodName;
+				switch (ae.getType()) {
+				case INT32:
+				case UINT32:
+				case SINT32:
+				case FIXED32:
+				case SFIXED32:
+					predictMethodName = StringUtils.camelCase("add_all_" + ae.getName(), '_');
+					addPrediction = object.getClass().getMethod(predictMethodName, java.lang.Iterable.class);
+					List<Integer> intList = predictList.stream().map(
+							obj -> (Integer)obj).collect(Collectors.toList());
+					addPrediction.invoke(object, intList);
+					break;
+				case INT64:
+				case UINT64:
+				case SINT64:
+				case FIXED64:
+				case SFIXED64:
+					predictMethodName = StringUtils.camelCase("add_all_" + ae.getName(), '_');
+					addPrediction = object.getClass().getMethod(predictMethodName, java.lang.Iterable.class);
+					List<Long> longList = predictList.stream().map(
+							obj -> (Long)obj).collect(Collectors.toList());
+					
+					addPrediction.invoke(object, longList);
+					break;
+				case FLOAT:
+					predictMethodName = StringUtils.camelCase("add_all_" + ae.getName(), '_');
+					addPrediction = object.getClass().getMethod(predictMethodName, java.lang.Iterable.class);
+					List<Float> floatList = predictList.stream().map(
+							obj -> (Float)obj).collect(Collectors.toList());
+					
+					addPrediction.invoke(object, floatList);
+					break;
+				case DOUBLE:
+					predictMethodName = StringUtils.camelCase("add_all_" + ae.getName(), '_');
+
+					addPrediction = object.getClass().getMethod(predictMethodName, java.lang.Iterable.class);
+					List<Double> doubleList = predictList.stream().map(
+							obj -> (Double)obj).collect(Collectors.toList());
+					addPrediction.invoke(object, doubleList);
+					break;
+				case BOOL:
+					predictMethodName = StringUtils.camelCase("add_all_" + ae.getName(), '_');
+
+					addPrediction = object.getClass().getMethod(predictMethodName, java.lang.Iterable.class);
+					List<Boolean> boolList = predictList.stream().map(
+							obj -> (Boolean)obj).collect(Collectors.toList());
+					addPrediction.invoke(object, boolList);
+					break;
+				case BYTES:
+					predictMethodName = StringUtils.camelCase("add_all_" + ae.getName(), '_');
+
+					// addPrediction = object.getClass().getMethod("addAllPrediction",
+					// java.lang.Iterable.class);
+					addPrediction = object.getClass().getMethod(predictMethodName, java.lang.Iterable.class);
+					List<ByteString> byteList = predictList.stream().map(
+							obj -> (ByteString)obj).collect(Collectors.toList());
+					addPrediction.invoke(object, byteList);
+					break;
+
+				case STRING:
+					predictMethodName = StringUtils.camelCase("add_" + ae.getName(), '_');
+					addPrediction = object.getClass().getMethod(predictMethodName, String.class);
+
+					for (int i = 1; i <= predictList.size(); i++) {
+						addPrediction.invoke(object, (String)predictList.get(i - 1));
+						// addPrediction.invoke(object, String.valueOf(predictlist.get(i - 1)));
+					}
+					break;
+
+				default:
+					Class<?> cls = null;
+					MessageObject mobj = classList.get(ae.getType());
+					if (mobj != null)
+						cls = mobj.getCls();
+					predictMethodName = StringUtils.camelCase("add_all_" + ae.getName(), '_');
+					addPrediction = object.getClass().getMethod(predictMethodName, cls.getClass());
+/*					List<?> clsList = predictList.stream().map(
+							obj -> cls.getClass().cast(obj)).collect(Collectors.toList()); */
+					
+					addPrediction.invoke(object, predictList);
+					
+					break;
+				}
+			}
+			// Create a Prediction and set its value depending on the output of
+			// the H2o predict method
+
+			Method build = object.getClass().getMethod("build");
+			Object pobj = build.invoke(object);
+
+			Method toByteArray = pobj.getClass().getMethod("toByteArray");
+
+			logger.info("In predict method: Done Prediction, returning binary serialization of prediction. ");
+			return (byte[]) (toByteArray.invoke(pobj));
+
+		} catch (Exception ex) {
+			logger.error("Failed in doPredictH2O() ", ex);
+			return null;
+
+		}
+
+	}
+
+	/**
+	 * This is API end point for enhanced generic model runner
+	 * 
+	 * @param dataset
+	 *            : A serialized version of input data in binary data stream
+	 * @param operation
+	 *            : this specifies the operation from the service structure in
+	 *            protobuf file
+	 * @return : A serialized version of prediction in binary stream
+	 */
 	@RequestMapping(value = "/operation/{operation}", method = RequestMethod.POST)
 	public byte[] operation(@RequestBody byte[] dataset, @PathVariable("operation") String operation) {
 		logger.info("/operation/" + operation + " GETTING POST REQUEST:");
@@ -1478,7 +1949,7 @@ public class RunnerController {
 			Object df = method.invoke(null, dataset);
 
 			if (!modelType.equalsIgnoreCase("G"))
-				return doPredict(df, null);
+				return doPredictH2O(df, null);
 			else
 				return doPredictGeneric(df, null);
 
@@ -1887,30 +2358,26 @@ public class RunnerController {
 			}
 			String subline = line.substring(0, idx_equal);
 			String pat = null;
-			if(subline.indexOf("repeated") != -1) {
+			if (subline.indexOf("repeated") != -1) {
 				pat = "(\\s*)repeated(\\s*)(\\w+\\s*)(\\w+\\s*)";
 				isRepeated = true;
-			}
-			else if(subline.indexOf("optional") != -1) {
+			} else if (subline.indexOf("optional") != -1) {
 				pat = "(\\s*)optional(\\s*)(\\w+\\s*)(\\w+\\s*)";
 				isOptional = true;
-			}
-			else if(subline.indexOf("required") != -1) {
+			} else if (subline.indexOf("required") != -1) {
 				pat = "(\\s*)required(\\s*)(\\w+\\s*)(\\w+\\s*)";
 				isRequired = true;
-			}
-			else 
+			} else
 				pat = "(\\s*)(\\w+\\s*)(\\w+\\s*)";
-			
+
 			Pattern r = Pattern.compile(pat);
 			Matcher mproto = r.matcher(subline);
-			if(mproto.find()) {
-				if(!isRepeated && !isOptional && !isRequired) {
+			if (mproto.find()) {
+				if (!isRepeated && !isOptional && !isRequired) {
 					type = mproto.group(2).trim();
 					attribute = mproto.group(3).trim();
 					logger.info("setMessageProtoAttributes(): type = [" + type + "] attribute = [" + attribute + "]");
-				}
-				else {
+				} else {
 					type = mproto.group(3).trim();
 					attribute = mproto.group(4).trim();
 					logger.info("setMessageProtoAttributes(): type = [" + type + "] attribute = [" + attribute + "]");
@@ -1997,8 +2464,8 @@ public class RunnerController {
 		String cmd;
 		int exitVal = -1;
 
-		cmd = PROJECTROOT + SEP + "bin" + SEP + "protoc -I=" + protoFilePath + " --java_out=" + protoOutputPath + " "
-				+ protoFilePath + SEP + "dataset.proto";
+		cmd = "protoc -I=" + protoFilePath + " --java_out=" + protoOutputPath + " " + protoFilePath + SEP
+				+ "dataset.proto";
 
 		try {
 			exitVal = runCommand(cmd);
