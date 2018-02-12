@@ -1451,6 +1451,12 @@ public class RunnerController {
 
 	}
 
+	/**
+	 * This is API end point for enhanced generic model runner
+	 * @param dataset : A serialized version of input data in binary data stream
+	 * @param operation : this specifies the operation from the service structure in protobuf file
+	 * @return : A serialized version of prediction in binary stream
+	 */
 	@RequestMapping(value = "/operation/{operation}", method = RequestMethod.POST)
 	public byte[] operation(@RequestBody byte[] dataset, @PathVariable("operation") String operation) {
 		logger.info("/operation/" + operation + " GETTING POST REQUEST:");
