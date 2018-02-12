@@ -74,7 +74,7 @@
 		<dependency>
 			<groupId>com.google.protobuf</groupId>
 			<artifactId>protobuf-java</artifactId>
-			<version>3.4.0</version>
+			<version>3.5.1</version>
 		</dependency>
 		<dependency>
 			<groupId>commons-io</groupId>
@@ -187,11 +187,8 @@
 					</execution>
 				</executions>
 			</plugin>
-			<!--
-				No "skip" configuration for maven-deploy-plugin.
-				Let the jar be deployed to LF Nexus repo, so that
-				the final deploy step finds a jar then succeeds.
-			-->
+			<!-- No "skip" configuration for maven-deploy-plugin. Let the jar be deployed 
+				to LF Nexus repo, so that the final deploy step finds a jar then succeeds. -->
 			<!-- https://stackoverflow.com/questions/39126226/fabric8-springboot-full-example -->
 			<plugin>
 				<groupId>io.fabric8</groupId>
@@ -217,6 +214,21 @@
 								<assembly>
 									<descriptorRef>artifact</descriptorRef>
 								</assembly>
+								<runCmds>
+									<runCmd>
+										<!-- CDATA prevents Eclipse formatter from breaking line -->
+										<![CDATA[curl -OL https://github.com/google/protobuf/releases/download/v3.4.0/protoc-3.4.0-linux-x86_64.zip]]>
+									</runCmd>
+									<runCmd>
+										unzip protoc-3.4.0-linux-x86_64.zip -d protoc3
+									</runCmd>
+									<runCmd>
+										mv protoc3/bin/* /usr/local/bin/
+									</runCmd>
+									<runCmd>
+										mv protoc3/include/* /usr/local/include/
+									</runCmd>
+								</runCmds>
 								<cmd>
 									<!-- CDATA prevents Eclipse formatter from breaking line -->
 									<shell><![CDATA[java -Xms128m -Xmx512m -Djava.security.egd=file:/dev/./urandom -jar /maven/${project.artifactId}-${project.version}.${project.packaging}]]></shell>
