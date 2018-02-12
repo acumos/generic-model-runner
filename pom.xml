@@ -219,7 +219,7 @@
 								</assembly>
 								<cmd>
 									<!-- CDATA prevents Eclipse formatter from breaking line -->
-									<shell><![CDATA[java -Djava.security.egd=file:/dev/./urandom -jar /maven/${project.artifactId}-${project.version}.${project.packaging}]]></shell>
+									<shell><![CDATA[java -Xms128m -Xmx512m -Djava.security.egd=file:/dev/./urandom -jar /maven/${project.artifactId}-${project.version}.${project.packaging}]]></shell>
 								</cmd>
 							</build>
 						</image>
