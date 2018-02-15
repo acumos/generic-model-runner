@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "7c5e0df3_0a5b8082",
+        "filename": "pom.xml",
+        "patchSetId": 4
+      },
+      "lineNbr": 231,
+      "author": {
+        "id": 62
+      },
+      "writtenOn": "2018-02-15T13:52:41Z",
+      "side": 1,
+      "message": "A software build should NEVER modify a dev\u0027s OS file system like this. This could potentially corrupt their local toolchain. If you\u0027re build has OS level requirements. Note that in dev documentation and require the developer make it available themselves preferably via their favourite distro package manager. With manual instructions if needed.",
+      "range": {
+        "startLine": 217,
+        "startChar": 0,
+        "endLine": 231,
+        "endChar": 18
+      },
+      "revId": "6b6d5f2835fe57be148b0f6710d2a2bf51bb4b6d",
+      "serverId": "655300a2-7a56-4504-9153-881edd907bea",
+      "unresolved": false
+    }
+  ]
+}
