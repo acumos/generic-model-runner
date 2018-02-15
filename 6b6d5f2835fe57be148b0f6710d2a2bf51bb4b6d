@@ -22,6 +22,30 @@
       "revId": "6b6d5f2835fe57be148b0f6710d2a2bf51bb4b6d",
       "serverId": "655300a2-7a56-4504-9153-881edd907bea",
       "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "e127c897_8b24c2b1",
+        "filename": "pom.xml",
+        "patchSetId": 4
+      },
+      "lineNbr": 231,
+      "author": {
+        "id": 4
+      },
+      "writtenOn": "2018-02-15T14:09:43Z",
+      "side": 1,
+      "message": "Thanh - these commands modify the docker image.  Not the Jenkins build host.",
+      "parentUuid": "7c5e0df3_0a5b8082",
+      "range": {
+        "startLine": 217,
+        "startChar": 0,
+        "endLine": 231,
+        "endChar": 18
+      },
+      "revId": "6b6d5f2835fe57be148b0f6710d2a2bf51bb4b6d",
+      "serverId": "655300a2-7a56-4504-9153-881edd907bea",
+      "unresolved": false
     }
   ]
 }
