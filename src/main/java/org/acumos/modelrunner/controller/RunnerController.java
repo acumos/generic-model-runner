@@ -629,27 +629,20 @@ public class RunnerController {
 	 * in the case of nestedmsg.proto First iteration : parent - DataFrame, child -
 	 * DataFrameRow Second iteration: parent - DataFrameRow, child - SubFrameRow
 	 */
-	private void getRowString(Object df, String parentName, String attributeName, String childName,
+	private void getRowString(Object df, String parentName, String attributeName,
 			StringBuffer rowStr) {
 		try {
-			logger.info("getRowString: " + parentName + " | " + childName);
+			logger.info("getRowString(): " + parentName);
 			MessageObject parentMsg = classList.get(parentName);
 			Class<?> parentCls = parentMsg.getCls();
 			ArrayList<AttributeEntity> parentAttributes = parentMsg.getAttributes();
 
-			MessageObject childMsg = null;
-			Class<?> childCls = null;
-			ArrayList<AttributeEntity> childAttributes = null;
-			if (childName != null) {
-				childMsg = classList.get(childName);
-				childCls = childMsg.getCls();
-				childAttributes = childMsg.getAttributes();
-			}
-
+			
 			for (AttributeEntity ae : parentAttributes) {
 				if (attributeName != null && !attributeName.equals(ae.getName()))
 					continue;
 
+				
 				if (ae.isRepeated()) {
 					String pAttrMethodName = StringUtils.camelCase("get_" + ae.getName(), '_');
 					Method getCount = parentCls.getMethod(pAttrMethodName + "Count");
@@ -722,161 +715,79 @@ public class RunnerController {
 							break;
 
 						default:
-							if (childName == null) {
-								childName = ae.getType();
-								childMsg = classList.get(ae.getType());
-								childCls = childMsg.getCls();
-								childAttributes = childMsg.getAttributes();
-							}
-
-							for (AttributeEntity cae : childAttributes) {
-								String cAttrMethodName = StringUtils.camelCase("get_" + cae.getName(), '_');
-								Method cAttrMethod = childCls.getMethod(cAttrMethodName);
-								Object gcObj = cAttrMethod.invoke(obj);
-
-								switch (cae.getType()) {
-								case DOUBLE:
-									double gcValDouble = ((Double) gcObj).doubleValue();
-									if (rowStr.length() != 0)
-										rowStr.append(",");
-									rowStr.append(gcValDouble);
-									break;
-
-								case FLOAT:
-									float gcValFloat = ((Float) gcObj).floatValue();
-									if (rowStr.length() != 0)
-										rowStr.append(",");
-									rowStr.append(gcValFloat);
-									break;
-
-								case INT32:
-								case UINT32:
-								case SINT32:
-								case FIXED32:
-								case SFIXED32:
-									int gcValInt = ((Integer) gcObj).intValue();
-									if (rowStr.length() != 0)
-										rowStr.append(",");
-									rowStr.append(gcValInt);
-									break;
-
-								case INT64:
-								case UINT64:
-								case SINT64:
-								case FIXED64:
-								case SFIXED64:
-									long gcValLong = ((Long) gcObj).longValue();
-									if (rowStr.length() != 0)
-										rowStr.append(",");
-									rowStr.append(gcValLong);
-									break;
-
-								case BOOL:
-									boolean gcValBool = ((Boolean) gcObj).booleanValue();
-									if (rowStr.length() != 0)
-										rowStr.append(",");
-									rowStr.append(gcValBool);
-									break;
-
-								case STRING:
-									String gcValStr = (String) gcObj;
-									if (rowStr.length() != 0)
-										rowStr.append(",");
-									rowStr.append(gcValStr);
-									break;
-
-								case BYTES:
-									byte gcValByte = ((Byte) gcObj).byteValue();
-									if (rowStr.length() != 0)
-										rowStr.append(",");
-									rowStr.append(gcValByte);
-									break;
-
-								default:
-									getRowString(gcObj, cae.getType(), null, null, rowStr); // use df instead of gcobj
-																							// first
-									// getRowString(df, childName, cae.getName(), cae.getType(), rowStr); // use df
-									// instead of gcobj first
-									break;
-								}
-
-							}
+							getRowString(obj, ae.getType(), null, rowStr);
+							
 							break;
 						}
 					}
 				} else {
 					String pAttrMethodName = StringUtils.camelCase("get_" + ae.getName(), '_');
 					Method pAttrMethod = parentCls.getMethod(pAttrMethodName);
-					Object cObj = pAttrMethod.invoke(df);
+					Object obj = pAttrMethod.invoke(df);
 
-					for (AttributeEntity cae : childAttributes) {
-						String cAttrMethodName = StringUtils.camelCase("get_" + cae.getName(), '_');
-						Method cAttrMethod = childCls.getMethod(cAttrMethodName);
-						Object gcObj = cAttrMethod.invoke(cObj);
+					switch (ae.getType()) {
+					case DOUBLE:
+						double gcValDouble = ((Double) obj).doubleValue();
+						if (rowStr.length() != 0)
+							rowStr.append(",");
+						rowStr.append(gcValDouble);
+						break;
 
-						switch (cae.getType()) {
-						case DOUBLE:
-							double gcValDouble = ((Double) gcObj).doubleValue();
-							if (rowStr.length() != 0)
-								rowStr.append(",");
-							rowStr.append(gcValDouble);
-							break;
+					case FLOAT:
+						float gcValFloat = ((Float) obj).floatValue();
+						if (rowStr.length() != 0)
+							rowStr.append(",");
+						rowStr.append(gcValFloat);
+						break;
 
-						case FLOAT:
-							float gcValFloat = ((Float) gcObj).floatValue();
-							if (rowStr.length() != 0)
-								rowStr.append(",");
-							rowStr.append(gcValFloat);
-							break;
+					case INT32:
+					case UINT32:
+					case SINT32:
+					case FIXED32:
+					case SFIXED32:
+						int gcValInt = ((Integer) obj).intValue();
+						if (rowStr.length() != 0)
+							rowStr.append(",");
+						rowStr.append(gcValInt);
+						break;
 
-						case INT32:
-						case UINT32:
-						case SINT32:
-						case FIXED32:
-						case SFIXED32:
-							int gcValInt = ((Integer) gcObj).intValue();
-							if (rowStr.length() != 0)
-								rowStr.append(",");
-							rowStr.append(gcValInt);
-							break;
+					case INT64:
+					case UINT64:
+					case SINT64:
+					case FIXED64:
+					case SFIXED64:
+						long gcValLong = ((Long) obj).longValue();
+						if (rowStr.length() != 0)
+							rowStr.append(",");
+						rowStr.append(gcValLong);
+						break;
 
-						case INT64:
-						case UINT64:
-						case SINT64:
-						case FIXED64:
-						case SFIXED64:
-							long gcValLong = ((Long) gcObj).longValue();
-							if (rowStr.length() != 0)
-								rowStr.append(",");
-							rowStr.append(gcValLong);
-							break;
+					case BOOL:
+						boolean gcValBool = ((Boolean) obj).booleanValue();
+						if (rowStr.length() != 0)
+							rowStr.append(",");
+						rowStr.append(gcValBool);
+						break;
 
-						case BOOL:
-							boolean gcValBool = ((Boolean) gcObj).booleanValue();
-							if (rowStr.length() != 0)
-								rowStr.append(",");
-							rowStr.append(gcValBool);
-							break;
-
-						case STRING:
-							String gcValStr = (String) gcObj;
-							if (rowStr.length() != 0)
-								rowStr.append(",");
-							rowStr.append(gcValStr);
-							break;
-						case BYTES:
-							byte gcValByte = ((Byte) gcObj).byteValue();
-							if (rowStr.length() != 0)
-								rowStr.append(",");
-							rowStr.append(gcValByte);
-							break;
-						default: // TODO
-							getRowString(gcObj, childName, cae.getName(), cae.getType(), rowStr);
-							break;
-						}
+					case STRING:
+						String gcValStr = (String) obj;
+						if (rowStr.length() != 0)
+							rowStr.append(",");
+						rowStr.append(gcValStr);
+						break;
+					case BYTES:
+						byte gcValByte = ((Byte) obj).byteValue();
+						if (rowStr.length() != 0)
+							rowStr.append(",");
+						rowStr.append(gcValByte);
+						break;
+					default: // TODO
+						getRowString(obj, ae.getType(), null, rowStr);
+						break;
 					}
-					rowStr.append("\n");// TODO: is it done yet?
 				}
+//				rowStr.append("\n");
+
 				logger.info(rowStr.toString());
 			}
 		} catch (Exception ex) {
@@ -895,7 +806,7 @@ public class RunnerController {
 		try {
 			StringBuffer rowString = new StringBuffer();
 
-			getRowString(df, inputClassName, null, null, rowString);
+			getRowString(df, inputClassName, null, rowString);
 			logger.info(rowString.toString());
 			String tempPath = TMPPATH + SEP + "tmpFiles";
 			File dir = new File(tempPath);
@@ -1714,7 +1625,7 @@ public class RunnerController {
 			getH2ORowData(df, inputClassName, rows);
 
 			ArrayList<Object> predictList = new ArrayList<>();
-			
+
 			for (RowData row : rows) {
 				/*
 				 * We handle the following model categories: Binomial Multinomial Regression
@@ -1817,8 +1728,7 @@ public class RunnerController {
 				case SFIXED32:
 					predictMethodName = StringUtils.camelCase("add_all_" + ae.getName(), '_');
 					addPrediction = object.getClass().getMethod(predictMethodName, java.lang.Iterable.class);
-					List<Integer> intList = predictList.stream().map(
-							obj -> (Integer)obj).collect(Collectors.toList());
+					List<Integer> intList = predictList.stream().map(obj -> (Integer) obj).collect(Collectors.toList());
 					addPrediction.invoke(object, intList);
 					break;
 				case INT64:
@@ -1828,33 +1738,31 @@ public class RunnerController {
 				case SFIXED64:
 					predictMethodName = StringUtils.camelCase("add_all_" + ae.getName(), '_');
 					addPrediction = object.getClass().getMethod(predictMethodName, java.lang.Iterable.class);
-					List<Long> longList = predictList.stream().map(
-							obj -> (Long)obj).collect(Collectors.toList());
-					
+					List<Long> longList = predictList.stream().map(obj -> (Long) obj).collect(Collectors.toList());
+
 					addPrediction.invoke(object, longList);
 					break;
 				case FLOAT:
 					predictMethodName = StringUtils.camelCase("add_all_" + ae.getName(), '_');
 					addPrediction = object.getClass().getMethod(predictMethodName, java.lang.Iterable.class);
-					List<Float> floatList = predictList.stream().map(
-							obj -> (Float)obj).collect(Collectors.toList());
-					
+					List<Float> floatList = predictList.stream().map(obj -> (Float) obj).collect(Collectors.toList());
+
 					addPrediction.invoke(object, floatList);
 					break;
 				case DOUBLE:
 					predictMethodName = StringUtils.camelCase("add_all_" + ae.getName(), '_');
 
 					addPrediction = object.getClass().getMethod(predictMethodName, java.lang.Iterable.class);
-					List<Double> doubleList = predictList.stream().map(
-							obj -> (Double)obj).collect(Collectors.toList());
+					List<Double> doubleList = predictList.stream().map(obj -> (Double) obj)
+							.collect(Collectors.toList());
 					addPrediction.invoke(object, doubleList);
 					break;
 				case BOOL:
 					predictMethodName = StringUtils.camelCase("add_all_" + ae.getName(), '_');
 
 					addPrediction = object.getClass().getMethod(predictMethodName, java.lang.Iterable.class);
-					List<Boolean> boolList = predictList.stream().map(
-							obj -> (Boolean)obj).collect(Collectors.toList());
+					List<Boolean> boolList = predictList.stream().map(obj -> (Boolean) obj)
+							.collect(Collectors.toList());
 					addPrediction.invoke(object, boolList);
 					break;
 				case BYTES:
@@ -1863,8 +1771,8 @@ public class RunnerController {
 					// addPrediction = object.getClass().getMethod("addAllPrediction",
 					// java.lang.Iterable.class);
 					addPrediction = object.getClass().getMethod(predictMethodName, java.lang.Iterable.class);
-					List<ByteString> byteList = predictList.stream().map(
-							obj -> (ByteString)obj).collect(Collectors.toList());
+					List<ByteString> byteList = predictList.stream().map(obj -> (ByteString) obj)
+							.collect(Collectors.toList());
 					addPrediction.invoke(object, byteList);
 					break;
 
@@ -1873,7 +1781,7 @@ public class RunnerController {
 					addPrediction = object.getClass().getMethod(predictMethodName, String.class);
 
 					for (int i = 1; i <= predictList.size(); i++) {
-						addPrediction.invoke(object, (String)predictList.get(i - 1));
+						addPrediction.invoke(object, (String) predictList.get(i - 1));
 						// addPrediction.invoke(object, String.valueOf(predictlist.get(i - 1)));
 					}
 					break;
@@ -1885,11 +1793,13 @@ public class RunnerController {
 						cls = mobj.getCls();
 					predictMethodName = StringUtils.camelCase("add_all_" + ae.getName(), '_');
 					addPrediction = object.getClass().getMethod(predictMethodName, cls.getClass());
-/*					List<?> clsList = predictList.stream().map(
-							obj -> cls.getClass().cast(obj)).collect(Collectors.toList()); */
-					
+					/*
+					 * List<?> clsList = predictList.stream().map( obj ->
+					 * cls.getClass().cast(obj)).collect(Collectors.toList());
+					 */
+
 					addPrediction.invoke(object, predictList);
-					
+
 					break;
 				}
 			}

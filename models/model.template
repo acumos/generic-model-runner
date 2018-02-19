@@ -1,29 +1,43 @@
 import java.util.ArrayList;
 import java.util.StringTokenizer;
+
 public class Multiplier {
-        public static ArrayList<Object> multiply(String str) {
-                Object predictedClassValue = null;
-                ArrayList<Object> predictList = new ArrayList<Object>();
+	public static ArrayList<Object> multiply(String str) {
+		Object predictedClassValue = null;
+		ArrayList<Object> predictList = new ArrayList<Object>();
 
-                StringTokenizer st = new StringTokenizer(str, "\n");
-                while(st.hasMoreTokens()) {
-                        predictedClassValue = getMultiply(st.nextToken());
-                        predictList.add(predictedClassValue);
-                }
+		StringTokenizer st = new StringTokenizer(str, "\n");
+		while (st.hasMoreTokens()) {
+			predictedClassValue = getMultiply(st.nextToken());
+			predictList.add(predictedClassValue);
+		}
 
-                return predictList;
-        }
+		return predictList;
+	}
 
-        private static Object getMultiply(String str) {
-                System.out.println("Input Str: " + str);
-                StringTokenizer st = new StringTokenizer(str, ",");
-                Integer sum = 2;
+	private static Object getMultiply(String str) {
+		System.out.println("Input Str: " + str);
+		StringTokenizer st = new StringTokenizer(str, ",");
+		Integer sum = 2;
 
-                while (st.hasMoreTokens()) {
-                        sum = sum * Integer.parseInt((st.nextToken().trim()));
-                }
+		while (st.hasMoreTokens()) {
+			sum = sum * Integer.parseInt((st.nextToken().trim()));
+		}
 
-                System.out.println("2 * " + str + " = " + sum.toString());
-                return sum.toString();
-        }
+		System.out.println("2 * " + str + " = " + sum.toString());
+		return sum.toString();
+	}
+
+	public static ArrayList<Object> classify(String str) {
+		Object pVal = null;
+		ArrayList<Object> pList = new ArrayList<Object>();
+		StringTokenizer st = new StringTokenizer(str, "\n");
+		while (st.hasMoreTokens()) {
+			pVal = st.nextToken() + "," + 9 + ",Hello," + 2 + "\n";
+			pList.add(pVal);
+		}
+
+		return pList;
+
+	}
 }
