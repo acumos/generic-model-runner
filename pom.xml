@@ -238,7 +238,6 @@
 					</images>
 				</configuration>
 				<!-- build Docker images in install phase, push in deploy phase -->
-<!--
 				<executions>
 					<execution>
 						<goals>
@@ -247,7 +246,6 @@
 						</goals>
 					</execution>
 				</executions>
--->
 			</plugin>
 		</plugins>
 
