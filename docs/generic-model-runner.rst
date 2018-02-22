@@ -22,9 +22,6 @@ Requirements
 
 In order for the Model Runner to be able to dynamically load the plugin jar that contains the proto classes at run time, the plugin jar must be outside the project directories. The application.properties specifies the default plugin root directory, ${plugin_root}, which if not existed, will be created when the Model Runner starts.  When the Model Runner receives a POST request, it will put the generated JAVA code under ${plugin_root}/src directory and generated class files under ${plugin_root}/classes directory. Therefore, these two directories, ${plugin_root}/src and ${plugin_root}/classes, must also be present. If not, the model runner will create them. 
 
-Please make sure that the protoc Java Runtime library, protobuf-java-3.4.0.jar, must always be present at the location/directory where the model runner starts. 
- 
-
 Supported Methods and Objects
 -----------------------------
 

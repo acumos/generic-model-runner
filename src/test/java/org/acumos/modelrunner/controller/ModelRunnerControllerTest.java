@@ -144,7 +144,7 @@ public class ModelRunnerControllerTest extends ModelRunnerTestApp {
 			logger.info("Done testing /putModel PUT end point");
 
 			// testing /transform end point
-			logger.info("Testing /transform POST end point");
+/*			logger.info("Testing /transform POST end point");
 
 			MockMultipartFile ft = new MockMultipartFile("csvFile", "testTransform.csv", "text/csv",
 					"2\n7\n8\n".getBytes());
@@ -217,7 +217,7 @@ public class ModelRunnerControllerTest extends ModelRunnerTestApp {
 					.andExpect(status().isOk()).andReturn().getResponse().getContentAsByteArray();
 			logger.info("Done testing POST /model/{method} end point using method = multiply: "
 					+ Arrays.toString(resultsMethod));
-
+*/
 		} catch (HttpStatusCodeException ex) {
 			logger.error("predictTest failed", ex);
 			assert (false);
