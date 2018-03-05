@@ -27,12 +27,14 @@ public class MessageObject {
 		String name;
 		String type;
 		boolean isRepeated;
+		boolean isRequired;
 
-		public AttributeEntity(String name, String type, boolean isRepeated) {
+		public AttributeEntity(String name, String type, boolean isRepeated, boolean isRequired) {
 			super();
 			this.name = name;
 			this.type = type;
 			this.isRepeated = isRepeated;
+			this.isRequired = isRequired;
 		}
 
 		public String getName() {
@@ -58,14 +60,20 @@ public class MessageObject {
 		public void setRepeated(boolean isRepeated) {
 			this.isRepeated = isRepeated;
 		}
+		
+		public boolean isRequired() {
+			return isRequired;
+		}
+
+		public void setRequired(boolean isRequired) {
+			this.isRequired = isRequired;
+		}
 
 	}
 
 	private String cname;
 	private Class<?> cls;
 	private ArrayList<AttributeEntity> attributes;
-	// private ArrayList<String> attributes;
-	// private ArrayList<String> attributeTypes;
 
 	public MessageObject(String cname) {
 		super();
@@ -97,20 +105,8 @@ public class MessageObject {
 		this.attributes.add(attribute);
 	}
 	
-	public void addAttribute(String attributeName, String attributeType, boolean isRepeated) {
-		 AttributeEntity attribute = new AttributeEntity(attributeName, attributeType, isRepeated);
+	public void addAttribute(String attributeName, String attributeType, boolean isRepeated, boolean isRequired) {
+		 AttributeEntity attribute = new AttributeEntity(attributeName, attributeType, isRepeated, isRequired);
 		 this.attributes.add(attribute);
 	}
-
-	/*
-	 * public ArrayList<String> getAttributes() { return attributes; }
-	 * 
-	 * public void addAttribute(String attribute) { this.attributes.add(attribute);
-	 * }
-	 * 
-	 * public ArrayList<String> getAttributeTypes() { return attributeTypes; }
-	 * 
-	 * public void addAttributeType(String attibuteType) {
-	 * this.attributeTypes.add(attibuteType); }
-	 */
 }

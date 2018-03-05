@@ -1,6 +1,7 @@
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.StringTokenizer;
+import java.util.Random;
 
 public class Multiplier {
 	public static ArrayList<Object> multiply(String str) {
@@ -73,6 +74,21 @@ public class Multiplier {
 		for(int k = 0; k < 2; k ++)
 			predictList.add("Bye");
 			
+		predictList.add((int)8888);
+		predictList.add((int)-8888);
+		predictList.add((long)77778888);
+		predictList.add((boolean)true);
+		predictList.add((long)-77778888);
+		predictList.add((int)12345678);
+		predictList.add((long)11112222);
+		predictList.add((int)-11112222);
+		predictList.add((long)-11112222);
+		
+		Random r=new Random();
+		
+		byte[] bytes = {69, 121, 101, 45, 62, 118, 101, 114, (byte) 196, (byte) 195, 61, 101, 98};
+		predictList.add(bytes);
+		
 		System.out.println("In multiplyAll(): returning prediction results: " + Arrays.toString(predictList.toArray()));
 
 		return predictList;

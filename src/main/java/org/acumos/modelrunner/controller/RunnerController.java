@@ -33,6 +33,7 @@ import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.PrintWriter;
 import java.io.Writer;
+import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.lang.reflect.Type;
 import java.net.URL;
@@ -45,6 +46,7 @@ import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Map.Entry;
 import java.util.Properties;
 import java.util.Random;
 import java.util.Scanner;
@@ -55,7 +57,10 @@ import java.util.jar.JarOutputStream;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
+import static java.util.stream.Collectors.*;
 
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
 import javax.ws.rs.core.MediaType;
 
 import org.acumos.modelrunner.domain.*;
@@ -67,8 +72,10 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.util.MultiValueMap;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.RequestPart;
@@ -159,7 +166,13 @@ public class RunnerController {
 			SFIXED64, BOOL, STRING, BYTES };
 
 	@RequestMapping(value = "/hello", method = RequestMethod.GET)
-	public String hello() {
+	public String hello(@RequestHeader MultiValueMap<String, String> headers, HttpServletRequest request,
+			HttpServletResponse response) {
+		logger.info("response " + response);
+		for (Entry<String, List<String>> entry : headers.entrySet()) {
+			logger.info(entry.getKey() + " => " + entry.getValue());
+		}
+
 		return "HelloWorld";
 	}
 
@@ -499,136 +512,6 @@ public class RunnerController {
 		return df;
 	}
 
-	//
-	/**
-	 * Get {InputClass}.Builder class based on uploaded data file and proto file
-	 * 
-	 * @param file
-	 * @param proto
-	 * @return {InputClass}.Builder
-	 * @throws Exception
-	 */
-	/*
-	 * private Object getInputClassBuilder(MultipartFile file, MultipartFile proto,
-	 * String operation) throws Exception { if (file.isEmpty()) {
-	 * logger.error("You failed to upload " + file.getOriginalFilename() +
-	 * " because the file was empty."); return null; }
-	 * 
-	 * Object df = null;
-	 * 
-	 * String contentType = file.getContentType(); if
-	 * (!"application/vnd.ms-excel".equalsIgnoreCase(contentType) &&
-	 * !"text/csv".equalsIgnoreCase(contentType)) {
-	 * logger.error("Wrong file type. Current content type is " + contentType);
-	 * return null; }
-	 * 
-	 * String protoString = null; if (proto != null && !proto.isEmpty()) { long
-	 * protosize = proto.getSize();
-	 * 
-	 * InputStream protoInput = new BufferedInputStream(proto.getInputStream());
-	 * byte[] protodata = new byte[(int) protosize]; char[] protoChar = new
-	 * char[(int) protosize]; int bytesRead = protoInput.read(protodata); for (int i
-	 * = 0; i < bytesRead; i++) { protoChar[i] = (char) protodata[i]; }
-	 * 
-	 * protoString = new String(protoChar); }
-	 * 
-	 * init(protoString); ServiceObject so = serviceList.get(operation);
-	 * inputClassName = so.getInputClass(); outputClassName = so.getOutputClass();
-	 * serviceName = operation; Class<?> inputClass =
-	 * classList.get(inputClassName).getCls(); Method inputBuilder =
-	 * inputClass.getMethod("newBuilder"); df = inputBuilder.invoke(null); Class<?>
-	 * inputClassBuilder = classList.get(inputClassName+"Builder").getCls();
-	 * MessageObject inputMsg = classList.get(inputClassName);
-	 * ArrayList<AttributeEntity> inputAttributes = inputMsg.getAttributes(); Method
-	 * inputAddRow = null; for(AttributeEntity ae : inputAttributes) { if
-	 * (ae.isRepeated()) { String iAttrMethodName = StringUtils.camelCase("add_" +
-	 * ae.getName(), '_'); switch(ae.getType()) { case DOUBLE: inputAddRow =
-	 * inputClassBuilder.getMethod(iAttrMethodName, Double.class); break; case
-	 * FLOAT: inputAddRow = inputClassBuilder.getMethod(iAttrMethodName,
-	 * Float.class); break; case INT32: case UINT32: case SINT32: case FIXED32: case
-	 * SFIXED32: inputAddRow = inputClassBuilder.getMethod(iAttrMethodName,
-	 * Integer.class); break; case INT64: case UINT64: case SINT64: case FIXED64:
-	 * case SFIXED64: inputAddRow = inputClassBuilder.getMethod(iAttrMethodName,
-	 * Integer.class); break; case BOOL: inputAddRow =
-	 * inputClassBuilder.getMethod(iAttrMethodName, Boolean.class); break; case
-	 * STRING: inputAddRow = inputClassBuilder.getMethod(iAttrMethodName,
-	 * String.class); break; case BYTES: inputAddRow =
-	 * inputClassBuilder.getMethod(iAttrMethodName, ByteString.class); break;
-	 * default: MessageObject innerMsg = classList.get(ae.getType()); Class<?>
-	 * innerCls = innerMsg.getCls(); Method innerBuilder =
-	 * innerCls.getMethod("newBuilder"); Object innerObj =
-	 * innerBuilder.invoke(null); inputAddRow =
-	 * inputClassBuilder.getMethod(iAttrMethodName, innerObj.getClass()); break;
-	 * 
-	 * }
-	 * 
-	 * } else {
-	 * 
-	 * } }
-	 * 
-	 * // // Method newBuilder = dataframerow.getMethod("newBuilder"); // Object dfr
-	 * = newBuilder.invoke(null); // dfr is of // DataFrameRow.Builder type //
-	 * Method dfNewBuilder = dataframe.getMethod("newBuilder"); // df =
-	 * dfNewBuilder.invoke(null); // df is of DataFrame.Builder // type // Method
-	 * dfAddRows = dataframeBuilder.getMethod("addRows", dfr.getClass());
-	 * 
-	 * long size = file.getSize();
-	 * 
-	 * InputStream csvInput = new BufferedInputStream(file.getInputStream()); byte[]
-	 * data = new byte[(int) size]; char[] dataChar = new char[(int) size]; int
-	 * bytesRead = csvInput.read(data); for (int i = 0; i < bytesRead; i++) {
-	 * dataChar[i] = (char) data[i]; }
-	 * 
-	 * String dataString = new String(dataChar); String[] lines =
-	 * dataString.split(NEWLINE);
-	 * 
-	 * for (String line : lines) { String[] array = line.split(",");
-	 * 
-	 * logger.info("Current line is: " + line);
-	 * 
-	 * for (int i = 0; i < array.length; i++) { if (array[i].length() == 0) // skip
-	 * missing field continue;
-	 * 
-	 * // start from here } } for (String line : lines) { String[] array =
-	 * line.split(",");
-	 * 
-	 * logger.info("Current line is: " + line);
-	 * 
-	 * for (int i = 0; i < array.length; i++) { if (array[i].length() == 0) // skip
-	 * missing field continue;
-	 * 
-	 * String attr = attributes.get(i); String attrMethodName =
-	 * StringUtils.camelCase("set_" + attr, '_'); Method attrMethod = null; switch
-	 * (attributeTypes.get(i)) { case DOUBLE: attrMethod =
-	 * dfr.getClass().getMethod(attrMethodName, double.class);
-	 * attrMethod.invoke(dfr, Double.parseDouble(array[i])); break;
-	 * 
-	 * case FLOAT: attrMethod = dfr.getClass().getMethod(attrMethodName,
-	 * float.class); attrMethod.invoke(dfr, Float.parseFloat(array[i])); break;
-	 * 
-	 * case INT32: case UINT32: case SINT32: case FIXED32: case SFIXED32: attrMethod
-	 * = dfr.getClass().getMethod(attrMethodName, int.class); attrMethod.invoke(dfr,
-	 * Integer.parseInt(array[i])); break;
-	 * 
-	 * case INT64: case UINT64: case SINT64: case FIXED64: case SFIXED64: attrMethod
-	 * = dfr.getClass().getMethod(attrMethodName, long.class);
-	 * attrMethod.invoke(dfr, Long.parseLong(array[i])); break;
-	 * 
-	 * case BOOL: attrMethod = dfr.getClass().getMethod(attrMethodName,
-	 * boolean.class); attrMethod.invoke(dfr, Boolean.parseBoolean(array[i]));
-	 * break;
-	 * 
-	 * case STRING: attrMethod = dfr.getClass().getMethod(attrMethodName,
-	 * String.class); attrMethod.invoke(dfr, array[i]); break;
-	 * 
-	 * case BYTES: attrMethod = dfr.getClass().getMethod(attrMethodName,
-	 * byte.class); attrMethod.invoke(dfr, Byte.parseByte(array[i])); break;
-	 * default: break; }
-	 * 
-	 * } dfAddRows.invoke(df, dfr); }
-	 * 
-	 * return df; }
-	 */
 	/*
 	 * in the case of nestedmsg.proto First iteration : parent - DataFrame, child -
 	 * DataFrameRow Second iteration: parent - DataFrameRow, child - SubFrameRow
@@ -878,129 +761,7 @@ public class RunnerController {
 			Object[] predictor = new Object[row_count + 2];
 			for (int i = 0; i <= row_count + 1; i++)
 				predictor[i] = null;
-
-			Class<?> prediction = classList.get(outputClassName).getCls();
-			Method newBuilder = prediction.getMethod("newBuilder");
-			Object object = newBuilder.invoke(null);
-			Method addPrediction;
-			// Method addPrediction = object.getClass().getMethod("addPrediction",
-			// String.class);
-			ArrayList<AttributeEntity> outputAttributes = classList.get(outputClassName).getAttributes();
-			for (AttributeEntity ae : outputAttributes) {
-				String predictMethodName;
-				switch (ae.getType()) {
-				case INT32:
-				case UINT32:
-				case SINT32:
-				case FIXED32:
-				case SFIXED32:
-					// addPrediction = object.getClass().getMethod("addAllPrediction",
-					// java.lang.Iterable.class);
-					predictMethodName = StringUtils.camelCase("add_all_" + ae.getName(), '_');
-					addPrediction = object.getClass().getMethod(predictMethodName, java.lang.Iterable.class);
-					
-					List<Integer> intList = new ArrayList<>();
-					for (Object obj : predictList) {
-						if (obj instanceof Integer)
-							intList.add((Integer) obj);
-					}
-
-					addPrediction.invoke(object, intList);
-					break;
-				case INT64:
-				case UINT64:
-				case SINT64:
-				case FIXED64:
-				case SFIXED64:
-					predictMethodName = StringUtils.camelCase("add_all_" + ae.getName(), '_');
-					addPrediction = object.getClass().getMethod(predictMethodName, java.lang.Iterable.class);
-					List<Long> longList = new ArrayList<>();
-					for (Object obj : predictList) {
-						if (obj instanceof Long)
-							longList.add((Long) obj);
-					}
-
-					addPrediction.invoke(object, longList);
-					break;
-
-				case FLOAT:
-					predictMethodName = StringUtils.camelCase("add_all_" + ae.getName(), '_');
-					addPrediction = object.getClass().getMethod(predictMethodName, java.lang.Iterable.class);
-					// List<Float> floatList = predictList.stream().map(obj -> (Float)
-					// obj).collect(Collectors.toList());
-
-					List<Float> floatList = new ArrayList<>();
-					for (Object obj : predictList) {
-						if (obj instanceof Float)
-							floatList.add((Float) obj);
-					}
-					addPrediction.invoke(object, floatList);
-					break;
-				case DOUBLE:
-					predictMethodName = StringUtils.camelCase("add_all_" + ae.getName(), '_');
-
-					addPrediction = object.getClass().getMethod(predictMethodName, java.lang.Iterable.class);
-					
-					List<Double> doubleList = new ArrayList<>();
-					for (Object obj : predictList) {
-						if (obj instanceof Double)
-							doubleList.add((Double) obj);
-					}
-					addPrediction.invoke(object, doubleList);
-					break;
-				case BOOL:
-					predictMethodName = StringUtils.camelCase("add_all_" + ae.getName(), '_');
-
-					addPrediction = object.getClass().getMethod(predictMethodName, java.lang.Iterable.class);
-					// List<Boolean> boolList = predictList.stream().map(obj -> (Boolean)
-					// obj).collect(Collectors.toList());
-					List<Boolean> boolList = new ArrayList<>();
-					for (Object obj : predictList) {
-						if (obj instanceof Boolean)
-							boolList.add((Boolean) obj);
-					}
-					addPrediction.invoke(object, boolList);
-					break;
-				case BYTES:
-					predictMethodName = StringUtils.camelCase("add_all_" + ae.getName(), '_');
-					addPrediction = object.getClass().getMethod(predictMethodName, java.lang.Iterable.class);
-					// List<ByteString> byteList = predictList.stream().map(obj -> (ByteString)
-					// obj).collect(Collectors.toList());
-					List<ByteString> byteList = new ArrayList<>();
-					for (Object obj : predictList) {
-						if (obj instanceof ByteString)
-							byteList.add((ByteString) obj);
-					}
-					addPrediction.invoke(object, byteList);
-					break;
-
-				case STRING:
-					predictMethodName = StringUtils.camelCase("add_" + ae.getName(), '_');
-					addPrediction = object.getClass().getMethod(predictMethodName, String.class);
-
-					for (int i = 1; i <= predictList.size(); i++) {
-						if (predictList.get(i - 1) instanceof String)
-							addPrediction.invoke(object, (String) predictList.get(i - 1));
-						// addPrediction.invoke(object, String.valueOf(predictlist.get(i - 1)));
-					}
-					break;
-
-				default: // TODO
-					predictMethodName = StringUtils.camelCase("add_" + ae.getName(), '_');
-					addPrediction = object.getClass().getMethod(predictMethodName, predictList.get(0).getClass());
-					// addPrediction = object.getClass().getMethod("addPrediction",
-					// predictlist.get(0).getClass());
-					for (int i = 1; i <= row_count; i++) {
-						addPrediction.invoke(object, predictList.get(i - 1));
-						// addPrediction.invoke(object, String.valueOf(predictlist.get(i - 1)));
-					}
-					break;
-				}
-			}
-
-			Method build = object.getClass().getMethod("build");
-
-			Object pobj = build.invoke(object);
+			Object pobj = getPredictionRow(outputClassName, predictList);
 
 			Method toByteArray = pobj.getClass().getMethod("toByteArray");
 			byte[] results = (byte[]) (toByteArray.invoke(pobj));
@@ -1016,6 +777,350 @@ public class RunnerController {
 			return null;
 		}
 
+	}
+
+	/**
+	 * 
+	 * @param predictionClassName
+	 *            output message name from proto file. Could be nested inner message
+	 *            name.
+	 * @param predictList
+	 *            this list contains un-serialized prediction data
+	 * @return object containing serialized prediction in protobuf format
+	 */
+	private Object getPredictionRow(String predictionClassName, List<?> predictList) {
+		try {
+
+			List<?> copy = new ArrayList<>(predictList);
+			Class<?> predictionCls = classList.get(predictionClassName).getCls();
+			Method newBuilder = predictionCls.getMethod("newBuilder");
+			Object object = newBuilder.invoke(null);
+			Method addPrediction;
+			boolean started = false, predictionAdded = false;
+			String predictMethodName = null;
+
+			ArrayList<AttributeEntity> outputAttributes = classList.get(predictionClassName).getAttributes();
+			for (AttributeEntity ae : outputAttributes) {
+				predictMethodName = null;
+				started = false;
+
+				switch (ae.getType()) {
+				case INT32:
+				case UINT32:
+				case SINT32:
+				case FIXED32:
+				case SFIXED32:
+					// addPrediction = object.getClass().getMethod("addAllPrediction",
+					// java.lang.Iterable.class);
+					if (ae.isRepeated()) {
+						predictMethodName = StringUtils.camelCase("add_all_" + ae.getName(), '_');
+						addPrediction = object.getClass().getMethod(predictMethodName, java.lang.Iterable.class);
+
+						List<Integer> intList = new ArrayList<>();
+						for (Object obj : predictList) {
+							if (obj instanceof Integer) {
+								if (!started)
+									started = true;
+								intList.add((Integer) obj);
+								predictionAdded = true;
+							} else {
+								if (started)
+									break;
+							}
+						}
+
+						if (!intList.isEmpty()) {
+							addPrediction.invoke(object, intList);
+							predictList.removeAll(intList);
+						}
+					} else {
+						predictMethodName = StringUtils.camelCase("set_" + ae.getName(), '_');
+						addPrediction = object.getClass().getMethod(predictMethodName, int.class);
+
+						for (Object obj : predictList) {
+							if (obj instanceof Integer) {
+								addPrediction.invoke(object, (Integer) obj);
+								predictionAdded = true;
+								predictList.remove(obj);
+								break;
+							}
+						}
+					}
+					break;
+
+				case INT64:
+				case UINT64:
+				case SINT64:
+				case FIXED64:
+				case SFIXED64:
+					if (ae.isRepeated()) {
+						predictMethodName = StringUtils.camelCase("add_all_" + ae.getName(), '_');
+						addPrediction = object.getClass().getMethod(predictMethodName, java.lang.Iterable.class);
+
+						List<Long> longList = new ArrayList<>();
+						for (Object obj : predictList) {
+							if (obj instanceof Long) {
+								if (!started)
+									started = true;
+								longList.add((Long) obj);
+								predictionAdded = true;
+							} else {
+								if (started)
+									break;
+							}
+						}
+						if (!longList.isEmpty()) {
+							addPrediction.invoke(object, longList);
+							predictList.removeAll(longList);
+						}
+					} else {
+						predictMethodName = StringUtils.camelCase("set_" + ae.getName(), '_');
+						addPrediction = object.getClass().getMethod(predictMethodName, long.class);
+
+						for (Object obj : predictList) {
+							if (obj instanceof Long) {
+								addPrediction.invoke(object, (Long) obj);
+								predictionAdded = true;
+								predictList.remove(obj);
+								break;
+							}
+						}
+					}
+					break;
+
+				case FLOAT:
+					if (ae.isRepeated()) {
+						predictMethodName = StringUtils.camelCase("add_all_" + ae.getName(), '_');
+						addPrediction = object.getClass().getMethod(predictMethodName, java.lang.Iterable.class);
+
+						// List<Float> floatList = predictList.stream().map(obj -> (Float)
+						// obj).collect(Collectors.toList());
+
+						List<Float> floatList = new ArrayList<>();
+						for (Object obj : predictList) {
+							if (obj instanceof Float) {
+								if (!started)
+									started = true;
+								floatList.add((Float) obj);
+								predictionAdded = true;
+							} else {
+								if (started)
+									break;
+							}
+						}
+						if (!floatList.isEmpty()) {
+							addPrediction.invoke(object, floatList);
+							predictList.removeAll(floatList);
+						}
+					} else {
+						predictMethodName = StringUtils.camelCase("set_" + ae.getName(), '_');
+						addPrediction = object.getClass().getMethod(predictMethodName, float.class);
+
+						for (Object obj : predictList) {
+							if (obj instanceof Float) {
+								addPrediction.invoke(object, (Float) obj);
+								predictionAdded = true;
+								predictList.remove(obj);
+								break;
+							}
+						}
+					}
+					break;
+				case DOUBLE:
+					if (ae.isRepeated()) {
+						predictMethodName = StringUtils.camelCase("add_all_" + ae.getName(), '_');
+						addPrediction = object.getClass().getMethod(predictMethodName, java.lang.Iterable.class);
+
+						List<Double> doubleList = new ArrayList<>();
+						for (Object obj : predictList) {
+							if (obj instanceof Double) {
+								if (!started)
+									started = true;
+
+								doubleList.add((Double) obj);
+								predictionAdded = true;
+							} else {
+								if (started)
+									break;
+							}
+						}
+						if (!doubleList.isEmpty()) {
+							addPrediction.invoke(object, doubleList);
+							predictList.removeAll(doubleList);
+						}
+					} else {
+						predictMethodName = StringUtils.camelCase("set_" + ae.getName(), '_');
+						addPrediction = object.getClass().getMethod(predictMethodName, double.class);
+
+						for (Object obj : predictList) {
+							if (obj instanceof Double) {
+								addPrediction.invoke(object, (Double) obj);
+								predictionAdded = true;
+								predictList.remove(obj);
+								break;
+							}
+						}
+					}
+					break;
+
+				case BOOL:
+					if (ae.isRepeated()) {
+						predictMethodName = StringUtils.camelCase("add_all_" + ae.getName(), '_');
+						addPrediction = object.getClass().getMethod(predictMethodName, java.lang.Iterable.class);
+
+						// List<Boolean> boolList = predictList.stream().map(obj -> (Boolean)
+						// obj).collect(Collectors.toList());
+						List<Boolean> boolList = new ArrayList<>();
+						for (Object obj : predictList) {
+							if (obj instanceof Boolean) {
+								if (!started)
+									started = true;
+								boolList.add((Boolean) obj);
+								predictionAdded = true;
+
+							} else {
+								if (started)
+									break;
+							}
+						}
+						if (!boolList.isEmpty()) {
+							addPrediction.invoke(object, boolList);
+							predictList.removeAll(boolList);
+						}
+					} else {
+						predictMethodName = StringUtils.camelCase("set_" + ae.getName(), '_');
+						addPrediction = object.getClass().getMethod(predictMethodName, boolean.class);
+
+						for (Object obj : predictList) {
+							if (obj instanceof Boolean) {
+								addPrediction.invoke(object, (Boolean) obj);
+								predictionAdded = true;
+								predictList.remove(obj);
+								break;
+							}
+						}
+					}
+					break;
+				case BYTES:
+					if (ae.isRepeated()) {
+						predictMethodName = StringUtils.camelCase("add_all_" + ae.getName(), '_');
+						addPrediction = object.getClass().getMethod(predictMethodName, java.lang.Iterable.class);
+
+						// List<ByteString> byteList = predictList.stream().map(obj -> (ByteString)
+						// obj).collect(Collectors.toList());
+						List<ByteString> byteList = new ArrayList<>();
+						List<Object> byteArrayList = new ArrayList<>();
+						for (Object obj : predictList) {
+							logger.info("Object is " + obj.getClass().getName());
+							if (obj.getClass().getName().equals("[B")) {
+								if (!started)
+									started = true;
+								ByteString byteStr = ByteString.copyFrom((byte[]) obj);
+								byteList.add(byteStr);
+								byteArrayList.add(obj);
+								predictionAdded = true;
+
+							} else {
+								if (started)
+									break;
+							}
+						}
+						if (!byteList.isEmpty()) {
+							addPrediction.invoke(object, byteList);
+							predictList.removeAll(byteArrayList);
+						}
+					} else {
+						predictMethodName = StringUtils.camelCase("set_" + ae.getName(), '_');
+						addPrediction = object.getClass().getMethod(predictMethodName,
+								com.google.protobuf.ByteString.class);
+
+						for (Object obj : predictList) {
+							if (obj.getClass().getName().equals("[B")) {
+								ByteString byteStr = ByteString.copyFrom((byte[]) obj);
+								addPrediction.invoke(object, byteStr);
+								predictionAdded = true;
+								predictList.remove(obj);
+								break;
+							}
+						}
+					}
+					break;
+
+				case STRING:
+					if (ae.isRepeated()) {
+						predictMethodName = StringUtils.camelCase("add_" + ae.getName(), '_');
+						addPrediction = object.getClass().getMethod(predictMethodName, String.class);
+						List<String> found = new ArrayList<>();
+						for (int i = 1; i <= predictList.size(); i++) {
+							if (predictList.get(i - 1) instanceof String) {
+								if (!started)
+									started = true;
+								addPrediction.invoke(object, (String) predictList.get(i - 1));
+								found.add((String) predictList.get(i - 1));
+								predictionAdded = true;
+							} else {
+								if (started)
+									break;
+							}
+							// addPrediction.invoke(object, String.valueOf(predictlist.get(i - 1)));
+						}
+						if (!found.isEmpty())
+							predictList.removeAll(found);
+					} else {
+						predictMethodName = StringUtils.camelCase("set_" + ae.getName(), '_');
+						addPrediction = object.getClass().getMethod(predictMethodName, String.class);
+						for (Object obj : predictList) {
+							if (obj instanceof String) {
+								addPrediction.invoke(object, (String) obj);
+								predictionAdded = true;
+								predictList.remove(obj);
+								break;
+							}
+						}
+					}
+					break;
+
+				default:
+					if (ae.isRepeated()) {
+						predictMethodName = StringUtils.camelCase("add_all_" + ae.getName(), '_');
+						addPrediction = object.getClass().getMethod(predictMethodName, java.lang.Iterable.class);
+
+						List msgList = new ArrayList();
+						while (!predictList.isEmpty()) {
+							Object innerObj = getPredictionRow(ae.getType(), predictList);
+							if (innerObj == null)
+								break;
+							msgList.add(innerObj);
+							predictionAdded = true;
+						}
+
+						if (!msgList.isEmpty())
+							addPrediction.invoke(object, msgList);
+					} else { // TODO
+						predictMethodName = StringUtils.camelCase("set_" + ae.getName(), '_');
+						addPrediction = object.getClass().getMethod(predictMethodName, classList.get(ae.getType()).getCls());
+						Object innerObj = getPredictionRow(ae.getType(), predictList);
+						if(innerObj != null) {
+							addPrediction.invoke(object, innerObj);
+							predictionAdded = true;
+						}
+					}
+					break;
+				}
+			}
+			// None of the data matches
+			if (!predictionAdded)
+				return null;
+
+			Method build = object.getClass().getMethod("build");
+			Object pobj = build.invoke(object);
+			return pobj;
+
+		} catch (Exception ex) {
+			logger.error("Failed in getPredictionRow() : ", ex);
+			return null;
+
+		}
 	}
 
 	/**
@@ -1800,132 +1905,9 @@ public class RunnerController {
 				}
 			}
 
-			// get Prediction
-			// addPrediction = object.getClass().getMethod("addAllPrediction", java.lang.Iterable.class);
-			Class<?> prediction = classList.get(outputClassName).getCls();
-			Method newBuilder = prediction.getMethod("newBuilder");
-			Object object = newBuilder.invoke(null);
-			Method addPrediction;
-			ArrayList<AttributeEntity> outputAttributes = classList.get(outputClassName).getAttributes();
-			for (AttributeEntity ae : outputAttributes) {
-				String predictMethodName;
-				switch (ae.getType()) {
-				case INT32:
-				case UINT32:
-				case SINT32:
-				case FIXED32:
-				case SFIXED32:
-					predictMethodName = StringUtils.camelCase("add_all_" + ae.getName(), '_');
-					addPrediction = object.getClass().getMethod(predictMethodName, java.lang.Iterable.class);
-					// List<Integer> intList = predictList.stream().map(obj -> (Integer)
-					// obj).collect(Collectors.toList());
-					List<Integer> intList = new ArrayList<>();
-					for (Object obj : predictList) {
-						if (obj instanceof Integer)
-							intList.add((Integer) obj);
-					}
-
-					addPrediction.invoke(object, intList);
-					break;
-				case INT64:
-				case UINT64:
-				case SINT64:
-				case FIXED64:
-				case SFIXED64:
-					predictMethodName = StringUtils.camelCase("add_all_" + ae.getName(), '_');
-					addPrediction = object.getClass().getMethod(predictMethodName, java.lang.Iterable.class);
-
-					List<Long> longList = new ArrayList<>();
-					for (Object obj : predictList) {
-						if (obj instanceof Long)
-							longList.add((Long) obj);
-					}
-					addPrediction.invoke(object, longList);
-					break;
-				case FLOAT:
-					predictMethodName = StringUtils.camelCase("add_all_" + ae.getName(), '_');
-					addPrediction = object.getClass().getMethod(predictMethodName, java.lang.Iterable.class);
-
-					List<Float> floatList = new ArrayList<>();
-					for (Object obj : predictList) {
-						if (obj instanceof Float)
-							floatList.add((Float) obj);
-					}
-
-					addPrediction.invoke(object, floatList);
-					break;
-				case DOUBLE:
-					predictMethodName = StringUtils.camelCase("add_all_" + ae.getName(), '_');
-
-					addPrediction = object.getClass().getMethod(predictMethodName, java.lang.Iterable.class);
-					List<Double> doubleList = new ArrayList<>();
-					for (Object obj : predictList) {
-						if (obj instanceof Double)
-							doubleList.add((Double) obj);
-					}
-
-					addPrediction.invoke(object, doubleList);
-					break;
-				case BOOL:
-					predictMethodName = StringUtils.camelCase("add_all_" + ae.getName(), '_');
-
-					addPrediction = object.getClass().getMethod(predictMethodName, java.lang.Iterable.class);
-					// List<Boolean> boolList = predictList.stream().map(obj -> (Boolean)
-					// obj).collect(Collectors.toList());
-					List<Boolean> boolList = new ArrayList<>();
-					for (Object obj : predictList) {
-						if (obj instanceof Boolean)
-							boolList.add((Boolean) obj);
-					}
-					addPrediction.invoke(object, boolList);
-					break;
-				case BYTES:
-					predictMethodName = StringUtils.camelCase("add_all_" + ae.getName(), '_');
-
-					
-					addPrediction = object.getClass().getMethod(predictMethodName, java.lang.Iterable.class);
-					// List<ByteString> byteList = predictList.stream().map(obj -> (ByteString) obj)
-					// .collect(Collectors.toList());
-					List<ByteString> byteList = new ArrayList<>();
-					for (Object obj : predictList) {
-						if (obj instanceof ByteString)
-							byteList.add((ByteString) obj);
-					}
-					addPrediction.invoke(object, byteList);
-					break;
-
-				case STRING:
-					predictMethodName = StringUtils.camelCase("add_" + ae.getName(), '_');
-					addPrediction = object.getClass().getMethod(predictMethodName, String.class);
-					for (int i = 1; i <= predictList.size(); i++) {
-						if (predictList.get(i - 1) instanceof String)
-							addPrediction.invoke(object, (String) predictList.get(i - 1));
-					}
-
-					break;
-
-				default: //TODO
-					Class<?> cls = null;
-					MessageObject mobj = classList.get(ae.getType());
-					if (mobj != null)
-						cls = mobj.getCls();
-					predictMethodName = StringUtils.camelCase("add_all_" + ae.getName(), '_');
-					addPrediction = object.getClass().getMethod(predictMethodName, cls.getClass());
-					/*
-					 * List<?> clsList = predictList.stream().map( obj ->
-					 * cls.getClass().cast(obj)).collect(Collectors.toList());
-					 */
-
-					addPrediction.invoke(object, predictList);
-
-					break;
-				}
-			}
 			// Create a Prediction and set its value depending on the output of
 			// the H2o predict method
-
-			Method build = object.getClass().getMethod("build");
-			Object pobj = build.invoke(object);
+			Object pobj = getPredictionRow(outputClassName, predictList);
 
 			Method toByteArray = pobj.getClass().getMethod("toByteArray");
 
@@ -2428,7 +2410,7 @@ public class RunnerController {
 				}
 			}
 			if (attribute != null && type != null)
-				mobj.addAttribute(attribute, type, isRepeated);
+				mobj.addAttribute(attribute, type, isRepeated, isRequired);
 		}
 
 		return true;
@@ -2501,9 +2483,7 @@ public class RunnerController {
 						new_list.add(line);
 					else
 						new_list.add(option);
-
 				}
-
 			} else {
 				int index = 0;
 				for (String line : old_list) {
@@ -2512,9 +2492,7 @@ public class RunnerController {
 						new_list.add(option);
 					}
 					index++;
-
 				}
-
 			}
 			for (String out_line : new_list) {
 				fw.write(out_line);

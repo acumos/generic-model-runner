@@ -1,15 +1,47 @@
 syntax = "proto3";
-option java_package = "org.random.domain";
-option java_outer_classname = "DatasetProto";
+option java_package = "org.acumos";
+
 message DataFrameRow {
-string multiplier_data = 1;
+string sepal_len = 1;
+int32 sepal_wid = 2;
+SubFrameRow petal_len = 3;
+string petal_wid = 4;
 }
 message DataFrame {
- 	repeated DataFrameRow rows = 1;
+    repeated DataFrameRow rows = 1;
+    repeated MyFrameRow myRow = 2;
 }
+message SubFrameRow {
+    repeated string srow_1 = 1;
+    repeated string srow_2 = 2;
+}
+message MyFrameRow {
+    repeated int64 mrow_1 = 1;
+   repeated string mrow_2 = 2;
+}
+
+message testFrame {
+   uint32 prow1 = 1;
+   sint32 prow2 = 2;
+   string testrow = 3;
+   uint64 prow3 = 4;
+   bool prow4 = 5;
+   sint64 prow5 = 6;
+   fixed32 prow6 = 7;
+   fixed64 prow7 = 8;
+   sfixed32 prow8 = 9;
+   sfixed64 prow9 = 10;
+   bytes prow10 = 11;
+}
+
 message Prediction {
-	repeated string prediction= 1;
+    repeated int64 outlook= 1;
+    repeated float outlook2= 2;
+    repeated double outlook3= 3;
+    repeated string outlook4= 4;
+     testFrame outlook5= 5;
 }
-service Multiplier {
-	rpc predict(DataFrame) returns (Prediction);
+service Model {
+  rpc transform (DataFrame) returns (Prediction);
 }
+
