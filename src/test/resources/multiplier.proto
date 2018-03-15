@@ -1,0 +1,16 @@
+syntax = "proto3";
+option java_package = "org.acumos.test";
+option java_outer_classname = "DatasetProto";
+message InputFrameRow {
+int64 operand = 1;
+}
+message InputFrame {
+ 	repeated InputFrameRow rows = 1;
+}
+message Product {
+	repeated int64 product= 1;
+}
+service Multiplier {
+	rpc multiply(InputFrame) returns (Product);
+
+}

@@ -93,18 +93,239 @@ public class Multiplier {
 
 		return predictList;
 	}
-
 	
+	public static ArrayList<Object> transform(String str) {
+		Object predictedClassValue = null;
+		ArrayList<Object> predictList = new ArrayList<Object>();
 
-	public static ArrayList<Object> classify(String str) {
-		Object pVal = null;
-		ArrayList<Object> pList = new ArrayList<Object>();
 		StringTokenizer st = new StringTokenizer(str, "\n");
 		while (st.hasMoreTokens()) {
-			pVal = st.nextToken() + ",Hello," + 2 + "\n";
-			pList.add(pVal);
+			String line = st.nextToken();
+			
+			System.out.println("Input Line: " + line);
+			StringTokenizer st1 = new StringTokenizer(line, ",");
+			String output = "[";
+			while (st1.hasMoreTokens()) {
+				if (!output.equals("["))
+					output += "|";
+				String next = st1.nextToken().trim();
+				System.out.println("The current token is " + next);
+				output += next;
+			}
+            output += "]";
+			System.out.println("After transformation: " + output);
+			predictedClassValue = (Object)output;
+			
+			predictList.add(predictedClassValue);
 		}
+		for(int i = 0; i < 3; i ++)
+			predictList.add((float)2.222);
+			
+		for(int j = 0; j < 2; j ++)
+			predictList.add((double)3.333);
+			
+		for(int k = 0; k < 3; k ++)
+			predictList.add("Bye");
+			
+		predictList.add((int)8888);
+		predictList.add((int)-8888);
+		predictList.add("Blessings");
+		
+		predictList.add((long)77778888);
+		predictList.add((boolean)true);
+		predictList.add((long)-77778888);
+		predictList.add((int)12345678);
+		predictList.add((long)11112222);
+		predictList.add((int)-11112222);
+		predictList.add((long)-11112222);
+		
+		Random r=new Random();
+		
+		byte[] bytes = {69, 121, 101, 45, 62, 118, 101, 114, (byte) 196, (byte) 195, 61, 101, 98};
+		predictList.add(bytes);
+		
+		predictList.add("8.88");
+		predictList.add("3.14159");
+		predictList.add("6");
+		predictList.add("5");
+		
+		System.out.println("In transform(): returning prediction results: " + Arrays.toString(predictList.toArray()));
 
-		return pList;
+		return predictList;
 	}
+	
+	public static ArrayList<Object> classify(String str) {
+		Object predictedClassValue = null;
+		ArrayList<Object> predictList = new ArrayList<Object>();
+
+		StringTokenizer st = new StringTokenizer(str, "\n");
+		while (st.hasMoreTokens()) {
+			String line = st.nextToken();
+			
+			System.out.println("Input Line: " + line);
+			StringTokenizer st1 = new StringTokenizer(line, ",");
+			String output = "[";
+			while (st1.hasMoreTokens()) {
+				if (!output.equals("["))
+					output += "|";
+				String next = st1.nextToken().trim();
+				System.out.println("The current token is " + next);
+				output += next;
+			}
+            output += "]";
+			System.out.println("After classify: " + output);
+			predictedClassValue = (Object)output;
+			predictList.add(predictedClassValue);
+		}
+		
+		// for uint32
+		for(int i = 0; i < 2; i++);
+			predictList.add(32);
+		
+		// for sint32	
+		for(int i = 0; i < 2; i ++)
+			predictList.add(-33);
+			
+		// for string
+		for(int i = 0; i < 2; i ++)
+			predictList.add("Hello");
+			
+		// for uint64	
+		for(int i = 0; i < 2; i ++)
+			predictList.add(999);
+			
+		// for repeated bool prow4 = 5;
+		for (int i = 0; i < 2; i ++)
+			predictList.add("true");
+			
+  		// for repeated sint64 prow5 = 6;
+  		for (int i = 0; i < 2; i ++)
+  			predictList.add(-64);
+  			
+  		// for repeated fixed32 prow6 = 7;
+  		for (int i = 0; i < 2; i ++)
+  			predictList.add(32);
+  			
+  		// repeated fixed64 prow7 = 8;
+  		for (int i = 0; i < 2; i ++)
+  			predictList.add(64);
+  			
+  		// repeated sfixed32 prow8 = 9;
+  		for (int i = 0; i < 2; i ++)
+  			predictList.add(-32);
+  			
+  		// repeated sfixed64 prow9 = 10;
+  		for (int i = 0; i < 2; i ++)
+  			predictList.add(-64);
+  			
+  		// repeated bytes prow10 = 11;
+  		Random r=new Random();
+		
+		byte[] bytes = {69, 121, 101, 45, 62, 118, 101, 114, (byte) 196, (byte) 195, 61, 101, 98};
+		predictList.add(bytes);	
+		predictList.add(bytes);
+  		
+  		// repeated int32 prow11 = 12;
+  		for (int i = 0; i < 2; i ++)
+  			predictList.add(32);
+  			
+  		// repeated int64 prow12 = 13;
+  		for (int i = 0; i < 2; i ++)
+  			predictList.add(64);
+  			
+  		for(int j = 0; j < 2; j ++)
+			predictList.add((double)3.333);
+			
+		for(int i = 0; i < 3; i ++)
+			predictList.add((float)2.222);
+			
+		System.out.println("In classify(): returning prediction results: " + Arrays.toString(predictList.toArray()));
+
+		return predictList;
+	}
+	
+	public static ArrayList<Object> aggregate(String str) {
+		Object predictedClassValue = null;
+		ArrayList<Object> predictList = new ArrayList<Object>();
+
+		StringTokenizer st = new StringTokenizer(str, "\n");
+		while (st.hasMoreTokens()) {
+			String line = st.nextToken();
+			
+			System.out.println("Input Line: " + line);
+			StringTokenizer st1 = new StringTokenizer(line, ",");
+			String output = "[";
+			while (st1.hasMoreTokens()) {
+				if (!output.equals("["))
+					output += "|";
+				String next = st1.nextToken().trim();
+				System.out.println("The current token is " + next);
+				output += next;
+			}
+            output += "]";
+			System.out.println("After classify: " + output);
+			predictedClassValue = (Object)output;
+			predictList.add(predictedClassValue);
+		}
+		
+		// for uint32
+		predictList.add(32);
+		
+		// for sint32	
+		predictList.add(-33);
+			
+		// for string
+		predictList.add("Hello");
+			
+		// for uint64	
+		predictList.add(999);
+			
+		// for repeated bool prow4 = 5;
+		predictList.add("true");
+			
+  		// for repeated sint64 prow5 = 6;
+  		predictList.add(-64);
+  			
+  		// for repeated fixed32 prow6 = 7;
+  		predictList.add(32);
+  			
+  		// repeated fixed64 prow7 = 8;
+  		for (int i = 0; i < 2; i ++)
+  			predictList.add(64);
+  			
+  		// repeated sfixed32 prow8 = 9;
+  		for (int i = 0; i < 2; i ++)
+  			predictList.add(-32);
+  			
+  		// repeated sfixed64 prow9 = 10;
+  		for (int i = 0; i < 2; i ++)
+  			predictList.add(-64);
+  			
+  		// repeated bytes prow10 = 11;
+  		Random r=new Random();
+		
+		byte[] bytes = {69, 121, 101, 45, 62, 118, 101, 114, (byte) 196, (byte) 195, 61, 101, 98};
+		predictList.add(bytes);	
+		predictList.add(bytes);
+  		
+  		// repeated int32 prow11 = 12;
+  		for (int i = 0; i < 2; i ++)
+  			predictList.add(32);
+  			
+  		// repeated int64 prow12 = 13;
+  		for (int i = 0; i < 2; i ++)
+  			predictList.add(64);
+  			
+  		for(int j = 0; j < 2; j ++)
+			predictList.add((double)3.333);
+			
+		for(int i = 0; i < 3; i ++)
+			predictList.add((float)2.222);
+			
+		System.out.println("In classify(): returning prediction results: " + Arrays.toString(predictList.toArray()));
+
+		return predictList;
+	}
+	
+	
 }

@@ -1,0 +1,68 @@
+syntax = "proto3";
+option java_package = "org.helloworld";
+
+message DataFieldRow {
+string sepal_len = 1;
+int32 sepal_wid = 2;
+SubFieldRow petal_len = 3;
+string petal_wid = 4;
+}
+message DataField {
+    repeated DataFieldRow rows = 1;
+    repeated MyFieldRow myRow = 2;
+}
+message SubFieldRow {
+    repeated InnerMostRow inner_row = 1;
+    repeated string srow_1 = 2;
+    repeated string srow_2 = 3;
+}
+
+message InnerMostRow {
+   repeated uint32 test_uint32 = 1;
+   sint32 test_sint32 = 2;
+  repeated uint64 test_uint64 = 3;
+   bool test_bool = 4;
+  repeated sint64 test_sint64 = 5;
+   fixed32 test_fixed32 = 6;
+  repeated fixed64 test_fixed64 = 7;
+   sfixed32 test_sfixed32 = 8;
+  repeated sfixed64 test_sfixed64 = 9;
+   bytes test_bytes = 10;
+  repeated float test_float = 11;
+  double test_double = 12;
+}
+
+message MyFieldRow {
+    repeated int64 mrow_1 = 1;
+   repeated string mrow_2 = 2;
+}
+
+message testField {
+   uint32 prow1 = 1;
+   sint32 prow2 = 2;
+   string testrow = 3;
+   uint64 prow3 = 4;
+   bool prow4 = 5;
+   sint64 prow5 = 6;
+   fixed32 prow6 = 7;
+   fixed64 prow7 = 8;
+   sfixed32 prow8 = 9;
+   sfixed64 prow9 = 10;
+   bytes prow10 = 11;
+   float prow11= 12;
+   double prow12= 13;
+   int64 prow13 = 14;
+   int32 prow14 = 15;
+}
+
+message Forecast {
+     string outlook= 1;
+    repeated float outlook2= 2;
+    repeated double outlook3= 3;
+    repeated string outlook4= 4;
+    repeated testField outlook5= 5;
+}
+service Model {
+  rpc transform (DataField) returns (Forecast);
+}
+

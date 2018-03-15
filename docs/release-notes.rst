@@ -48,3 +48,12 @@ Version 2.0.0, 22 February 2018
 * Remove all restrictions on the naming and number of input and output messages.  
 * The service structure must be present. Model Runner based on this structure to find operation name, input messages, and output messages.
 * Support 15 scalar data types in all defined messages.
+
+Version 2.0.1, 15 March 2018
+----------------------------
+
+* Enhance end points /transform, /transformDefault, /getBinary, /getBinaryDefault to accept nested message proto files with no naming restriction
+* Add /putModelConfig to allow uploading new modelConfig.properties
+* Modify /putProto to allow replacing current default protofile
+* Modify /putModel to allow replacing current model.
+* Add JUnit test cases for all above end points. 

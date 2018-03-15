@@ -33,7 +33,6 @@ import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.PrintWriter;
 import java.io.Writer;
-import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.lang.reflect.Type;
 import java.net.URL;
@@ -46,7 +45,6 @@ import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Map.Entry;
 import java.util.Properties;
 import java.util.Random;
 import java.util.Scanner;
@@ -56,11 +54,6 @@ import java.util.jar.JarEntry;
 import java.util.jar.JarOutputStream;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
-import java.util.stream.Collectors;
-import static java.util.stream.Collectors.*;
-
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
 import javax.ws.rs.core.MediaType;
 
 import org.acumos.modelrunner.domain.*;
@@ -72,10 +65,8 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.util.MultiValueMap;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.RequestPart;
@@ -147,13 +138,7 @@ public class RunnerController {
 	private String protoJarPath = null;
 	private String inputClassName = null;
 	private String outputClassName = null;
-	private String serviceName = null;
-	private ArrayList<String> attributes = new ArrayList<>();
-	private ArrayList<String> attributeTypes = new ArrayList<>();
-	private Class<?> dataframerow;
-	private Class<?> dataframe;
-	private Class<?> prediction;
-	private Class<?> dataframeBuilder;
+
 	private HashMap<String, MessageObject> classList = new HashMap<>();
 	private HashMap<String, ServiceObject> serviceList = new HashMap<>();
 	private ArrayList<String> classNames = new ArrayList<>();
@@ -162,20 +147,6 @@ public class RunnerController {
 	private ClassLoader cl = null;
 	private int protoIdx = 0;
 
-	private String[] types = { DOUBLE, FLOAT, INT32, INT64, UINT32, UINT64, SINT32, SINT64, FIXED32, FIXED64, SFIXED32,
-			SFIXED64, BOOL, STRING, BYTES };
-
-	@RequestMapping(value = "/hello", method = RequestMethod.GET)
-	public String hello(@RequestHeader MultiValueMap<String, String> headers, HttpServletRequest request,
-			HttpServletResponse response) {
-		logger.info("response " + response);
-		for (Entry<String, List<String>> entry : headers.entrySet()) {
-			logger.info(entry.getKey() + " => " + entry.getValue());
-		}
-
-		return "HelloWorld";
-	}
-
 	/**
 	 * End point for a modeler to upload a model
 	 * 
@@ -183,7 +154,7 @@ public class RunnerController {
 	 *            Uploaded model
 	 * @return ResponseEntity
 	 */
-	@ApiOperation(value = "Upload a machine learning model", response = Map.class)
+	@ApiOperation(value = "Upload a machine learning model to replace the current model", response = Map.class)
 	@RequestMapping(value = "/putModel", method = RequestMethod.PUT)
 	public ResponseEntity<Map<String, String>> putModel(@RequestPart("model") MultipartFile model) {
 		logger.info("Receiving /putModel PUT request...");
@@ -194,7 +165,7 @@ public class RunnerController {
 				byte[] bytes = model.getBytes();
 
 				// Create the file on server
-				File modelFile = new File(PROJECTROOT + SEP + "models" + SEP + model.getOriginalFilename());
+				File modelFile = new File(PROJECTROOT + defaultModel);
 				BufferedOutputStream stream = new BufferedOutputStream(new FileOutputStream(modelFile));
 				stream.write(bytes);
 				stream.close();
@@ -219,7 +190,7 @@ public class RunnerController {
 	 *            Protobuf file
 	 * @return ResponseEntity
 	 */
-	@ApiOperation(value = "Upload a protofile", response = ResponseEntity.class)
+	@ApiOperation(value = "Upload a protofile to replace the current default protofile", response = ResponseEntity.class)
 	@RequestMapping(value = "/putProto", method = RequestMethod.PUT)
 	public ResponseEntity<Map<String, String>> putProto(@RequestPart("proto") MultipartFile proto) {
 		logger.info("Receiving /putProto PUT request...");
@@ -230,7 +201,7 @@ public class RunnerController {
 				byte[] bytes = proto.getBytes();
 
 				// Create the file on server
-				File protoFile = new File(PROJECTROOT + SEP + "models" + SEP + proto.getOriginalFilename());
+				File protoFile = new File(PROJECTROOT + defaultProto);
 				BufferedOutputStream stream = new BufferedOutputStream(new FileOutputStream(protoFile));
 				stream.write(bytes);
 				stream.close();
@@ -239,6 +210,42 @@ public class RunnerController {
 			}
 		} catch (Exception ex) {
 			logger.error("Failed in uploading protofile: ", ex);
+			results.put("status", "bad request");
+			results.put("message", ex.getMessage());
+			return new ResponseEntity<>(results, HttpStatus.BAD_REQUEST);
+		}
+
+		results.put("status", "ok");
+		return new ResponseEntity<>(results, HttpStatus.OK);
+	}
+	
+	/**
+	 * End point to upload a new model configuration properties file
+	 * 
+	 * @param configFile
+	 *           modelConfig.properties file
+	 * @return ResponseEntity
+	 */
+	@ApiOperation(value = "Upload a model config file to replace current model configuration properties", response = ResponseEntity.class)
+	@RequestMapping(value = "/putModelConfig", method = RequestMethod.PUT)
+	public ResponseEntity<Map<String, String>> putModelConfig(@RequestPart("modelConfig") MultipartFile configFile) {
+		logger.info("Receiving /putModelConfig PUT request...");
+		Map<String, String> results = new LinkedHashMap<>();
+
+		try {
+			if (configFile != null && !configFile.isEmpty()) {
+				byte[] bytes = configFile.getBytes();
+
+				// Create the file on server
+				File configPropertiesFile = new File(PROJECTROOT + modelConfig);
+				BufferedOutputStream stream = new BufferedOutputStream(new FileOutputStream(configPropertiesFile));
+				stream.write(bytes);
+				stream.close();
+
+				logger.info("Model config properties file location=" + configPropertiesFile.getAbsolutePath());
+			}
+		} catch (Exception ex) {
+			logger.error("Failed in uploading configfile: ", ex);
 			results.put("status", "bad request");
 			results.put("message", ex.getMessage());
 			return new ResponseEntity<>(results, HttpStatus.BAD_REQUEST);
@@ -256,36 +263,47 @@ public class RunnerController {
 	 *            CSV file
 	 * @return binary stream in protobuf format as inputs for the predictor
 	 */
-	@ApiOperation(value = "Converts the csv file based on the default .proto to a binary stream in protobuf format.")
+	@ApiOperation(value = "Converts the csv file to a binary stream in protobuf format using default.proto. The header is required in the csv file. The header fields must match with ones in the proto file")
 	@RequestMapping(value = "/getBinaryDefault", method = RequestMethod.POST, produces = "application/octet-stream")
-	public byte[] getBinaryDefault(@RequestPart("csvFile") MultipartFile csvFile) {
+	public byte[] getBinaryDefault(@RequestPart("csvFile") MultipartFile csvFile, String operation) {
 		logger.info("Receiving /getBinaryDefault POST request...");
-		return getBinary_(csvFile, null);
-
+		return getNewBinary_(csvFile, null, operation);
 	}
 
 	/**
-	 * getBinary converts the uploaded csv file based on the uploaded proto file
 	 * 
 	 * @param csvFile
-	 *            CSV file
+	 *            CSV file to be serialized
 	 * @param proto
 	 *            Protobuf file
-	 * @return binary stream in protobuf format as inputs to the predictor
+	 * @param operation
+	 *            one of the operations matching service structure in protofile
+	 * @return
 	 */
-	@ApiOperation(value = "Gets a binary stream in protobuf format based on the provided csv file and .proto file as inputs for the predictor")
+	@ApiOperation(value = "Serialize the csv file based on the .proto file provided here. This .proto file will not replace the default protofile ")
 	@RequestMapping(value = "/getBinary", method = RequestMethod.POST, produces = MediaType.APPLICATION_OCTET_STREAM)
-	public byte[] getBinary(@RequestPart("csvFile") MultipartFile csvFile, @RequestPart("proto") MultipartFile proto) {
+	public byte[] getBinary(@RequestPart("csvFile") MultipartFile csvFile, @RequestPart("proto") MultipartFile proto,
+			String operation) {
 		logger.info("Receiving /getBinary POST request...");
 
-		return getBinary_(csvFile, proto);
+		return getNewBinary_(csvFile, proto, operation);
 	}
 
-	public byte[] getBinary_(MultipartFile file, MultipartFile proto) {
+	/**
+	 * Serialize the csv file based on the proto file into binary protobuf format
+	 * 
+	 * @param file
+	 *            csv file containing headers
+	 * @param proto
+	 *            proto file
+	 * @param operation
+	 *            name of operation specified in the service structure of the proto
+	 *            file
+	 * @return
+	 */
+	private byte[] getNewBinary_(MultipartFile file, MultipartFile proto, String operation) {
 		try {
-			Object df = getDataFrameBuilder(file, proto); // df is of
-															// DataFrame.Builder
-															// type
+			Object df = getInputClassBuilder(file, proto, operation); // df is of {InputClass}.Builder type
 			Method dfBuilder = df.getClass().getMethod("build");
 			Object obj = dfBuilder.invoke(df);
 
@@ -308,29 +326,28 @@ public class RunnerController {
 	 *            CSV file
 	 * @return prediction binary stream in protobuf format
 	 */
-	@ApiOperation(value = "Gets a prediction binary stream in protobuf format based on the provided csv file and .proto file")
+	@ApiOperation(value = "Gets a prediction binary stream in protobuf format for the training data in the provided csv file using default .proto file")
 	@RequestMapping(value = "/transformDefault", method = RequestMethod.POST)
-	public byte[] transform(@RequestPart("csvFile") MultipartFile csvFile) {
+	public byte[] transform(@RequestPart("csvFile") MultipartFile csvFile, String operation) {
 		logger.info("Receiving /transformDefault POST Request...");
-		return transform_(csvFile, null, null);
-
+		return transform_(csvFile, null, null, operation);
 	}
 
 	/**
 	 * @param csvFile
 	 *            CSV File
 	 * @param model
-	 *            H2O model
+	 *            an ML model
 	 * @param proto
 	 *            Protobuf file
 	 * @return prediction binary stream in protobuf format
 	 */
-	@ApiOperation(value = "Gets a prediction binary stream in protobuf format based on the provided csv file, H2O model, and .proto file")
+	@ApiOperation(value = "Gets a prediction binary stream in protobuf format for the training data in the provided csv file using the ML model and .proto file provided here")
 	@RequestMapping(value = "/transform", method = RequestMethod.POST)
 	public byte[] transform(@RequestPart("csvFile") MultipartFile csvFile, @RequestPart("model") MultipartFile model,
-			@RequestPart("proto") MultipartFile proto) {
+			@RequestPart("proto") MultipartFile proto, String operation) {
 		logger.info("Receiving /transform POST Request...");
-		return transform_(csvFile, model, proto);
+		return transform_(csvFile, model, proto, operation);
 	}
 
 	/**
@@ -340,14 +357,14 @@ public class RunnerController {
 	 * @param model
 	 *            Model
 	 * @param proto
-	 *            Protobuf
+	 *            Protofile
+	 * @param operation
+	 *            one of the operation in the service structure of the protofile
 	 * @return prediction binary stream in protobuf format
 	 */
-	public byte[] transform_(MultipartFile file, MultipartFile model, MultipartFile proto) {
+	private byte[] transform_(MultipartFile file, MultipartFile model, MultipartFile proto, String operation) {
 		try {
-			Object df = getDataFrameBuilder(file, proto); // df is of
-															// DataFrame.Builder
-															// type
+			Object df = getInputClassBuilder(file, proto, operation); // df is of {InputClass}.Builder
 
 			Method dfBuilder = df.getClass().getMethod("build");
 			Object obj = dfBuilder.invoke(df);
@@ -376,12 +393,19 @@ public class RunnerController {
 				logger.info("model File Location=" + modelFile.getAbsolutePath());
 			}
 
+			if (serviceList.isEmpty() || classList.isEmpty()) {
+				logger.error("Wrong protofile format - must specify message and service!");
+				return null;
+			}
+			
+			outputClassName = serviceList.get(operation).getOutputClass();
+			
 			if (!modelType.equalsIgnoreCase("G"))
-				return doPredict(obj, modelLoc);
+				return doPredictH2O(obj, modelLoc);
 			else
-				return doPredictJavaGeneric(obj, modelLoc);
+				return doPredictGeneric(obj, modelLoc);
 		} catch (Exception ex) {
-			logger.error("Failed transforming csv file and getting prediction results: ", ex);
+			logger.error("transform_(): Failed transforming csv file and getting prediction results: ", ex);
 
 		}
 
@@ -389,19 +413,21 @@ public class RunnerController {
 	}
 
 	/**
+	 * Get {InputClass}.Builder class based on uploaded data file and proto file
 	 * 
 	 * @param file
 	 * @param proto
-	 * @return DataFrame.Builder
+	 * @return {InputClass}.Builder
 	 * @throws Exception
 	 */
-	private Object getDataFrameBuilder(MultipartFile file, MultipartFile proto) throws Exception {
+
+	private Object getInputClassBuilder(MultipartFile file, MultipartFile proto, String operation) throws Exception {
 		if (file.isEmpty()) {
 			logger.error("You failed to upload " + file.getOriginalFilename() + " because the file was empty.");
 			return null;
 		}
 
-		Object df = null;
+		Object inputBuilder = null;
 
 		String contentType = file.getContentType();
 		if (!"application/vnd.ms-excel".equalsIgnoreCase(contentType) && !"text/csv".equalsIgnoreCase(contentType)) {
@@ -425,13 +451,9 @@ public class RunnerController {
 		}
 
 		init(protoString);
-		Method newBuilder = dataframerow.getMethod("newBuilder");
-		Object dfr = newBuilder.invoke(null); // dfr is of
-												// DataFrameRow.Builder type
-		Method dfNewBuilder = dataframe.getMethod("newBuilder");
-		df = dfNewBuilder.invoke(null); // df is of DataFrame.Builder
-										// type
-		Method dfAddRows = dataframeBuilder.getMethod("addRows", dfr.getClass());
+
+		ServiceObject so = serviceList.get(operation);
+		inputClassName = so.getInputClass();
 
 		long size = file.getSize();
 
@@ -446,70 +468,496 @@ public class RunnerController {
 		String dataString = new String(dataChar);
 		String[] lines = dataString.split(NEWLINE);
 
-		for (String line : lines) {
+		inputBuilder = getInputBuilder(inputClassName, lines);
+
+		return inputBuilder;
+	}
+
+	private Object getInputBuilder(String thisClassName, String[] lines) {
+		try {
+			Object thisBuilder = null;
+			Class<?> thisClass = classList.get(thisClassName).getCls();
+			Method thisBuilderMethod = thisClass.getMethod("newBuilder");
+			thisBuilder = thisBuilderMethod.invoke(null); // thisBuilder is of {thisClass}.Builder
+
+			MessageObject thisMsg = classList.get(thisClassName);
+			ArrayList<AttributeEntity> inputAttributes = thisMsg.getAttributes();
+			Method inputAddOrSetRow = null;
+
+			String headerLine = lines[0];
+			String[] headerFields = headerLine.split(",");
+			logger.info("getInputBuilder(): Header Line is: [" + headerLine + "]");
+
+			String[] array;
+
+			int idx;
+
+			for (AttributeEntity ae : inputAttributes) {
+				for (int i = 1; i < lines.length; i++) { // ignore the first line which is header
+					String line = lines[i];
+					logger.info("getInputBuilder(): current line is: [" + line + "]");
+
+					array = line.split(",");
+
+					if (ae.isRepeated()) {
+						String iAttrMethodName = StringUtils.camelCase("add_" + ae.getName(), '_');
+						switch (ae.getType()) {
+						case DOUBLE:
+							inputAddOrSetRow = thisBuilder.getClass().getMethod(iAttrMethodName, double.class);
+							for (idx = 0; idx < headerFields.length; idx++) {
+								if (array[idx].length() == 0) // skip missing field
+									continue;
+								if (headerFields[idx].equals(ae.getName()))
+									inputAddOrSetRow.invoke(thisBuilder, Double.parseDouble(array[idx]));
+							}
+							break;
+						case FLOAT:
+							inputAddOrSetRow = thisBuilder.getClass().getMethod(iAttrMethodName, float.class);
+							for (idx = 0; idx < headerFields.length; idx++) {
+								if (array[idx].length() == 0) // skip missing field
+									continue;
+								if (headerFields[idx].equals(ae.getName()))
+									inputAddOrSetRow.invoke(thisBuilder, Float.parseFloat(array[idx]));
+							}
+							break;
+						case INT32:
+						case UINT32:
+						case SINT32:
+						case FIXED32:
+						case SFIXED32:
+							inputAddOrSetRow = thisBuilder.getClass().getMethod(iAttrMethodName, int.class);
+							for (idx = 0; idx < headerFields.length; idx++) {
+								if (array[idx].length() == 0) // skip missing field
+									continue;
+								if (headerFields[idx].equals(ae.getName()))
+									inputAddOrSetRow.invoke(thisBuilder, Integer.parseInt(array[idx]));
+							}
+							break;
+						case INT64:
+						case UINT64:
+						case SINT64:
+						case FIXED64:
+						case SFIXED64:
+							inputAddOrSetRow = thisBuilder.getClass().getMethod(iAttrMethodName, long.class);
+							for (idx = 0; idx < headerFields.length; idx++) {
+								if (array[idx].length() == 0) // skip missing field
+									continue;
+								if (headerFields[idx].equals(ae.getName()))
+									inputAddOrSetRow.invoke(thisBuilder, Long.parseLong(array[idx]));
+							}
+							break;
+						case BOOL:
+							inputAddOrSetRow = thisBuilder.getClass().getMethod(iAttrMethodName, boolean.class);
+							for (idx = 0; idx < headerFields.length; idx++) {
+								if (array[idx].length() == 0) // skip missing field
+									continue;
+								if (headerFields[idx].equals(ae.getName()))
+									inputAddOrSetRow.invoke(thisBuilder, Boolean.parseBoolean(array[idx]));
+							}
+							break;
+						case STRING:
+							inputAddOrSetRow = thisBuilder.getClass().getMethod(iAttrMethodName, String.class);
+							for (idx = 0; idx < headerFields.length; idx++) {
+								if (array[idx].length() == 0) // skip missing field
+									continue;
+
+								if (headerFields[idx].equals(ae.getName()))
+									inputAddOrSetRow.invoke(thisBuilder, array[idx]);
+							}
+							break;
+						case BYTES:
+							inputAddOrSetRow = thisBuilder.getClass().getMethod(iAttrMethodName, ByteString.class);
+							for (idx = 0; idx < headerFields.length; idx++) {
+								if (array[idx].length() == 0) // skip missing field
+									continue;
+
+								if (headerFields[idx].equals(ae.getName())) {
+									ByteString byteStr = ByteString.copyFrom(array[idx].getBytes());
+									inputAddOrSetRow.invoke(thisBuilder, byteStr);
+								}
+							}
+							break;
+						default:
+							inputAddOrSetRow = thisBuilder.getClass().getMethod(iAttrMethodName,
+									classList.get(ae.getType()).getCls());
+
+							Object innerBuilder = getInnerBuilder(ae.getType(), line, headerLine);
+							Method innerBuildMethod;
+							if (innerBuilder != null) {
+								innerBuildMethod = innerBuilder.getClass().getMethod("build");
+								Object innerObj = innerBuildMethod.invoke(innerBuilder);
+								inputAddOrSetRow.invoke(thisBuilder, innerObj);
+							}
+							break;
+						}
+
+					} else {
+						String iAttrMethodName = StringUtils.camelCase("set_" + ae.getName(), '_');
+
+						switch (ae.getType()) {
+						case DOUBLE:
+							inputAddOrSetRow = thisBuilder.getClass().getMethod(iAttrMethodName, double.class);
+							for (idx = 0; idx < headerFields.length; idx++) {
+								if (array[idx].length() == 0) // skip missing field
+									continue;
+
+								if (headerFields[idx].equals(ae.getName())) {
+									inputAddOrSetRow.invoke(thisBuilder, Double.parseDouble(array[idx]));
+									break;
+								}
+							}
+
+							break;
+						case FLOAT:
+							inputAddOrSetRow = thisBuilder.getClass().getMethod(iAttrMethodName, float.class);
+
+							for (idx = 0; idx < headerFields.length; idx++) {
+								if (array[idx].length() == 0) // skip missing field
+									continue;
+
+								if (headerFields[idx].equals(ae.getName())) {
+									inputAddOrSetRow.invoke(thisBuilder, Float.parseFloat(array[idx]));
+									break;
+								}
+							}
+							break;
+						case INT32:
+						case UINT32:
+						case SINT32:
+						case FIXED32:
+						case SFIXED32:
+							inputAddOrSetRow = thisBuilder.getClass().getMethod(iAttrMethodName, int.class);
+
+							for (idx = 0; idx < headerFields.length; idx++) {
+								if (array[idx].length() == 0) // skip missing field
+									continue;
+
+								if (headerFields[idx].equals(ae.getName())) {
+									inputAddOrSetRow.invoke(thisBuilder, Integer.parseInt(array[idx]));
+									break;
+								}
+							}
+							break;
+						case INT64:
+						case UINT64:
+						case SINT64:
+						case FIXED64:
+						case SFIXED64:
+							inputAddOrSetRow = thisBuilder.getClass().getMethod(iAttrMethodName, long.class);
+
+							for (idx = 0; idx < headerFields.length; idx++) {
+								if (array[idx].length() == 0) // skip missing field
+									continue;
+
+								if (headerFields[idx].equals(ae.getName())) {
+									inputAddOrSetRow.invoke(thisBuilder, Long.parseLong(array[idx]));
+									break;
+								}
+							}
+							break;
+						case BOOL:
+							inputAddOrSetRow = thisBuilder.getClass().getMethod(iAttrMethodName, boolean.class);
+							for (idx = 0; idx < headerFields.length; idx++) {
+								if (array[idx].length() == 0) // skip missing field
+									continue;
+
+								if (headerFields[idx].equals(ae.getName())) {
+									inputAddOrSetRow.invoke(thisBuilder, Boolean.parseBoolean(array[idx]));
+									break;
+								}
+							}
+							break;
+						case STRING:
+							inputAddOrSetRow = thisBuilder.getClass().getMethod(iAttrMethodName, String.class);
+							for (idx = 0; idx < headerFields.length; idx++) {
+								if (array[idx].length() == 0) // skip missing field
+									continue;
+
+								if (headerFields[idx].equals(ae.getName())) {
+									inputAddOrSetRow.invoke(thisBuilder, array[idx]);
+									break;
+								}
+							}
+							break;
+						case BYTES:
+							inputAddOrSetRow = thisBuilder.getClass().getMethod(iAttrMethodName, ByteString.class);
+							for (idx = 0; idx < headerFields.length; idx++) {
+								if (array[idx].length() == 0) // skip missing field
+									continue;
+
+								if (headerFields[idx].equals(ae.getName())) {
+									ByteString byteStr = ByteString.copyFrom(array[idx].getBytes());
+
+									inputAddOrSetRow.invoke(thisBuilder, byteStr);
+									break;
+								}
+							}
+							break;
+						default:
+							Class<?> innerCls = classList.get(ae.getType()).getCls();
+							Object innerBuilder = getInnerBuilder(ae.getType(), line, headerLine);
+
+							inputAddOrSetRow = thisBuilder.getClass().getMethod(iAttrMethodName, innerCls);
+							Method innerBuildMethod;
+							if (innerBuilder != null) {
+								innerBuildMethod = innerBuilder.getClass().getMethod("build");
+								Object innerObj = innerBuildMethod.invoke(innerBuilder);
+								inputAddOrSetRow.invoke(thisBuilder, innerObj);
+							}
+							break;
+
+						}
+					}
+				}
+			}
+			return thisBuilder;
+		} catch (Exception ex) {
+			logger.error("Failed in getInputBuilder(): ", ex);
+			return null;
+		}
+	}
+
+	/**
+	 * 
+	 * @param thisClassName
+	 * @param line
+	 * @param headerLine
+	 * @return return a
+	 */
+	private Object getInnerBuilder(String thisClassName, String line, String headerLine) {
+		try {
+			logger.info("getInnerBuilder(): current line is [" + line + "] header is [" + headerLine + "]");
+			Object thisBuilder = null;
+			Class<?> thisClass = classList.get(thisClassName).getCls();
+			Method thisBuilderMethod = thisClass.getMethod("newBuilder");
+			thisBuilder = thisBuilderMethod.invoke(null); // thisBuilder is of {thisClass}.Builder
+
+			MessageObject thisMsg = classList.get(thisClassName);
+			ArrayList<AttributeEntity> inputAttributes = thisMsg.getAttributes();
+			Method inputAddOrSetRow = null;
+
+			String[] headerFields = headerLine.split(",");
 			String[] array = line.split(",");
 
-			logger.info("Current line is: " + line);
+			int idx;
 
-			for (int i = 0; i < array.length; i++) {
-				if (array[i].length() == 0) // skip missing field
-					continue;
+			for (AttributeEntity ae : inputAttributes) {
+				if (ae.isRepeated()) {
+					String iAttrMethodName = StringUtils.camelCase("add_" + ae.getName(), '_');
+					switch (ae.getType()) {
+					case DOUBLE:
+						inputAddOrSetRow = thisBuilder.getClass().getMethod(iAttrMethodName, double.class);
+						for (idx = 0; idx < headerFields.length; idx++) {
+							if (array[idx].length() == 0) // skip missing field
+								continue;
+							if (headerFields[idx].equals(ae.getName()))
+								inputAddOrSetRow.invoke(thisBuilder, Double.parseDouble(array[idx]));
+						}
+						break;
+					case FLOAT:
+						inputAddOrSetRow = thisBuilder.getClass().getMethod(iAttrMethodName, float.class);
+						for (idx = 0; idx < headerFields.length; idx++) {
+							if (array[idx].length() == 0) // skip missing field
+								continue;
+							if (headerFields[idx].equals(ae.getName()))
+								inputAddOrSetRow.invoke(thisBuilder, Float.parseFloat(array[idx]));
+						}
+						break;
+					case INT32:
+					case UINT32:
+					case SINT32:
+					case FIXED32:
+					case SFIXED32:
+						inputAddOrSetRow = thisBuilder.getClass().getMethod(iAttrMethodName, int.class);
+						for (idx = 0; idx < headerFields.length; idx++) {
+							if (array[idx].length() == 0) // skip missing field
+								continue;
+							if (headerFields[idx].equals(ae.getName()))
+								inputAddOrSetRow.invoke(thisBuilder, Integer.parseInt(array[idx]));
+						}
+						break;
+					case INT64:
+					case UINT64:
+					case SINT64:
+					case FIXED64:
+					case SFIXED64:
+						inputAddOrSetRow = thisBuilder.getClass().getMethod(iAttrMethodName, long.class);
+						for (idx = 0; idx < headerFields.length; idx++) {
+							if (array[idx].length() == 0) // skip missing field
+								continue;
+							if (headerFields[idx].equals(ae.getName()))
+								inputAddOrSetRow.invoke(thisBuilder, Long.parseLong(array[idx]));
+						}
+						break;
+					case BOOL:
+						inputAddOrSetRow = thisBuilder.getClass().getMethod(iAttrMethodName, boolean.class);
+						for (idx = 0; idx < headerFields.length; idx++) {
+							if (array[idx].length() == 0) // skip missing field
+								continue;
+							if (headerFields[idx].equals(ae.getName()))
+								inputAddOrSetRow.invoke(thisBuilder, Boolean.parseBoolean(array[idx]));
+						}
+						break;
+					case STRING:
+						inputAddOrSetRow = thisBuilder.getClass().getMethod(iAttrMethodName, String.class);
+						for (idx = 0; idx < headerFields.length; idx++) {
+							if (array[idx].length() == 0) // skip missing field
+								continue;
 
-				String attr = attributes.get(i);
-				String attrMethodName = StringUtils.camelCase("set_" + attr, '_');
-				Method attrMethod = null;
-				switch (attributeTypes.get(i)) {
-				case DOUBLE:
-					attrMethod = dfr.getClass().getMethod(attrMethodName, double.class);
-					attrMethod.invoke(dfr, Double.parseDouble(array[i]));
-					break;
+							if (headerFields[idx].equals(ae.getName()))
+								inputAddOrSetRow.invoke(thisBuilder, array[idx]);
+						}
+						break;
+					case BYTES:
+						inputAddOrSetRow = thisBuilder.getClass().getMethod(iAttrMethodName, ByteString.class);
+						for (idx = 0; idx < headerFields.length; idx++) {
+							if (array[idx].length() == 0) // skip missing field
+								continue;
 
-				case FLOAT:
-					attrMethod = dfr.getClass().getMethod(attrMethodName, float.class);
-					attrMethod.invoke(dfr, Float.parseFloat(array[i]));
-					break;
+							if (headerFields[idx].equals(ae.getName())) {
+								ByteString byteStr = ByteString.copyFrom(array[idx].getBytes());
+								inputAddOrSetRow.invoke(thisBuilder, byteStr);
+							}
+						}
+						break;
+					default:
+						inputAddOrSetRow = thisBuilder.getClass().getMethod(iAttrMethodName,
+								classList.get(ae.getType()).getCls());
 
-				case INT32:
-				case UINT32:
-				case SINT32:
-				case FIXED32:
-				case SFIXED32:
-					attrMethod = dfr.getClass().getMethod(attrMethodName, int.class);
-					attrMethod.invoke(dfr, Integer.parseInt(array[i]));
-					break;
+						Object innerBuilder = getInnerBuilder(ae.getType(), line, headerLine);
+						Method innerBuildMethod;
+						if (innerBuilder != null) {
+							innerBuildMethod = innerBuilder.getClass().getMethod("build");
+							Object innerObj = innerBuildMethod.invoke(innerBuilder);
+							inputAddOrSetRow.invoke(thisBuilder, innerObj);
+						}
+						break;
+					}
 
-				case INT64:
-				case UINT64:
-				case SINT64:
-				case FIXED64:
-				case SFIXED64:
-					attrMethod = dfr.getClass().getMethod(attrMethodName, long.class);
-					attrMethod.invoke(dfr, Long.parseLong(array[i]));
-					break;
+				} else {
+					String iAttrMethodName = StringUtils.camelCase("set_" + ae.getName(), '_');
 
-				case BOOL:
-					attrMethod = dfr.getClass().getMethod(attrMethodName, boolean.class);
-					attrMethod.invoke(dfr, Boolean.parseBoolean(array[i]));
-					break;
+					switch (ae.getType()) {
+					case DOUBLE:
+						inputAddOrSetRow = thisBuilder.getClass().getMethod(iAttrMethodName, double.class);
+						for (idx = 0; idx < headerFields.length; idx++) {
+							if (array[idx].length() == 0) // skip missing field
+								continue;
 
-				case STRING:
-					attrMethod = dfr.getClass().getMethod(attrMethodName, String.class);
-					attrMethod.invoke(dfr, array[i]);
-					break;
+							if (headerFields[idx].equals(ae.getName())) {
+								inputAddOrSetRow.invoke(thisBuilder, Double.parseDouble(array[idx]));
+								break;
+							}
+						}
 
-				case BYTES:
-					attrMethod = dfr.getClass().getMethod(attrMethodName, byte.class);
-					attrMethod.invoke(dfr, Byte.parseByte(array[i]));
-					break;
-				default:
-					break;
+						break;
+					case FLOAT:
+						inputAddOrSetRow = thisBuilder.getClass().getMethod(iAttrMethodName, float.class);
+
+						for (idx = 0; idx < headerFields.length; idx++) {
+							if (array[idx].length() == 0) // skip missing field
+								continue;
+
+							if (headerFields[idx].equals(ae.getName())) {
+								inputAddOrSetRow.invoke(thisBuilder, Float.parseFloat(array[idx]));
+								break;
+							}
+						}
+						break;
+					case INT32:
+					case UINT32:
+					case SINT32:
+					case FIXED32:
+					case SFIXED32:
+						inputAddOrSetRow = thisBuilder.getClass().getMethod(iAttrMethodName, int.class);
+
+						for (idx = 0; idx < headerFields.length; idx++) {
+							if (array[idx].length() == 0) // skip missing field
+								continue;
+
+							if (headerFields[idx].equals(ae.getName())) {
+								inputAddOrSetRow.invoke(thisBuilder, Integer.parseInt(array[idx]));
+								break;
+							}
+						}
+						break;
+					case INT64:
+					case UINT64:
+					case SINT64:
+					case FIXED64:
+					case SFIXED64:
+						inputAddOrSetRow = thisBuilder.getClass().getMethod(iAttrMethodName, long.class);
+
+						for (idx = 0; idx < headerFields.length; idx++) {
+							if (array[idx].length() == 0) // skip missing field
+								continue;
+
+							if (headerFields[idx].equals(ae.getName())) {
+								inputAddOrSetRow.invoke(thisBuilder, Long.parseLong(array[idx]));
+								break;
+							}
+						}
+						break;
+					case BOOL:
+						inputAddOrSetRow = thisBuilder.getClass().getMethod(iAttrMethodName, boolean.class);
+						for (idx = 0; idx < headerFields.length; idx++) {
+							if (array[idx].length() == 0) // skip missing field
+								continue;
+
+							if (headerFields[idx].equals(ae.getName())) {
+								inputAddOrSetRow.invoke(thisBuilder, Boolean.parseBoolean(array[idx]));
+								break;
+							}
+						}
+						break;
+					case STRING:
+						inputAddOrSetRow = thisBuilder.getClass().getMethod(iAttrMethodName, String.class);
+						for (idx = 0; idx < headerFields.length; idx++) {
+							if (array[idx].length() == 0) // skip missing field
+								continue;
+
+							if (headerFields[idx].equals(ae.getName())) {
+								inputAddOrSetRow.invoke(thisBuilder, array[idx]);
+								break;
+							}
+						}
+						break;
+					case BYTES:
+						inputAddOrSetRow = thisBuilder.getClass().getMethod(iAttrMethodName, ByteString.class);
+						for (idx = 0; idx < headerFields.length; idx++) {
+							if (array[idx].length() == 0) // skip missing field
+								continue;
+
+							if (headerFields[idx].equals(ae.getName())) {
+								ByteString byteStr = ByteString.copyFrom(array[idx].getBytes());
+
+								inputAddOrSetRow.invoke(thisBuilder, byteStr);
+								break;
+							}
+						}
+						break;
+					default:
+						Class<?> innerCls = classList.get(ae.getType()).getCls();
+						Object innerBuilder = getInnerBuilder(ae.getType(), line, headerLine);
+
+						inputAddOrSetRow = thisBuilder.getClass().getMethod(iAttrMethodName, innerCls);
+						Method innerBuildMethod;
+						if (innerBuilder != null) {
+							innerBuildMethod = innerBuilder.getClass().getMethod("build");
+							Object innerObj = innerBuildMethod.invoke(innerBuilder);
+							inputAddOrSetRow.invoke(thisBuilder, innerObj);
+						}
+						break;
+
+					}
 				}
 
 			}
-			dfAddRows.invoke(df, dfr);
+			return thisBuilder;
+		} catch (Exception ex) {
+			logger.error("Failed in getInnerBuilder(): ", ex);
+			return null;
 		}
-
-		return df;
 	}
 
 	/*
@@ -592,7 +1040,7 @@ public class RunnerController {
 							break;
 
 						case BYTES:
-							byte attrValByte = ((Byte) obj).byteValue();
+							byte[] attrValByte = ((ByteString) obj).toByteArray();
 							if (rowStr.length() != 0)
 								rowStr.append(",");
 							rowStr.append(attrValByte);
@@ -660,7 +1108,7 @@ public class RunnerController {
 						rowStr.append(gcValStr);
 						break;
 					case BYTES:
-						byte gcValByte = ((Byte) obj).byteValue();
+						byte[] gcValByte = ((ByteString) obj).toByteArray();
 						if (rowStr.length() != 0)
 							rowStr.append(",");
 						rowStr.append(gcValByte);
@@ -1098,9 +1546,10 @@ public class RunnerController {
 							addPrediction.invoke(object, msgList);
 					} else { // TODO
 						predictMethodName = StringUtils.camelCase("set_" + ae.getName(), '_');
-						addPrediction = object.getClass().getMethod(predictMethodName, classList.get(ae.getType()).getCls());
+						addPrediction = object.getClass().getMethod(predictMethodName,
+								classList.get(ae.getType()).getCls());
 						Object innerObj = getPredictionRow(ae.getType(), predictList);
-						if(innerObj != null) {
+						if (innerObj != null) {
 							addPrediction.invoke(object, innerObj);
 							predictionAdded = true;
 						}
@@ -1124,196 +1573,12 @@ public class RunnerController {
 	}
 
 	/**
-	 * This procedure uses Java ML model to do prediction
+	 * Decide input format of the model
 	 * 
-	 * @param df
-	 * @param modelLoc
-	 * @return prediction binary stream in protobuf format
+	 * @param modelClass
+	 * @param modelMethodName
+	 * @return
 	 */
-	private byte[] doPredictJavaGeneric(Object df, String modelLoc) {
-		try {
-
-			Method getRowsCount = dataframe.getMethod("getRowsCount");
-			int row_count = (int) getRowsCount.invoke(df);
-			logger.info("We have: " + row_count + " rows.");
-
-			Method getRowsList = dataframe.getMethod("getRowsList");
-			List<?> list = (List<?>) getRowsList.invoke(df);
-			int j = 0;
-			StringBuffer rowString = new StringBuffer();
-			for (Object obj : list) {
-				j = 0;
-				for (String attr : attributes) {
-					String attrMethodName = StringUtils.camelCase("get_" + attr, '_');
-					Method attrMethod = dataframerow.getMethod(attrMethodName);
-					Object attrValObj = attrMethod.invoke(obj);
-
-					if (j != 0) {
-						rowString.append(",");
-					}
-					switch (attributeTypes.get(j)) {
-					case DOUBLE:
-						double attrValDouble = ((Double) attrValObj).doubleValue();
-						rowString.append(attrValDouble);
-						break;
-
-					case FLOAT:
-						float attrValFloat = ((Float) attrValObj).floatValue();
-						rowString.append(attrValFloat);
-						break;
-
-					case INT32:
-					case UINT32:
-					case SINT32:
-					case FIXED32:
-					case SFIXED32:
-						int attrValInt = ((Integer) attrValObj).intValue();
-						rowString.append(attrValInt);
-						break;
-
-					case INT64:
-					case UINT64:
-					case SINT64:
-					case FIXED64:
-					case SFIXED64:
-						long attrValLong = ((Long) attrValObj).longValue();
-						rowString.append(attrValLong);
-						break;
-
-					case BOOL:
-						boolean attrValBool = ((Boolean) attrValObj).booleanValue();
-						rowString.append(attrValBool);
-						break;
-
-					case STRING:
-						String attrValStr = (String) attrValObj;
-						rowString.append(attrValStr);
-						break;
-					case BYTES:
-						byte attrValByte = ((Byte) attrValObj).byteValue();
-						rowString.append(attrValByte);
-						break;
-					default:
-						break;
-					}
-					j++;
-
-				}
-				rowString.append("\n");
-			}
-			logger.info(rowString.toString());
-			String tempPath = TMPPATH + SEP + "tmpFiles";
-			File dir = new File(tempPath);
-			if (!dir.exists())
-				dir.mkdirs();
-			String genfile = tempPath + SEP + UUID.randomUUID() + "_genfile.csv";
-			FileWriter ff = new FileWriter(genfile);
-			ff.write(rowString.toString());
-			ff.close();
-
-			String propFile = new String(PROJECTROOT + modelConfig);
-			// Load property
-			Properties prop = new Properties();
-			InputStream input = new FileInputStream(propFile);
-			prop.load(input);
-
-			String modelMethodName = prop.getProperty("modelMethod");
-			String modelClassName = prop.getProperty("modelClassName");
-
-			logger.info("model class name and method=" + modelClassName + "  " + modelMethodName);
-
-			// model invoke and preparation
-
-			File modelSource = new File(PROJECTROOT + defaultModel);
-
-			File modelJarPath = new File(pluginClassPath + SEP + UUID.randomUUID() + modelSource.getName());
-			Files.copy(modelSource, modelJarPath);
-
-			cl = RunnerController.class.getClassLoader();
-			addFile(modelJarPath);
-			logger.info("Jar file path=" + modelJarPath);
-			List<?> predictlist = null;
-
-			Class<?> modelClass = cl.loadClass(modelClassName);
-
-			logger.info("getDeclaredMethods: " + Arrays.toString(modelClass.getDeclaredMethods()));
-			logger.info("getMethods: " + Arrays.toString(modelClass.getMethods()));
-
-			String paramType = getMethodParamType(modelClass, modelMethodName);
-
-			Method methodPredict = null;
-
-			logger.info(modelMethodName + " method parameter type=" + paramType);
-
-			switch (paramType) {
-
-			case "java.io.File":
-
-				File file = new File(genfile);
-				methodPredict = modelClass.getDeclaredMethod(modelMethodName, File.class);
-				predictlist = (List<?>) methodPredict.invoke(null, file);
-				break;
-
-			case "java.lang.String":
-				methodPredict = modelClass.getDeclaredMethod(modelMethodName, String.class);
-				predictlist = (List<?>) methodPredict.invoke(null, rowString.toString());
-				break;
-
-			default:
-				break;
-			}
-
-			if (predictlist == null) {
-				logger.debug("predictlist is null");
-				return null;
-			}
-
-			Object[] predictor = new Object[row_count + 2];
-			for (int i = 0; i <= row_count + 1; i++)
-				predictor[i] = null;
-
-			Method newBuilder = prediction.getMethod("newBuilder");
-			Object object = newBuilder.invoke(null);
-			Method addPrediction;
-			// Method addPrediction = object.getClass().getMethod("addPrediction",
-			// String.class);
-
-			switch (predictlist.get(0).getClass().getSimpleName()) {
-			case "Integer":
-			case "Float":
-			case "Double":
-			case "Boolean":
-			case "Long":
-			case "Byte":
-				addPrediction = object.getClass().getMethod("addAllPrediction", java.lang.Iterable.class);
-				addPrediction.invoke(object, predictlist);
-				break;
-
-			default:
-				addPrediction = object.getClass().getMethod("addPrediction", predictlist.get(0).getClass());
-				for (int i = 1; i <= row_count; i++) {
-					addPrediction.invoke(object, predictlist.get(i - 1));
-					// addPrediction.invoke(object, String.valueOf(predictlist.get(i - 1)));
-				}
-				break;
-			}
-
-			Method build = object.getClass().getMethod("build");
-
-			Object pobj = build.invoke(object);
-
-			Method toByteArray = pobj.getClass().getMethod("toByteArray");
-
-			logger.info("In predict method: Done Prediction, returning binary serialization of prediction. ");
-			return (byte[]) (toByteArray.invoke(pobj));
-
-		} catch (Exception ex) {
-			logger.error("Failed in doPredictGenericJava: ", ex);
-			return null;
-		}
-
-	}
-
 	private String getMethodParamType(Class<?> modelClass, String modelMethodName) {
 		String fmt = "%24s: %s%n";
 		String paramType = null;
@@ -1346,218 +1611,14 @@ public class RunnerController {
 	}
 
 	/**
-	 * This procedure uses H2O model to do prediction
+	 * Populates rows for input of H2O model
 	 * 
 	 * @param df
-	 * @param modelLoc
-	 * @return prediction results in protobuf format
+	 *            builder class that contains the serialized data
+	 * @param outerClassName
+	 * @param rows
+	 *            rows to be populated
 	 */
-	private byte[] doPredict(Object df, String modelLoc) {
-		try {
-			/* start prediction */
-			MojoModel mojo = null;
-			EasyPredictModelWrapper model = null;
-			try {
-				if (modelLoc != null)
-					mojo = MojoModel.load(modelLoc);
-				else
-					mojo = MojoModel.load(modelZip);
-				model = new EasyPredictModelWrapper(mojo);
-			} // try ends
-
-			catch (IOException ie) {
-				logger.error("Failed in loading H2O Model: ", ie);
-				return null;
-
-			} // catch ends
-
-			Method getRowsCount = dataframe.getMethod("getRowsCount");
-			int row_count = (int) getRowsCount.invoke(df);
-			logger.info("We have: " + row_count + " rows.");
-
-			ArrayList<String> lst = new ArrayList<String>();
-			Method getRowsList = dataframe.getMethod("getRowsList");
-			List<?> list = (List<?>) getRowsList.invoke(df);
-			RowData row = new RowData();
-			for (Object obj : list) {
-				int j = 0;
-				for (String attr : attributes) {
-					String attrMethodName = StringUtils.camelCase("get_" + attr, '_');
-					Method attrMethod = dataframerow.getMethod(attrMethodName);
-					Object attrValObj = attrMethod.invoke(obj);
-
-					switch (attributeTypes.get(j)) {
-					case DOUBLE:
-						double attrValDouble = ((Double) attrValObj).doubleValue();
-						row.put(attr, attrValDouble);
-						break;
-
-					case FLOAT:
-						float attrValFloat = ((Float) attrValObj).floatValue();
-						row.put(attr, attrValFloat);
-						break;
-
-					case INT32:
-					case UINT32:
-					case SINT32:
-					case FIXED32:
-					case SFIXED32:
-						int attrValInt = ((Integer) attrValObj).intValue();
-						row.put(attr, attrValInt);
-						break;
-
-					case INT64:
-					case UINT64:
-					case SINT64:
-					case FIXED64:
-					case SFIXED64:
-						long attrValLong = ((Long) attrValObj).longValue();
-						row.put(attr, attrValLong);
-						break;
-
-					case BOOL:
-						boolean attrValBool = ((Boolean) attrValObj).booleanValue();
-						row.put(attr, attrValBool);
-						break;
-
-					case STRING:
-						String attrValStr = (String) attrValObj;
-						row.put(attr, attrValStr);
-						break;
-					case BYTES:
-						byte attrValByte = ((Byte) attrValObj).byteValue();
-						row.put(attr, attrValByte);
-						break;
-					default:
-						break;
-					}
-					j++;
-
-				}
-
-				/*
-				 * We handle the following model categories: Binomial Multinomial Regression
-				 * Clustering AutoEncoder DimReduction WordEmbedding Unknown
-				 */
-
-				String current_model_category = mojo.getModelCategory().toString();
-				logger.info("model category again: " + current_model_category);
-
-				String pr = null;
-				Object p = null;
-
-				try {
-
-					// Assume all predictions will be string for the time being.
-					// When protobuf is autogenerated, we can infer this from
-					// the model
-					// category and handle it here.
-					// But right now, if we return different datatypes/ i.e what
-					// h2o
-					// predictions return, the user who is handcrafting the
-					// protobuf
-					// will have to know the exact datatype.
-					// Hence the decision to use string for the prediction.
-
-					switch (current_model_category) {
-
-					case "Binomial":
-						p = model.predictBinomial(row);
-						String bnmpred = ((BinomialModelPrediction) p).label;
-						pr = bnmpred;
-						break;
-
-					case "Multinomial":
-						p = model.predictMultinomial(row);
-						String mnmpred = ((MultinomialModelPrediction) p).label;
-						pr = mnmpred;
-						break;
-
-					case "Regression":
-						p = model.predictRegression(row);
-						double regpred = ((RegressionModelPrediction) p).value;
-						pr = Double.toString(regpred);
-						break;
-
-					case "Clustering":
-						p = model.predictClustering(row);
-						int clspred = ((ClusteringModelPrediction) p).cluster;
-						pr = Integer.toString(clspred);
-						break;
-
-					case "AutoEncoder":
-						p = model.predictAutoEncoder(row);
-						double[] autopred = ((AutoEncoderModelPrediction) p).reconstructed;
-						pr = Arrays.toString(autopred);
-						break;
-
-					case "DimReduction":
-						p = model.predictDimReduction(row);
-						double[] dimredpred = ((DimReductionModelPrediction) p).dimensions;
-						pr = Arrays.toString(dimredpred);
-						break;
-
-					// TODO: See if this works
-					case "WordEmbedding":
-						p = model.predictWord2Vec(row);
-						HashMap<String, float[]> word2vecpred = ((Word2VecPrediction) p).wordEmbeddings;
-						pr = word2vecpred.toString();
-						break;
-
-					case "Unknown":
-						logger.error(
-								"Unknown model category. Results not available. Refer to http://docs.h2o.ai/h2o/latest-stable/h2o-genmodel/javadoc/hex ModelCategory.html");
-						pr = "Unknown h2o model category. Results not available. Refer to http://docs.h2o.ai/h2o/latest-stable/h2o-genmodel/javadoc/hex/ModelCategory.html";
-						break;
-
-					default:
-						logger.error(
-								"Model category not recognized. Results not guaranteed.Refer to http://docs.h2o.ai/h2o/latest-stable/h2o-genmodel/javadoc/hex/ModelCategory.html");
-						pr = "Your model did not match any supported category. Results not available.Refer to http://docs.h2o.ai/h2o/latest-stable/h2o-genmodel/javadoc/hex/ModelCategory.html";
-
-					}
-
-				} // try ends
-
-				catch (PredictException pe) {
-					logger.error("Failed getting prediction results from H2O model:", pe);
-					pe.getMessage();
-				} // catch ends
-
-				logger.info("The prediction is  " + pr);
-
-				lst.add(pr);
-			}
-
-			// Create a Prediction and set its value depending on the output of
-			// the H2o predict method
-
-			Object[] predictor = new Object[row_count + 2];
-			for (int i = 0; i <= row_count + 1; i++)
-				predictor[i] = null;
-
-			Method newBuilder = prediction.getMethod("newBuilder");
-			Object obj = newBuilder.invoke(null);
-			Method addPrediction = obj.getClass().getMethod("addPrediction", String.class);
-
-			for (int i = 1; i <= row_count; i++)
-				addPrediction.invoke(obj, lst.get(i - 1));
-			Method build = obj.getClass().getMethod("build");
-
-			Object pobj = build.invoke(obj);
-
-			Method toByteArray = pobj.getClass().getMethod("toByteArray");
-
-			logger.info("In predict method: Done Prediction, returning binary serialization of prediction. ");
-			return (byte[]) (toByteArray.invoke(pobj));
-
-		} catch (Exception ex) {
-			logger.error("Failed in doPredict() ", ex);
-			return null;
-
-		}
-	}
-
 	private void getH2ORowData(Object df, String outerClassName, List<RowData> rows) {
 		try {
 			logger.info("getH2ORowData() : " + outputClassName);
@@ -1668,7 +1729,7 @@ public class RunnerController {
 									break;
 
 								case BYTES:
-									byte iValByte = ((Byte) iobj).byteValue();
+									byte[] iValByte = ((ByteString) iobj).toByteArray();
 									row.put(iae.getName(), iValByte);
 									break;
 
@@ -1721,7 +1782,7 @@ public class RunnerController {
 						row.put(oae.getName(), attrValStr);
 						break;
 					case BYTES:
-						byte attrValByte = ((Byte) obj).byteValue();
+						byte[] attrValByte = ((ByteString) obj).toByteArray();
 						row.put(oae.getName(), attrValByte);
 						break;
 					default:
@@ -1935,6 +1996,7 @@ public class RunnerController {
 	@RequestMapping(value = "/operation/{operation}", method = RequestMethod.POST)
 	public byte[] operation(@RequestBody byte[] dataset, @PathVariable("operation") String operation) {
 		logger.info("/operation/" + operation + " GETTING POST REQUEST:");
+		logger.info(Arrays.toString(dataset));
 
 		try {
 			if (modelType.equalsIgnoreCase("G"))
@@ -1950,7 +2012,6 @@ public class RunnerController {
 			ServiceObject so = serviceList.get(operation);
 			inputClassName = so.getInputClass();
 			outputClassName = so.getOutputClass();
-			serviceName = operation;
 
 			// dframe = DataFrame.parseFrom(datain);
 			Class<?> inputClass = classList.get(inputClassName).getCls();
@@ -1965,78 +2026,6 @@ public class RunnerController {
 
 		} catch (Exception ex) {
 			logger.error("Failed getting prediction results: ", ex);
-		}
-
-		return null;
-	}
-
-	/**
-	 * 
-	 * @param dataset
-	 *            Data set
-	 * @return prediction results in protobuf format
-	 */
-	@ApiOperation(value = "Gets a prediction binary stream in protobuf format based on the binary stream input also in protobuf format.", consumes = "application/x-protobuf", response = Object.class)
-	@RequestMapping(value = "/predict", method = RequestMethod.POST)
-	public byte[] predict(@RequestBody byte[] dataset) {
-		logger.info("/predict GETTING POST REQUEST:");
-		logger.info(Arrays.toString(dataset));
-
-		try {
-			init(null);
-
-			// dframe = DataFrame.parseFrom(datain);
-			Method method = dataframe.getMethod("parseFrom", new Class[] { byte[].class });
-
-			Object df = method.invoke(null, dataset);
-
-			if (!modelType.equalsIgnoreCase("G"))
-				return doPredict(df, null);
-			else
-				return doPredictJavaGeneric(df, null);
-
-		} catch (Exception ex) {
-			logger.error("Failed getting prediction results: ", ex);
-		}
-
-		return null;
-	}
-
-	@RequestMapping(value = "/model/{methodname}", method = RequestMethod.POST)
-	public byte[] operate(@RequestBody byte[] dataset, @PathVariable("methodname") String methodname) {
-		logger.info("/model/" + methodname + " GETTING POST REQUEST:");
-
-		try {
-
-			// methodname should match from modelConfig.properties. if provided method does
-			// not match it will
-			// return with invalid method message
-			if (modelType.equalsIgnoreCase("G")) {
-
-				loadModelProp();
-				String modelMethodName = prop.getProperty("modelMethod");
-
-				if (!modelMethodName.equalsIgnoreCase(methodname)) {
-					logger.info("Expected model method name is =" + modelMethodName);
-					return "Model method name is invalid".getBytes();
-				}
-			}
-
-			init(null);
-
-			// dframe = DataFrame.parseFrom(datain);
-			Method method = dataframe.getMethod("parseFrom", new Class[] { byte[].class });
-
-			Object df = method.invoke(null, dataset);
-
-			if (!modelType.equalsIgnoreCase("G"))
-				return doPredict(df, null);
-			else
-				return doPredictJavaGeneric(df, null);
-
-		} catch (Exception ex) {
-			logger.error("Failed getting prediction results: ", ex);
-
 		}
 
 		return null;
@@ -2092,14 +2081,7 @@ public class RunnerController {
 		cl = RunnerController.class.getClassLoader();
 
 		addFile(protoJarPath);
-		/*
-		 * dataframerow = cl.loadClass(pluginPkgName + ".DatasetProto" + protoIdx +
-		 * "$DataFrameRow"); dataframe = cl.loadClass(pluginPkgName + ".DatasetProto" +
-		 * protoIdx + "$DataFrame"); prediction = cl.loadClass(pluginPkgName +
-		 * ".DatasetProto" + protoIdx + "$Prediction"); dataframeBuilder =
-		 * cl.loadClass(pluginPkgName + ".DatasetProto" + protoIdx +
-		 * "$DataFrame$Builder");
-		 */
+
 		for (String cname : classNames) {
 			MessageObject mobj = classList.get(cname);
 			if (mobj == null) {
@@ -2109,6 +2091,7 @@ public class RunnerController {
 			if (pluginPkgName != null)
 				className = pluginPkgName + ".DatasetProto" + protoIdx + "$" + cname;
 
+			logger.info("Inside init(): loading class " + className);
 			Class<?> thisClass = cl.loadClass(className);
 			mobj.setCls(thisClass);
 		}
@@ -2251,72 +2234,6 @@ public class RunnerController {
 	}
 
 	/**
-	 * @param protoString
-	 * @return boolean
-	 * @throws Exception
-	 */
-	private boolean setProtoAttributes(String protoString) throws Exception {
-		if (protoString == null)
-			return false;
-
-		attributes = new ArrayList<String>();
-		attributeTypes = new ArrayList<String>();
-
-		int idx_msg1 = protoString.indexOf("message DataFrameRow");
-		int idx_begincurly1 = protoString.indexOf("{", idx_msg1);
-		int idx_endcurly1 = protoString.indexOf("}", idx_begincurly1);
-		if (idx_msg1 == -1 || idx_begincurly1 == -1 || idx_endcurly1 == -1) {
-			logger.error("Wrong proto String format!");
-			return false;
-		}
-		int idx = idx_begincurly1 + 1;
-
-		do {
-			int prev_idx = -2;
-			int cur_idx = -2;
-			int target_idx = -2;
-			String prev_type = "";
-			String target_type = "";
-			for (String cur_type : types) {
-
-				cur_idx = protoString.indexOf(cur_type, idx);
-				if (cur_idx != -1) { // Do something
-					target_type = cur_type;
-
-					if (prev_idx == -2) {
-						prev_idx = cur_idx;
-						prev_type = cur_type;
-						target_idx = cur_idx;
-					} else if (prev_idx > cur_idx) { // should use current
-														// type then
-						target_idx = cur_idx;
-						prev_idx = cur_idx;
-						prev_type = cur_type;
-
-					} else { // should still use the prev one
-						target_type = prev_type;
-
-					}
-				}
-			}
-			if (target_idx == -2)
-				break;
-			int begin_attr = target_idx + target_type.length() + 1;
-			int end_attr = protoString.indexOf(" ", begin_attr);
-			if (begin_attr > idx_endcurly1 || end_attr > idx_endcurly1)
-				break;
-			attributes.add(protoString.substring(begin_attr, end_attr));
-			attributeTypes.add(target_type);
-
-			idx = end_attr + 1;
-
-		} while (idx > idx_begincurly1 && idx < idx_endcurly1);
-
-		return true;
-
-	}
-
-	/**
 	 * Based on protoString, set all attributes names and types for all messages
 	 * specified.
 	 * 
@@ -2430,7 +2347,6 @@ public class RunnerController {
 		serviceList.clear();
 
 		setProtoClasses(protoString);
-		setProtoAttributes(protoString);
 		setAllProtoAttributes(protoString);
 		String protoFilename = protoFilePath + SEP + "dataset.proto";
 		writeProtoFile(protoString, protoFilename);
@@ -2540,7 +2456,7 @@ public class RunnerController {
 	 * @param filename
 	 *            : Java source file generated by the protocol buffer compiler
 	 */
-	public void insertImport(String filename) {
+	private void insertImport(String filename) {
 		try {
 			List<String> old_list = java.nio.file.Files.readAllLines(Paths.get(filename));
 			List<String> new_list = new ArrayList<>();
@@ -2758,7 +2674,7 @@ public class RunnerController {
 	 * @throws IOException
 	 *             On failure
 	 */
-	public String execCommand(String cmd) throws IOException {
+	private String execCommand(String cmd) throws IOException {
 
 		Process proc = Runtime.getRuntime().exec(cmd);
 		InputStream is = proc.getInputStream();
@@ -2800,7 +2716,7 @@ public class RunnerController {
 	 * @throws IOException
 	 *             On failure
 	 */
-	public static void addURL(URL u) throws IOException {
+	private static void addURL(URL u) throws IOException {
 		URLClassLoader sysloader = (URLClassLoader) ClassLoader.getSystemClassLoader();
 		Class<?> sysclass = URLClassLoader.class;
 		try {
