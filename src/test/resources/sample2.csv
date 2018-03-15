@@ -1,0 +1,2 @@
+sepal_len,sepal_wid,test_uint32,test_uint32,test_sint32,test_uint64,test_uint64,test_bool,test_sint64,test_fixed32,test_fixed64,test_sfixed32,test_sfixed64,test_bytes,test_float,test_float,test_double,srow_1,srow_1,srow_2,srow_2,petal_wid,mrow_1,mrow_1,mrow_2,mrow_2
+1,2,32,32,132,64,64,false,64,32,64,32,64,7,0.00001,0.00001,2.0,3,3,4,4,5,6,6,7,7

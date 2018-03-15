@@ -1,0 +1,80 @@
+syntax = "proto3";
+option java_package = "org.acumos.simplemodel";
+
+message DataFrameRow {
+  repeated uint32 prow1 = 1;
+  repeated sint32 prow2 = 2;
+  repeated string testrow = 3;
+  repeated uint64 prow3 = 4;
+  repeated bool prow4 = 5;
+  repeated sint64 prow5 = 6;
+  repeated fixed32 prow6 = 7;
+  repeated fixed64 prow7 = 8;
+  repeated sfixed32 prow8 = 9;
+  repeated sfixed64 prow9 = 10;
+  repeated bytes prow10 = 11;
+  repeated int32 prow11 = 12;
+  repeated int64 prow12 = 13;
+  repeated double prow13 = 14;
+  repeated float prow14 = 15;
+}
+
+message InputFrameRow {
+   uint32 prow1 = 1;
+   sint32 prow2 = 2;
+   string testrow = 3;
+   uint64 prow3 = 4;
+   bool prow4 = 5;
+   sint64 prow5 = 6;
+   fixed32 prow6 = 7;
+   fixed64 prow7 = 8;
+   sfixed32 prow8 = 9;
+   sfixed64 prow9 = 10;
+   bytes prow10 = 11;
+   int32 prow11 = 12;
+   int64 prow12 = 13;
+   double prow13 = 14;
+   float prow14 = 15;
+}
+
+message Prediction {
+  repeated uint32 prow1 = 1;
+  repeated sint32 prow2 = 2;
+  repeated string testrow = 3;
+  repeated uint64 prow3 = 4;
+  repeated bool prow4 = 5;
+  repeated sint64 prow5 = 6;
+  repeated fixed32 prow6 = 7;
+  repeated fixed64 prow7 = 8;
+  repeated sfixed32 prow8 = 9;
+  repeated sfixed64 prow9 = 10;
+  repeated bytes prow10 = 11;
+  repeated int32 prow11 = 12;
+  repeated int64 prow12 = 13;
+  repeated double prow13 = 14;
+  repeated float prow14 = 15;
+}
+
+message Outlook {
+   uint32 prow1 = 1;
+   sint32 prow2 = 2;
+   string testrow = 3;
+   uint64 prow3 = 4;
+   bool prow4 = 5;
+   sint64 prow5 = 6;
+   fixed32 prow6 = 7;
+   fixed64 prow7 = 8;
+   sfixed32 prow8 = 9;
+   sfixed64 prow9 = 10;
+   bytes prow10 = 11;
+   int32 prow11 = 12;
+   int64 prow12 = 13;
+   double prow13 = 14;
+   float prow14 = 15;
+}
+
+service Model {
+  rpc aggregate(DataFrameRow) returns (Prediction);
+  rpc classify(InputFrameRow) returns (Outlook);
+}
+

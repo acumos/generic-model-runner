@@ -1,0 +1,47 @@
+syntax = "proto3";
+option java_package = "org.acumos";
+
+message DataFrameRow {
+string sepal_len = 1;
+int32 sepal_wid = 2;
+SubFrameRow petal_len = 3;
+string petal_wid = 4;
+}
+message DataFrame {
+    repeated DataFrameRow rows = 1;
+    repeated MyFrameRow myRow = 2;
+}
+message SubFrameRow {
+    repeated string srow_1 = 1;
+    repeated string srow_2 = 2;
+}
+message MyFrameRow {
+    repeated int64 mrow_1 = 1;
+   repeated string mrow_2 = 2;
+}
+
+message testFrame {
+  repeated uint32 prow1 = 1;
+  repeated sint32 prow2 = 2;
+  repeated string testrow = 3;
+  repeated uint64 prow3 = 4;
+  repeated bool prow4 = 5;
+  repeated sint64 prow5 = 6;
+  repeated fixed32 prow6 = 7;
+  repeated fixed64 prow7 = 8;
+  repeated sfixed32 prow8 = 9;
+  repeated sfixed64 prow9 = 10;
+  repeated bytes prow10 = 11;
+}
+
+message Forecast {
+    repeated int64 outlook= 1;
+    repeated float outlook2= 2;
+    repeated double outlook3= 3;
+    repeated string outlook4= 4;
+    repeated testFrame outlook5= 5;
+}
+service Model {
+  rpc transform (DataFrame) returns (Forecast);
+}
+
