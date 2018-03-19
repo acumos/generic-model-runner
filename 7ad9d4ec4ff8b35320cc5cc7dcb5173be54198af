@@ -1,0 +1,38 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "e98e7c8d_1fe143ba",
+        "filename": "docs/index.rst",
+        "patchSetId": 2
+      },
+      "lineNbr": 25,
+      "author": {
+        "id": 4
+      },
+      "writtenOn": "2018-03-19T17:52:23Z",
+      "side": 1,
+      "message": "You might want to shorten this underline to match the text. RST complains about this.",
+      "revId": "7ad9d4ec4ff8b35320cc5cc7dcb5173be54198af",
+      "serverId": "655300a2-7a56-4504-9153-881edd907bea",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "98f36007_89fabfbc",
+        "filename": "src/main/java/org/acumos/modelrunner/controller/RunnerController.java",
+        "patchSetId": 2
+      },
+      "lineNbr": 221,
+      "author": {
+        "id": 4
+      },
+      "writtenOn": "2018-03-19T17:52:23Z",
+      "side": 1,
+      "message": "You might want to avoid adding file commits that only change whitespace, such as this.",
+      "revId": "7ad9d4ec4ff8b35320cc5cc7dcb5173be54198af",
+      "serverId": "655300a2-7a56-4504-9153-881edd907bea",
+      "unresolved": false
+    }
+  ]
+}
