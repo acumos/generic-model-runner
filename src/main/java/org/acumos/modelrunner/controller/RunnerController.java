@@ -218,15 +218,15 @@ public class RunnerController {
 		results.put("status", "ok");
 		return new ResponseEntity<>(results, HttpStatus.OK);
 	}
-	
+
 	/**
 	 * End point to upload a new model configuration properties file
 	 * 
 	 * @param configFile
-	 *           modelConfig.properties file
+	 *            modelConfig.properties file
 	 * @return ResponseEntity
 	 */
-	@ApiOperation(value = "Upload a model config file to replace current model configuration properties", response = ResponseEntity.class)
+	@ApiOperation(value = "Upload a model config file to replace current model configuration properties used by Generic Model Runner. H2O Model Runner does not use this file", response = ResponseEntity.class)
 	@RequestMapping(value = "/putModelConfig", method = RequestMethod.PUT)
 	public ResponseEntity<Map<String, String>> putModelConfig(@RequestPart("modelConfig") MultipartFile configFile) {
 		logger.info("Receiving /putModelConfig PUT request...");
@@ -397,9 +397,9 @@ public class RunnerController {
 				logger.error("Wrong protofile format - must specify message and service!");
 				return null;
 			}
-			
+
 			outputClassName = serviceList.get(operation).getOutputClass();
-			
+
 			if (!modelType.equalsIgnoreCase("G"))
 				return doPredictH2O(obj, modelLoc);
 			else
