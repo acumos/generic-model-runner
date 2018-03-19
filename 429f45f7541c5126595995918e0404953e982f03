@@ -1,0 +1,38 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "aa9f87a8_4c0ea2dd",
+        "filename": "docs/developer-guide.rst",
+        "patchSetId": 4
+      },
+      "lineNbr": 2,
+      "author": {
+        "id": 51
+      },
+      "writtenOn": "2018-03-19T18:53:44Z",
+      "side": 1,
+      "message": "slightly different - copy from https://wiki.acumos.org/display/AC/License+Templates for RST",
+      "revId": "429f45f7541c5126595995918e0404953e982f03",
+      "serverId": "655300a2-7a56-4504-9153-881edd907bea",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "3fc7cbd9_f46cb7a4",
+        "filename": "docs/index.rst",
+        "patchSetId": 4
+      },
+      "lineNbr": 31,
+      "author": {
+        "id": 51
+      },
+      "writtenOn": "2018-03-19T18:53:44Z",
+      "side": 1,
+      "message": "change name to match filename change - generic-model-runner should be developer-guide",
+      "revId": "429f45f7541c5126595995918e0404953e982f03",
+      "serverId": "655300a2-7a56-4504-9153-881edd907bea",
+      "unresolved": false
+    }
+  ]
+}
