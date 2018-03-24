@@ -16,8 +16,12 @@
 .. limitations under the License.
 .. ===============LICENSE_END=========================================================
 
+====================================
 Generic Model Runner Developer Guide
 ====================================
+
+Overview
+========
 In the application.properties file under resources directory, the property, model\_type, defines the type of model runner this is. If model_type is defined and the value is G, then this is a generic Java Model Runner, invoking generic models internally; otherwise, this is a H2O Model Runner, running H2O models instead.
 
 The model runner takes a proto string, extracts attributes information from
@@ -38,19 +42,19 @@ The /getBinary and /getBinaryDefault APIs are utilities allowing users to upload
 The users can use the three PUT requests, /putModel, /putModelConfig, and /putProto, to replace the existing resources, the current uploaded model, the model configuration file, and the default proto file, respectively.
 
 Requirements
-------------
+============
 
 In order for the Model Runner to be able to dynamically load the plugin jar that contains the proto classes at run time, the plugin jar must be outside the project directories. The application.properties specifies the default plugin root directory, ${plugin_root}, which if not existed, will be created when the Model Runner starts.  When the Model Runner receives a POST request, it will put the generated JAVA code under ${plugin_root}/src directory and generated class files under ${plugin_root}/classes directory. Therefore, these two directories, ${plugin_root}/src and ${plugin_root}/classes, must also be present. If not, the model runner will create them. 
 
 Supported Methods and Objects
------------------------------
+=============================
 
 The micro service methods and objects are documented using Swagger. A running server documents itself at a URL like the following, but consult the server's application.properties file for the exact port number ("8334") and context root ("modelrunner") in use:
 
 	http://localhost:8334/modelrunner/swagger-ui.html
 
 Build Prerequisites
--------------------
+===================
 
 The build machine needs the following:
 
@@ -61,14 +65,14 @@ The build machine needs the following:
 
 
 Build and Package
------------------
+=================
 
 Use maven to build and package the service into a single "fat" jar using this command:
 
 	mvn clean install
 
 Launch Prerequisites
---------------------
+====================
 
 1. Java version 1.8
 2. A valid application.properties file.
@@ -76,7 +80,7 @@ Launch Prerequisites
 4. protobuf JAVA Runtime Library 3.4.0
 
 Launch Instructions
--------------------
+===================
 
 Start the microservice for development and testing like this:
 

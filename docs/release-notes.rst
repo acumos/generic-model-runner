@@ -23,7 +23,7 @@ Generic Model Runner Release Notes
 The server is deployed within a Docker image in the Docker registry.
 
 Version 1.0.2, 6 December 2017
----------------------------
+==============================
 
 * Support /predict, /transform, /transformDefault, /getBinary, /getBinaryDefault end points
 * The first line of the proto file must specify proto3 syntax 
@@ -34,12 +34,12 @@ Version 1.0.2, 6 December 2017
 * The service structure is not required in this release. 
 
 Version 1.0.3, 3 January 2018
--------------------------------
+=============================
 
 * Add /putModel end point and add /putProto end point
 
 Version 2.0.0, 22 February 2018
---------------------------------
+===============================
 
 * Add /operation/{operation} end point 
 * Only proto3 syntax is supported. 
@@ -50,7 +50,7 @@ Version 2.0.0, 22 February 2018
 * Support 15 scalar data types in all defined messages.
 
 Version 2.0.1, 15 March 2018
-----------------------------
+============================
 
 * Enhance end points /transform, /transformDefault, /getBinary, /getBinaryDefault to accept nested message proto files with no naming restriction
 * Add /putModelConfig to allow uploading new modelConfig.properties

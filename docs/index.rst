@@ -16,11 +16,7 @@
 .. limitations under the License.
 .. ===============LICENSE_END=========================================================
 
-.. Acumos Generic Model Runner documentation master file, created by
-   sphinx-quickstart on Mon Dec 04 23:30:45 2017.
-   You can adapt this file completely to your liking, but it should at least
-   contain the root `toctree` directive.
-
+====================
 Generic Model Runner
 ====================
 
@@ -28,13 +24,5 @@ Generic Model Runner
    :maxdepth: 2
    :caption: Contents:
 
-   developer-guide
-   tutorials/index
    release-notes
-
-Indices and tables
-==================
-
-* :ref:`genindex`
-* :ref:`modindex`
-* :ref:`search`
+   developer-guide
