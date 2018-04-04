@@ -75,7 +75,6 @@ import org.springframework.web.multipart.MultipartFile;
 
 import com.google.common.io.Files;
 import com.google.protobuf.ByteString;
-
 import hex.genmodel.MojoModel;
 import hex.genmodel.easy.EasyPredictModelWrapper;
 import hex.genmodel.easy.RowData;
@@ -142,6 +141,7 @@ public class RunnerController {
 	private HashMap<String, MessageObject> classList = new HashMap<>();
 	private HashMap<String, ServiceObject> serviceList = new HashMap<>();
 	private ArrayList<String> classNames = new ArrayList<>();
+	private ArrayList<String> enumNames = new ArrayList<>();
 	private Properties prop = new Properties();
 	private String protoRTVersion = null;
 	private ClassLoader cl = null;
@@ -206,10 +206,10 @@ public class RunnerController {
 				stream.write(bytes);
 				stream.close();
 
-				logger.info("Proto File Location=" + protoFile.getAbsolutePath());
+				logger.info("putProto: Proto File Location=" + protoFile.getAbsolutePath());
 			}
 		} catch (Exception ex) {
-			logger.error("Failed in uploading protofile: ", ex);
+			logger.error("putProto: Failed in uploading protofile: ", ex);
 			results.put("status", "bad request");
 			results.put("message", ex.getMessage());
 			return new ResponseEntity<>(results, HttpStatus.BAD_REQUEST);
@@ -242,10 +242,11 @@ public class RunnerController {
 				stream.write(bytes);
 				stream.close();
 
-				logger.info("Model config properties file location=" + configPropertiesFile.getAbsolutePath());
+				logger.info("putModelConfig: Model config properties file location="
+						+ configPropertiesFile.getAbsolutePath());
 			}
 		} catch (Exception ex) {
-			logger.error("Failed in uploading configfile: ", ex);
+			logger.error("putModelConfig: Failed in uploading configfile: ", ex);
 			results.put("status", "bad request");
 			results.put("message", ex.getMessage());
 			return new ResponseEntity<>(results, HttpStatus.BAD_REQUEST);
@@ -310,12 +311,12 @@ public class RunnerController {
 			Method tobytearray = obj.getClass().getSuperclass().getSuperclass().getSuperclass()
 					.getDeclaredMethod("toByteArray");
 			byte[] barray = (byte[]) tobytearray.invoke(obj);
-			logger.info("Returning the following byte[] :");
+			logger.info("getNewBinary_: Returning the following byte[] :");
 			logger.info(Arrays.toString(barray));
 			return barray;
 
 		} catch (Exception ex) {
-			logger.error("Failed getting binary stream inputs:", ex);
+			logger.error("getNewBinary_: Failed getting binary stream inputs:", ex);
 			return new byte[0];
 		}
 	}
@@ -374,7 +375,6 @@ public class RunnerController {
 				byte[] bytes = model.getBytes();
 
 				// Creating the directory to store file
-
 				File dir = new File(TMPPATH + SEP + "tmpFiles");
 				if (!dir.exists())
 					dir.mkdirs();
@@ -390,11 +390,11 @@ public class RunnerController {
 				stream.write(bytes);
 				stream.close();
 				modelLoc = modelFile.getAbsolutePath();
-				logger.info("model File Location=" + modelFile.getAbsolutePath());
+				logger.info("transform_: model File Location=" + modelFile.getAbsolutePath());
 			}
 
 			if (serviceList.isEmpty() || classList.isEmpty()) {
-				logger.error("Wrong protofile format - must specify message and service!");
+				logger.error("transform: Wrong protofile format - must specify message and service!");
 				return null;
 			}
 
@@ -405,7 +405,7 @@ public class RunnerController {
 			else
 				return doPredictGeneric(obj, modelLoc);
 		} catch (Exception ex) {
-			logger.error("transform_(): Failed transforming csv file and getting prediction results: ", ex);
+			logger.error("transform_: Failed transforming csv file and getting prediction results: ", ex);
 
 		}
 
@@ -423,7 +423,8 @@ public class RunnerController {
 
 	private Object getInputClassBuilder(MultipartFile file, MultipartFile proto, String operation) throws Exception {
 		if (file.isEmpty()) {
-			logger.error("You failed to upload " + file.getOriginalFilename() + " because the file was empty.");
+			logger.error("getInputClassBuilder: You failed to upload " + file.getOriginalFilename()
+					+ " because the file was empty.");
 			return null;
 		}
 
@@ -431,7 +432,7 @@ public class RunnerController {
 
 		String contentType = file.getContentType();
 		if (!"application/vnd.ms-excel".equalsIgnoreCase(contentType) && !"text/csv".equalsIgnoreCase(contentType)) {
-			logger.error("Wrong file type. Current content type is " + contentType);
+			logger.error("getInputClassBuilder: Wrong file type. Current content type is " + contentType);
 			return null;
 		}
 
@@ -486,7 +487,7 @@ public class RunnerController {
 
 			String headerLine = lines[0];
 			String[] headerFields = headerLine.split(",");
-			logger.info("getInputBuilder(): Header Line is: [" + headerLine + "]");
+			logger.info("getInputBuilder: Header Line is: [" + headerLine + "]");
 
 			String[] array;
 
@@ -495,7 +496,7 @@ public class RunnerController {
 			for (AttributeEntity ae : inputAttributes) {
 				for (int i = 1; i < lines.length; i++) { // ignore the first line which is header
 					String line = lines[i];
-					logger.info("getInputBuilder(): current line is: [" + line + "]");
+					logger.info("getInputBuilder: current line is: [" + line + "]");
 
 					array = line.split(",");
 
@@ -578,10 +579,34 @@ public class RunnerController {
 							}
 							break;
 						default:
-							inputAddOrSetRow = thisBuilder.getClass().getMethod(iAttrMethodName,
-									classList.get(ae.getType()).getCls());
+							String innerClassName = ae.getType();
+							MessageObject mo = classList.get(innerClassName);
+							if (mo == null) {
+								innerClassName = thisClassName + "." + ae.getType();
+								mo = classList.get(innerClassName);
+								if (mo == null) {
+									innerClassName = thisClassName + "$" + ae.getType();
+									mo = classList.get(innerClassName);
+								}
+							}
+							Class<?> innerCls = mo.getCls();
+							inputAddOrSetRow = thisBuilder.getClass().getMethod(iAttrMethodName, innerCls);
 
-							Object innerBuilder = getInnerBuilder(ae.getType(), line, headerLine);
+							if (mo.isEnum()) {
+								Method forNumberMethod = innerCls.getDeclaredMethod("forNumber", int.class);
+
+								for (idx = 0; idx < headerFields.length; idx++) {
+									if (array[idx].length() == 0) // skip missing field
+										continue;
+									if (headerFields[idx].equals(ae.getName())) {
+										inputAddOrSetRow.invoke(thisBuilder,
+												forNumberMethod.invoke(null, Integer.parseInt(array[idx])));
+									}
+								}
+								break;
+							}
+
+							Object innerBuilder = getInnerBuilder(innerClassName, line, headerLine);
 							Method innerBuildMethod;
 							if (innerBuilder != null) {
 								innerBuildMethod = innerBuilder.getClass().getMethod("build");
@@ -644,7 +669,6 @@ public class RunnerController {
 						case FIXED64:
 						case SFIXED64:
 							inputAddOrSetRow = thisBuilder.getClass().getMethod(iAttrMethodName, long.class);
-
 							for (idx = 0; idx < headerFields.length; idx++) {
 								if (array[idx].length() == 0) // skip missing field
 									continue;
@@ -694,10 +718,39 @@ public class RunnerController {
 							}
 							break;
 						default:
-							Class<?> innerCls = classList.get(ae.getType()).getCls();
-							Object innerBuilder = getInnerBuilder(ae.getType(), line, headerLine);
-
+							String innerClassName = ae.getType();
+							MessageObject mo = classList.get(innerClassName);
+							if (mo == null) {
+								innerClassName = thisClassName + "." + ae.getType();
+								mo = classList.get(innerClassName);
+								if (mo == null) {
+									innerClassName = thisClassName + "$" + ae.getType();
+									mo = classList.get(innerClassName);
+								}
+							}
+							Class<?> innerCls = mo.getCls();
 							inputAddOrSetRow = thisBuilder.getClass().getMethod(iAttrMethodName, innerCls);
+
+							if (mo.isEnum()) {
+								Method forNumberMethod = innerCls.getDeclaredMethod("forNumber", int.class);
+
+								for (idx = 0; idx < headerFields.length; idx++) {
+									if (array[idx].length() == 0) // skip missing field
+										continue;
+									if (headerFields[idx].equals(ae.getName())) {
+										logger.info("getDeclaredMethods: "
+												+ Arrays.toString(innerCls.getDeclaredMethods()));
+										logger.info("getMethods: " + Arrays.toString(innerCls.getMethods()));
+										Object obj = forNumberMethod.invoke(null, Integer.parseInt(array[idx]));
+										inputAddOrSetRow.invoke(thisBuilder, obj);
+										break;
+									}
+								}
+								break;
+							}
+
+							Object innerBuilder = getInnerBuilder(innerClassName, line, headerLine);
+
 							Method innerBuildMethod;
 							if (innerBuilder != null) {
 								innerBuildMethod = innerBuilder.getClass().getMethod("build");
@@ -705,14 +758,13 @@ public class RunnerController {
 								inputAddOrSetRow.invoke(thisBuilder, innerObj);
 							}
 							break;
-
 						}
 					}
 				}
 			}
 			return thisBuilder;
 		} catch (Exception ex) {
-			logger.error("Failed in getInputBuilder(): ", ex);
+			logger.error("getInputBuilder: ", ex);
 			return null;
 		}
 	}
@@ -722,17 +774,17 @@ public class RunnerController {
 	 * @param thisClassName
 	 * @param line
 	 * @param headerLine
-	 * @return return a
+	 * @return return builder object of {thisClass}.Builder
 	 */
 	private Object getInnerBuilder(String thisClassName, String line, String headerLine) {
 		try {
-			logger.info("getInnerBuilder(): current line is [" + line + "] header is [" + headerLine + "]");
+			logger.info("getInnerBuilder: current line is [" + line + "] header is [" + headerLine + "]");
 			Object thisBuilder = null;
-			Class<?> thisClass = classList.get(thisClassName).getCls();
+			MessageObject thisMsg = classList.get(thisClassName);
+			Class<?> thisClass = thisMsg.getCls();
 			Method thisBuilderMethod = thisClass.getMethod("newBuilder");
 			thisBuilder = thisBuilderMethod.invoke(null); // thisBuilder is of {thisClass}.Builder
 
-			MessageObject thisMsg = classList.get(thisClassName);
 			ArrayList<AttributeEntity> inputAttributes = thisMsg.getAttributes();
 			Method inputAddOrSetRow = null;
 
@@ -955,7 +1007,7 @@ public class RunnerController {
 			}
 			return thisBuilder;
 		} catch (Exception ex) {
-			logger.error("Failed in getInnerBuilder(): ", ex);
+			logger.error("getInnerBuilder: ", ex);
 			return null;
 		}
 	}
@@ -966,7 +1018,7 @@ public class RunnerController {
 	 */
 	private void getRowString(Object df, String parentName, String attributeName, StringBuffer rowStr) {
 		try {
-			logger.info("getRowString(): " + parentName);
+			logger.info("getRowString: " + parentName);
 			MessageObject parentMsg = classList.get(parentName);
 			Class<?> parentCls = parentMsg.getCls();
 			ArrayList<AttributeEntity> parentAttributes = parentMsg.getAttributes();
@@ -979,7 +1031,7 @@ public class RunnerController {
 					String pAttrMethodName = StringUtils.camelCase("get_" + ae.getName(), '_');
 					Method getCount = parentCls.getMethod(pAttrMethodName + "Count");
 					int rowCount = (int) getCount.invoke(df);
-					logger.info("We have: " + rowCount + " row(s) of " + ae.getName());
+					logger.info("getRowString: We have: " + rowCount + " row(s) of " + ae.getName());
 
 					Method getList = parentCls.getMethod(pAttrMethodName + "List");
 					List<?> list = (List<?>) getList.invoke(df); // list of child objects or list of primitive types
@@ -1047,8 +1099,25 @@ public class RunnerController {
 							break;
 
 						default:
-							getRowString(obj, ae.getType(), null, rowStr);
+							String innerClassName;
 
+							// Check whether it is an enum type or a message type
+							if (enumNames.contains(innerClassName = ae.getType())
+									|| enumNames.contains(innerClassName = (parentName + "$" + ae.getType()))) {
+								// it's an enum type
+								Class<?> cls = classList.get(innerClassName).getCls();
+								Method getNumber = cls.getMethod("getNumber");
+								int attrValEnum = (int) getNumber.invoke(obj);
+								if (rowStr.length() != 0)
+									rowStr.append(",");
+								rowStr.append(attrValEnum);
+							} else if (classNames.contains(innerClassName = ae.getType())
+									|| classNames.contains(innerClassName = (parentName + "." + ae.getType()))) {
+								getRowString(obj, innerClassName, null, rowStr);
+							} else {
+								logger.error("getRowString: class " + ae.getType() + " or class " + innerClassName
+										+ " not found");
+							}
 							break;
 						}
 					}
@@ -1113,8 +1182,27 @@ public class RunnerController {
 							rowStr.append(",");
 						rowStr.append(gcValByte);
 						break;
-					default: // TODO
-						getRowString(obj, ae.getType(), null, rowStr);
+					default:
+						String innerClassName;
+
+						// check if this is an enum type
+						if (enumNames.contains(innerClassName = ae.getType())
+								|| enumNames.contains(innerClassName = (parentName + "$" + ae.getType()))) {
+							// it's an enum type
+							Class<?> cls = classList.get(innerClassName).getCls();
+							Method getNumber = cls.getMethod("getNumber");
+							int attrValEnum = (int) getNumber.invoke(obj);
+							if (rowStr.length() != 0)
+								rowStr.append(",");
+							rowStr.append(attrValEnum);
+						} else if (classNames.contains(innerClassName = ae.getType())
+								|| classNames.contains(innerClassName = (parentName + "." + ae.getType()))) {
+							getRowString(obj, innerClassName, null, rowStr);
+						} else {
+							logger.error("getRowString: class " + ae.getType() + " or class " + innerClassName
+									+ " not found");
+						}
+
 						break;
 					}
 				}
@@ -1224,7 +1312,6 @@ public class RunnerController {
 			logger.error("Failed in doPredictGeneric: ", ex);
 			return null;
 		}
-
 	}
 
 	/**
@@ -1529,32 +1616,87 @@ public class RunnerController {
 					break;
 
 				default:
-					if (ae.isRepeated()) {
-						predictMethodName = StringUtils.camelCase("add_all_" + ae.getName(), '_');
-						addPrediction = object.getClass().getMethod(predictMethodName, java.lang.Iterable.class);
+					String innerClassName;
 
-						List msgList = new ArrayList();
-						while (!predictList.isEmpty()) {
-							Object innerObj = getPredictionRow(ae.getType(), predictList);
-							if (innerObj == null)
-								break;
-							msgList.add(innerObj);
-							predictionAdded = true;
+					// It's an enum type
+					if (enumNames.contains(innerClassName = ae.getType())
+							|| enumNames.contains(innerClassName = ae.getType().replaceAll("\\.", "\\$"))
+							|| enumNames.contains(innerClassName = predictionClassName + "$" + ae.getType())) {
+
+						Method forNumberMethod;
+						MessageObject mo = classList.get(innerClassName);
+						Class<?> innerCls = mo.getCls();
+
+						forNumberMethod = innerCls.getDeclaredMethod("forNumber", int.class);
+						if (ae.isRepeated()) {
+							predictMethodName = StringUtils.camelCase("add_all_" + ae.getName(), '_');
+							addPrediction = object.getClass().getMethod(predictMethodName, java.lang.Iterable.class);
+
+							List<Object> enumList = new ArrayList<>();
+							List<Object> enumArrayList = new ArrayList<>();
+							for (Object obj : predictList) {
+								logger.info("Object is " + obj.getClass().getName());
+								if (obj instanceof Integer) {
+									if (!started)
+										started = true;
+
+									enumList.add(forNumberMethod.invoke(null, (Integer) obj));
+									enumArrayList.add(obj);
+									predictionAdded = true;
+								} else {
+									if (started)
+										break;
+								}
+							}
+
+							if (!enumList.isEmpty()) {
+								addPrediction.invoke(object, enumList);
+								predictList.removeAll(enumArrayList);
+							}
+						} else {
+							predictMethodName = StringUtils.camelCase("set_" + ae.getName(), '_');
+							addPrediction = object.getClass().getMethod(predictMethodName, innerCls);
+
+							for (Object obj : predictList) {
+								logger.info("Object is " + obj.getClass().getName());
+								if (obj instanceof Integer) {
+									addPrediction.invoke(object, forNumberMethod.invoke(null, (Integer) obj));
+									predictionAdded = true;
+									predictList.remove(obj);
+									break;
+								}
+							}
 						}
 
-						if (!msgList.isEmpty())
-							addPrediction.invoke(object, msgList);
-					} else { // TODO
-						predictMethodName = StringUtils.camelCase("set_" + ae.getName(), '_');
-						addPrediction = object.getClass().getMethod(predictMethodName,
-								classList.get(ae.getType()).getCls());
-						Object innerObj = getPredictionRow(ae.getType(), predictList);
-						if (innerObj != null) {
-							addPrediction.invoke(object, innerObj);
-							predictionAdded = true;
+					} else if (classNames.contains(innerClassName = ae.getType())
+							|| classNames.contains(innerClassName = predictionClassName + "." + ae.getType())) {
+						if (ae.isRepeated()) {
+							predictMethodName = StringUtils.camelCase("add_all_" + ae.getName(), '_');
+							addPrediction = object.getClass().getMethod(predictMethodName, java.lang.Iterable.class);
+
+							List msgList = new ArrayList();
+							while (!predictList.isEmpty()) {
+								Object innerObj = getPredictionRow(innerClassName, predictList);
+								if (innerObj == null)
+									break;
+								msgList.add(innerObj);
+								predictionAdded = true;
+							}
+
+							if (!msgList.isEmpty())
+								addPrediction.invoke(object, msgList);
+						} else {
+							predictMethodName = StringUtils.camelCase("set_" + ae.getName(), '_');
+							addPrediction = object.getClass().getMethod(predictMethodName,
+									classList.get(innerClassName).getCls());
+							Object innerObj = getPredictionRow(innerClassName, predictList);
+							if (innerObj != null) {
+								addPrediction.invoke(object, innerObj);
+								predictionAdded = true;
+							}
 						}
+						break;
 					}
-					break;
 				}
 			}
 			// None of the data matches
@@ -1628,9 +1770,6 @@ public class RunnerController {
 			ArrayList<AttributeEntity> outerAttributes = outerMsg.getAttributes();
 
 			String innerClassName = null;
-			MessageObject innerMsg = null;
-			Class<?> innerCls = null;
-			ArrayList<AttributeEntity> innerAttributes = null;
 
 			for (AttributeEntity oae : outerAttributes) {
 				if (oae.isRepeated()) {
@@ -1683,61 +1822,26 @@ public class RunnerController {
 							String attrValStr = (String) obj;
 							row.put(oae.getName(), attrValStr);
 							break;
+
 						case BYTES:
-							byte attrValByte = ((Byte) obj).byteValue();
+							byte[] attrValByte = ((ByteString) obj).toByteArray();
 							row.put(oae.getName(), attrValByte);
 							break;
+
 						default:
-							innerClassName = oae.getType();
-							innerMsg = classList.get(innerClassName);
-							innerCls = innerMsg.getCls();
-							innerAttributes = innerMsg.getAttributes();
-							for (AttributeEntity iae : innerAttributes) {
-								String iAttrMethodName = StringUtils.camelCase("get_" + iae.getName(), '_');
-								Method iAttrMethod = innerCls.getMethod(iAttrMethodName);
-								Object iobj = iAttrMethod.invoke(obj);
-								switch (iae.getType()) {
-								case DOUBLE:
-									double iValDouble = ((Double) iobj).doubleValue();
-									row.put(iae.getName(), iValDouble);
-									break;
-								case FLOAT:
-									break;
-								case INT32:
-								case UINT32:
-								case SINT32:
-								case FIXED32:
-								case SFIXED32:
-									int iValInt = ((Integer) iobj).intValue();
-									row.put(iae.getName(), iValInt);
-									break;
-								case INT64:
-								case UINT64:
-								case SINT64:
-								case FIXED64:
-								case SFIXED64:
-									long iValLong = ((Long) iobj).longValue();
-									row.put(iae.getName(), iValLong);
-									break;
-								case BOOL:
-									boolean iValBool = ((Boolean) iobj).booleanValue();
-									row.put(iae.getName(), iValBool);
-									break;
-								case STRING:
-									String iValStr = (String) iobj;
-									row.put(iae.getName(), iValStr);
-									break;
-
-								case BYTES:
-									byte[] iValByte = ((ByteString) iobj).toByteArray();
-									row.put(iae.getName(), iValByte);
-									break;
-
-								default:
-									getH2ORowData(iobj, iae.getType(), rows);
-
-									break;
-								}
+							// It's an enum type
+							if (enumNames.contains(innerClassName = oae.getType())
+									|| enumNames.contains(innerClassName = (outerClassName + "$" + oae.getType()))) {
+								Class<?> cls = classList.get(innerClassName).getCls();
+								Method getNumber = cls.getMethod("getNumber");
+								int attrValEnum = (int) getNumber.invoke(obj);
+								row.put(oae.getName(), attrValEnum);
+							} else if (classNames.contains(innerClassName = oae.getType())
+									|| classNames.contains(innerClassName = (outerClassName + "." + oae.getType()))) {
+								getH2ORowData(obj, innerClassName, rows);
+							} else {
+								logger.error("getH2ORowString: class " + oae.getType() + " or class " + innerClassName
+										+ " not found");
 							}
 							break;
 						}
@@ -1754,6 +1858,10 @@ public class RunnerController {
 						break;
 
 					case FLOAT:
+						float attrValFloat = ((Float) obj).floatValue();
+						row.put(oae.getName(), attrValFloat);
+						break;
+
 					case INT32:
 					case UINT32:
 					case SINT32:
@@ -1781,63 +1889,28 @@ public class RunnerController {
 						String attrValStr = (String) obj;
 						row.put(oae.getName(), attrValStr);
 						break;
+
 					case BYTES:
 						byte[] attrValByte = ((ByteString) obj).toByteArray();
 						row.put(oae.getName(), attrValByte);
 						break;
+
 					default:
-						innerClassName = oae.getType();
-						innerMsg = classList.get(innerClassName);
-						innerCls = innerMsg.getCls();
-						innerAttributes = innerMsg.getAttributes();
-						for (AttributeEntity iae : innerAttributes) {
-							String iAttrMethodName = StringUtils.camelCase("get_" + iae.getName(), '_');
-							Method iAttrMethod = innerCls.getMethod(iAttrMethodName);
-							Object iobj = iAttrMethod.invoke(obj);
-							switch (iae.getType()) {
-							case DOUBLE:
-								double iValDouble = ((Double) iobj).doubleValue();
-								row.put(iae.getName(), iValDouble);
-								break;
-							case FLOAT:
-								break;
-							case INT32:
-							case UINT32:
-							case SINT32:
-							case FIXED32:
-							case SFIXED32:
-								int iValInt = ((Integer) iobj).intValue();
-								row.put(iae.getName(), iValInt);
-								break;
-							case INT64:
-							case UINT64:
-							case SINT64:
-							case FIXED64:
-							case SFIXED64:
-								long iValLong = ((Long) iobj).longValue();
-								row.put(iae.getName(), iValLong);
-								break;
-							case BOOL:
-								boolean iValBool = ((Boolean) iobj).booleanValue();
-								row.put(iae.getName(), iValBool);
-								break;
-							case STRING:
-								String iValStr = (String) iobj;
-								row.put(iae.getName(), iValStr);
-								break;
-
-							case BYTES:
-								byte iValByte = ((Byte) iobj).byteValue();
-								row.put(iae.getName(), iValByte);
-								break;
-
-							default:
-								getH2ORowData(iobj, iae.getType(), rows);
-								break;
-							}
+						// It's an enum type
+						if (enumNames.contains(innerClassName = oae.getType())
+								|| enumNames.contains(innerClassName = (outerClassName + "$" + oae.getType()))) {
+							Class<?> cls = classList.get(innerClassName).getCls();
+							Method getNumber = cls.getMethod("getNumber");
+							int attrValEnum = (int) getNumber.invoke(obj);
+							row.put(oae.getName(), attrValEnum);
+						} else if (classNames.contains(innerClassName = oae.getType())
+								|| classNames.contains(innerClassName = (outerClassName + "." + oae.getType()))) {
+							getH2ORowData(obj, innerClassName, rows);
+						} else {
+							logger.error("getH2ORowString: class " + oae.getType() + " or class " + innerClassName
+									+ " not found");
 						}
-						logger.info(row.toString());
-						// rows.add(row);
+						break;
 					}
 					logger.info(row.toString());
 				}
@@ -2010,6 +2083,9 @@ public class RunnerController {
 			}
 
 			ServiceObject so = serviceList.get(operation);
+			if (so == null) {
+				logger.error("Inside operation(): Invalid operation [" + operation + "]");
+			}
 			inputClassName = so.getInputClass();
 			outputClassName = so.getOutputClass();
 
@@ -2017,7 +2093,15 @@ public class RunnerController {
 			Class<?> inputClass = classList.get(inputClassName).getCls();
 			Method method = inputClass.getMethod("parseFrom", new Class[] { byte[].class });
 
-			Object df = method.invoke(null, dataset);
+			Object df;
+			try {
+				df = method.invoke(null, dataset);
+			} catch (Exception ex) {
+				logger.error(
+						"Inside operation(): possibly INVALID dataset - dataset needs to be in binary protobuf format: ",
+						ex);
+				return null;
+			}
 
 			if (!modelType.equalsIgnoreCase("G"))
 				return doPredictH2O(df, null);
@@ -2133,9 +2217,10 @@ public class RunnerController {
 
 		int total_len = arr.length;
 		int idx = 0;
+
 		while (idx < total_len) {
-			if (arr[idx].equals("message")) {
-				idx = processMessage(arr, idx);
+			if (arr[idx].equals("message") || arr[idx].equals("enum")) {
+				idx = processMessageOrEnum(arr, idx, null);
 			} else if (arr[idx].equals("rpc")) {
 				StringBuilder builder = new StringBuilder(arr[idx++]);
 				while (idx < total_len) {
@@ -2195,14 +2280,32 @@ public class RunnerController {
 	 * @param idx
 	 * @return
 	 */
-	private int processMessage(String[] arr, int idx) {
-		logger.info("Inside processMessage(): ");
+	private int processMessageOrEnum(String[] arr, int idx, String outerClsName) {
+		logger.info("Inside processMessageOrEnum(): ");
 
-		String msgname = arr[idx + 1].endsWith("{") ? arr[idx + 1].substring(0, arr[idx + 1].length() - 1)
-				: arr[idx + 1];
-		logger.info("Adding message: " + msgname);
+		boolean isEnum = false;
+		if (arr[idx].equals("enum"))
+			isEnum = true;
+
+		String msgname = "";
+		if (outerClsName != null && outerClsName.length() > 0) {
+			msgname = outerClsName + ((isEnum) ? "$" : ".");
+		}
+
+		msgname += arr[idx + 1].endsWith("{") ? arr[idx + 1].substring(0, arr[idx + 1].length() - 1) : arr[idx + 1];
+
+		logger.info("Inside processMessageOrEnum() : Adding message: " + msgname);
 		classNames.add(msgname);
+
+		if (isEnum)
+			enumNames.add(msgname);
+
 		for (int i = idx + 1; i < arr.length; i++) {
+			if (arr[i].equals("message") || arr[i].equals("enum")) {
+				int j = processMessageOrEnum(arr, i, msgname);
+				i = j;
+				continue;
+			}
 			if (arr[i].indexOf("}") >= 0) {
 				idx = i;
 				break;
@@ -2259,31 +2362,69 @@ public class RunnerController {
 	 * @throws Exception
 	 */
 	private boolean setMessageProtoAttributes(String cname, String protoString) throws Exception {
-		String pattern = "(message\\s+" + cname + "\\s+)";
+		MessageObject mobj = classList.get(cname);
 
-		Pattern p = Pattern.compile(pattern);
-		Matcher m = p.matcher(protoString);
-		if (!m.find()) {
-			logger.error("Cannot find message " + cname);
-			return false;
+		if (mobj == null) {
+			mobj = new MessageObject(cname);
+			classList.put(cname, mobj);
 		}
-		String search = m.group(0);
-		logger.info("SetMessageProtoAttributes: search pattern = [" + search + "]");
+		mobj.setEnum(enumNames.contains(cname));
+		String cnamearr[] = (mobj.isEnum()) ? cname.split("\\$") : cname.split("\\.");
+		String pattern;
+		Pattern p;
+		Matcher m;
+		int idx_msg1 = 0;
+		if (cnamearr.length == 0) {
+			cnamearr = new String[1];
+			cnamearr[0] = new String(cname);
+		}
+		for (String element : cnamearr) {
+			pattern = "(message\\s+" + element + "\\s+)";
+			p = Pattern.compile(pattern);
+			m = p.matcher(protoString);
 
-		int idx_msg1 = protoString.indexOf(search);
+			if (!m.find()) {
+				pattern = "(enum\\s+" + element + "\\s+)";
+				p = Pattern.compile(pattern);
+				m = p.matcher(protoString);
+
+				if (!m.find()) {
+					logger.error("Cannot find message or enum " + cname);
+					return false;
+				}
+			}
+			String search = m.group(0);
+			logger.info("SetMessageProtoAttributes: search pattern = [" + search + "]");
+
+			idx_msg1 = protoString.indexOf(search, idx_msg1);
+		}
+
 		int idx_begincurly1 = protoString.indexOf("{", idx_msg1);
 		int idx_endcurly1 = protoString.indexOf("}", idx_begincurly1);
 		if (idx_msg1 == -1 || idx_begincurly1 == -1 || idx_endcurly1 == -1) {
 			logger.error("Wrong proto String format!");
 			return false;
 		}
-		MessageObject mobj = classList.get(cname);
-		if (mobj == null) {
-			mobj = new MessageObject(cname);
-			classList.put(cname, mobj);
-		}
 
 		String curMsg = protoString.substring(idx_begincurly1 + 2, idx_endcurly1 - 1);
+		// Remove inner message or enum
+		boolean allRemoved = false;
+		int idx_innerMsg, idx_innerEnum, idx_inner;
+		StringBuffer pbuf = new StringBuffer(protoString);
+		while (!allRemoved) {
+			idx_innerMsg = curMsg.lastIndexOf("message");
+			idx_innerEnum = curMsg.lastIndexOf("enum");
+			if (idx_innerMsg == -1 && idx_innerEnum == -1) {
+				allRemoved = true;
+				break;
+			}
+			idx_inner = (idx_innerMsg >= idx_innerEnum) ? idx_innerMsg : idx_innerEnum;
+
+			pbuf.replace(idx_begincurly1 + 2 + idx_inner, idx_endcurly1 + 1, "");
+			idx_endcurly1 = pbuf.toString().indexOf("}", idx_begincurly1);
+			curMsg = pbuf.toString().substring(idx_begincurly1 + 2, idx_endcurly1 - 1);
+		}
+		//
 		StringTokenizer st = new StringTokenizer(curMsg, ";");
 
 		while (st.hasMoreTokens()) {
@@ -2296,33 +2437,38 @@ public class RunnerController {
 			String line = st.nextToken();
 			int idx_equal = line.indexOf("=");
 			if (idx_equal == -1) {
-				logger.error("Wrong proto string format!");
+				logger.debug("Can't find \"=\" from line " + line);
 				return false;
 			}
 			String subline = line.substring(0, idx_equal);
 			String pat = null;
 			if (subline.indexOf("repeated") != -1) {
-				pat = "(\\s*)repeated(\\s*)(\\w+\\s*)(\\w+\\s*)";
+				pat = "(\\s*)repeated(\\s*)(\\w+(\\.?\\w+)*\\s*)(\\w+\\s*)";
 				isRepeated = true;
 			} else if (subline.indexOf("optional") != -1) {
-				pat = "(\\s*)optional(\\s*)(\\w+\\s*)(\\w+\\s*)";
+				pat = "(\\s*)optional(\\s*)(\\w+(\\.?\\w+)*\\s*)(\\w+\\s*)";
 				isOptional = true;
 			} else if (subline.indexOf("required") != -1) {
-				pat = "(\\s*)required(\\s*)(\\w+\\s*)(\\w+\\s*)";
+				pat = "(\\s*)required(\\s*)(\\w+(\\.?\\w+)*\\s*)(\\w+\\s*)";
 				isRequired = true;
-			} else
-				pat = "(\\s*)(\\w+\\s*)(\\w+\\s*)";
+			} else if (mobj.isEnum())
+				pat = "(\\s*)(\\w+\\s*)";
+			else
+				pat = "(\\s*)(\\w+(\\.?\\w+)*\\s*)(\\w+\\s*)";
 
 			Pattern r = Pattern.compile(pat);
 			Matcher mproto = r.matcher(subline);
+			int count = mproto.groupCount();
 			if (mproto.find()) {
-				if (!isRepeated && !isOptional && !isRequired) {
-					type = mproto.group(2).trim();
-					attribute = mproto.group(3).trim();
-					logger.info("setMessageProtoAttributes(): type = [" + type + "] attribute = [" + attribute + "]");
+				if (mobj.isEnum()) {
+					attribute = mproto.group(count).trim();
+					logger.info("setMessageProtoAttributes(): type = [int64] attribute = [" + attribute + "]");
 				} else {
-					type = mproto.group(3).trim();
-					attribute = mproto.group(4).trim();
+					for (int i = 0; i <= count; i++) {
+						logger.info("setMessageProtoAttributes(): mproto(" + i + ") = " + mproto.group(i));
+					}
+					type = mproto.group(count - 2).trim();
+					attribute = mproto.group(count).trim();
 					logger.info("setMessageProtoAttributes(): type = [" + type + "] attribute = [" + attribute + "]");
 				}
 			}
@@ -2344,6 +2490,7 @@ public class RunnerController {
 		pluginPkgName = null;
 		classList.clear();
 		classNames.clear();
+		enumNames.clear();
 		serviceList.clear();
 
 		setProtoClasses(protoString);
