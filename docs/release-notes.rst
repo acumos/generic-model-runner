@@ -57,3 +57,14 @@ Version 2.0.1, 15 March 2018
 * Modify /putProto to allow replacing current default protofile
 * Modify /putModel to allow replacing current model.
 * Add JUnit test cases for all above end points. 
+
+Version 2.1.0, 4 April 2018
+---------------------------
+
+* Support embedded messages - messages defined inside another messages 
+
+Version 2.1.1, 5 April 2018
+---------------------------
+
+* Support non-scalar ENUM data type in the proto file for all POST end points.
+* The ENUM can be standalone or embedded in a message

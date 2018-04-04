@@ -77,4 +77,3 @@ service Model {
   rpc classify(DataFrameRow) returns (Prediction);
   rpc aggregate(InputFrameRow) returns (Outlook);
 }
-

@@ -3,7 +3,7 @@ import java.util.Arrays;
 import java.util.StringTokenizer;
 import java.util.Random;
 
-public class Multiplier {
+public class SimpleMockModel {
 	public static ArrayList<Object> multiply(String str) {
 		Object predictedClassValue = null;
 		ArrayList<Object> predictList = new ArrayList<Object>();
@@ -90,6 +90,35 @@ public class Multiplier {
 		predictList.add(bytes);
 		
 		System.out.println("In multiplyAll(): returning prediction results: " + Arrays.toString(predictList.toArray()));
+
+		return predictList;
+	}
+	
+	/*
+	 * syntax="proto3"; message Outer { enum ANIMAL { CAT = 0; MOUSE = 1; DOG = 2; }
+	 * ANIMAL pet = 1; repeated ANIMAL precious = 2; }
+	 *
+	 * message Prediction { repeated int64 outlook= 1; repeated ANIMAL family = 2;
+	 * string outlook2 = 3; ANIMAL family2 = 4; } service Model { rpc transform
+	 * (Outer) returns (Prediction); }
+	 */
+	public static ArrayList<Object> testEnum(String str) {
+		Object predictedClassValue = null;
+		ArrayList<Object> predictList = new ArrayList<Object>();
+
+		StringTokenizer st = new StringTokenizer(str, "\n");
+		while (st.hasMoreTokens()) {
+			predictedClassValue = getMultiplyLong(st.nextToken());
+			predictList.add(predictedClassValue);
+		}
+		
+		predictList.add((long)77778888);
+		predictList.add((int)0);
+		predictList.add((int)0);
+		predictList.add("Life is good");
+		predictList.add((int)2);
+		
+		System.out.println("In testEnum(): returning prediction results: " + Arrays.toString(predictList.toArray()));
 
 		return predictList;
 	}
