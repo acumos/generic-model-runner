@@ -25,6 +25,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 
 import java.io.BufferedReader;
 import java.io.File;
+import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.PrintWriter;
@@ -61,7 +62,6 @@ public class ModelRunnerControllerTest extends ModelRunnerTestApp {
 
 	@Autowired
 	private WebApplicationContext webApplicationContext;
-
 	private MockMvc mockMvc;
 
 	@Before
@@ -71,7 +71,6 @@ public class ModelRunnerControllerTest extends ModelRunnerTestApp {
 
 	@Test
 	public void predictTest() throws Exception {
-
 		String testPath = new String(pluginRoot + SEP + "test");
 
 		// Make sure plugin Root directories exist. If not, create them.
@@ -79,8 +78,8 @@ public class ModelRunnerControllerTest extends ModelRunnerTestApp {
 		boolean created = false;
 		if (!dir.exists()) {
 			created = dir.mkdirs();
-			logger.info("Creating pluginRoot directory: " + pluginRoot);
-			logger.info("Created pluginRoot directory? " + created);
+			logger.info("predictTest: Creating pluginRoot directory: " + pluginRoot);
+			logger.info("predictTest: Created pluginRoot directory? " + created);
 		}
 		File testDir = new File(testPath);
 		if (!testDir.exists()) {
@@ -90,7 +89,7 @@ public class ModelRunnerControllerTest extends ModelRunnerTestApp {
 
 		}
 		File modelSource = new File(PROJECTROOT + SEP + "models" + SEP + "model.template");
-		File modelDest = new File(testPath + SEP + "Multiplier.java");
+		File modelDest = new File(testPath + SEP + "SimpleMockModel.java");
 		modelDest.setWritable(true, false);
 		if (modelDest.createNewFile())
 			logger.info("Creating an empty file");
@@ -108,7 +107,7 @@ public class ModelRunnerControllerTest extends ModelRunnerTestApp {
 
 			logger.info("Testing /putProto PUT method");
 			byte[] protobytes = Files.readAllBytes(Paths.get("src", "test", "resources", "default.proto"));
-			MockMultipartFile proto = new MockMultipartFile("proto", "default.proto", null, protobytes);
+			MockMultipartFile proto = new MockMultipartFile("proto", "default.proto", null, protobytes); 
 
 			/*
 			 * 
@@ -126,7 +125,7 @@ public class ModelRunnerControllerTest extends ModelRunnerTestApp {
 			});
 			mockMvc.perform(builder1.file(proto)).andExpect(status().isOk());
 
-			logger.info("Done testing /putProto PUT end point");
+			logger.info("Done testing /putProto PUT end point"); 
 
 			logger.info("Testing /putModel PUT method");
 			byte[] modelbytes = Files.readAllBytes(new File(testPath + SEP + "model.jar").toPath());
@@ -158,7 +157,7 @@ public class ModelRunnerControllerTest extends ModelRunnerTestApp {
 			});
 			mockMvc.perform(builder3.file(modelConfig)).andExpect(status().isOk());
 
-			logger.info("Done testing /putModelConfig PUT end point");
+			logger.info("Done testing /putModelConfig PUT end point"); 
 
 			// testing /transform end point
 
@@ -167,8 +166,8 @@ public class ModelRunnerControllerTest extends ModelRunnerTestApp {
 			MockMultipartFile testCSV = new MockMultipartFile("csvFile", "testTransform.csv", "text/csv",
 					"operand\n2\n7\n8\n".getBytes());
 			byte[] modelbytes0 = Files.readAllBytes(new File(testPath + SEP + "model.jar").toPath());
-			byte[] protobytes0 = Files.readAllBytes(Paths.get("src", "test", "resources", "multiplier.proto"));
-			MockMultipartFile testProto = new MockMultipartFile("proto", "multiplier.proto", null, protobytes0);
+			byte[] protobytes0 = Files.readAllBytes(Paths.get("src", "test", "resources", "simplemodel.proto"));
+			MockMultipartFile testProto = new MockMultipartFile("proto", "simplemodel.proto", null, protobytes0);
 			MockMultipartFile testModel = new MockMultipartFile("model", "model.jar", null, modelbytes0);
 			MockHttpServletRequestBuilder builder0 = MockMvcRequestBuilders.fileUpload("/transform").file(testCSV)
 					.file(testModel).file(testProto).param("operation", "multiply");
@@ -254,33 +253,25 @@ public class ModelRunnerControllerTest extends ModelRunnerTestApp {
 				}
 			});
 			mockMvc.perform(builder6.file(proto2)).andExpect(status().isOk());
-
+			
 			// Use sample2.csv to test
 			byte[] csvbytes2 = Files
 					.readAllBytes(new File(this.getClass().getResource("/sample2.csv").getFile()).toPath());
 			MockMultipartFile csvfile2 = new MockMultipartFile("csvFile", "sample2.csv", "text/csv", csvbytes2);
-
 			byte[] resultsBinaryDefault = this.mockMvc.perform(MockMvcRequestBuilders.fileUpload("/getBinaryDefault")
 					.file(csvfile2).param("operation", "transform")).andExpect(status().isOk()).andReturn()
 					.getResponse().getContentAsByteArray();
-
 			logger.info("Done testing POST /getBinaryDefault end point " + Arrays.toString(resultsBinaryDefault));
 
 			// testing /operation/{operation} end point, use transform in this case
-
 			logger.info("Testing /operation/{operation} POST end point");
-
 			byte[] resultsPredict = this.mockMvc
 					.perform(post("/operation/transform").contentType(MediaType.TEXT_PLAIN)
 							.content(resultsBinaryDefault))
 					.andExpect(status().isOk()).andReturn().getResponse().getContentAsByteArray();
-
 			logger.info("Done testing POST /operation/{operation} end point " + Arrays.toString(resultsPredict));
 
-			// More test 2
-
-			logger.info("Start test2 set....");
-
+			
 			// Use sampleConfig3.properties which calls the classify method of the silly
 			// model
 			byte[] configbytes3 = Files.readAllBytes(
@@ -321,20 +312,14 @@ public class ModelRunnerControllerTest extends ModelRunnerTestApp {
 					.getContentAsByteArray();
 
 			// testing /operation/{operation} end point, use classify in this case
-
 			logger.info("Testing /operation/classify POST end point");
-
 			byte[] resultsPredict1 = this.mockMvc
 					.perform(post("/operation/classify").contentType(MediaType.TEXT_PLAIN)
 							.content(resultsBinaryDefault1))
 					.andExpect(status().isOk()).andReturn().getResponse().getContentAsByteArray();
-
 			logger.info("Done testing POST /operation/classify end point " + Arrays.toString(resultsPredict1));
 
-			// More test 3
-
-			logger.info("Start test3 set....");
-
+			
 			// Use sampleConfig3_2.properties which calls the classify method of the silly
 			// model
 			byte[] configbytes3_2 = Files.readAllBytes(
@@ -355,21 +340,61 @@ public class ModelRunnerControllerTest extends ModelRunnerTestApp {
 			byte[] csvbytes4 = Files
 					.readAllBytes(new File(this.getClass().getResource("/sample3_2.csv").getFile()).toPath());
 			MockMultipartFile csvfile4 = new MockMultipartFile("csvFile", "sample3_2.csv", "text/csv", csvbytes4);
-
 			byte[] resultsBinaryDefault2 = this.mockMvc.perform(MockMvcRequestBuilders.fileUpload("/getBinaryDefault")
 					.file(csvfile4).param("operation", "aggregate")).andExpect(status().isOk()).andReturn()
 					.getResponse().getContentAsByteArray();
 
 			// testing /operation/aggregate end point
-
 			logger.info("Testing /operation/aggregate POST end point");
-
 			byte[] resultsPredict2 = this.mockMvc
 					.perform(post("/operation/aggregate").contentType(MediaType.TEXT_PLAIN)
 							.content(resultsBinaryDefault2))
 					.andExpect(status().isOk()).andReturn().getResponse().getContentAsByteArray();
-
 			logger.info("Done testing POST /operation/aggregate end point " + Arrays.toString(resultsPredict2));
+			
+			// Use sample4.proto
+			byte[] protobytes4 = Files.readAllBytes(Paths.get("src", "test", "resources", "sample4.proto"));
+			MockMultipartFile proto4 = new MockMultipartFile("proto", "sample4.proto", null, protobytes4);
+
+			MockMultipartHttpServletRequestBuilder builder10 = MockMvcRequestBuilders.fileUpload("/putProto");
+			builder10.with(new RequestPostProcessor() {
+				@Override
+				public MockHttpServletRequest postProcessRequest(MockHttpServletRequest request) {
+					request.setMethod("PUT");
+					return request;
+				}
+			});
+			mockMvc.perform(builder10.file(proto4)).andExpect(status().isOk());
+			
+			// upload sampleConfig4.properties
+			byte[] configbytes4 = Files.readAllBytes(Paths.get("src", "test", "resources", "sampleConfig4.properties"));
+			MockMultipartFile sampleConfig4 = new MockMultipartFile("modelConfig", "sampleConfig4.properties", null,
+					configbytes4);
+			MockMultipartHttpServletRequestBuilder builderModelConfig4 = MockMvcRequestBuilders.fileUpload("/putModelConfig");
+			builderModelConfig4.with(new RequestPostProcessor() {
+				@Override
+				public MockHttpServletRequest postProcessRequest(MockHttpServletRequest request) {
+					request.setMethod("PUT");
+					return request;
+				}
+			});
+			mockMvc.perform(builderModelConfig4.file(sampleConfig4)).andExpect(status().isOk());
+
+			// use sample4.csv test
+			byte[] csvSample4 = Files.readAllBytes(new File(this.getClass().getResource("/sample4.csv").getFile()).toPath());
+			MockMultipartFile csvMock4 = new MockMultipartFile("csvFile", "sample4.csv", "text/csv", csvSample4);
+			byte[] resultsBinaryDefault4 = this.mockMvc.perform(MockMvcRequestBuilders.fileUpload("/getBinaryDefault")
+					.file(csvMock4).param("operation", "testEnum")).andExpect(status().isOk()).andReturn()
+					.getResponse().getContentAsByteArray();
+
+			// testing /operation/testEnum end point
+			logger.info("Testing /operation/testEnum POST end point");
+			byte[] resultsPredict4 = this.mockMvc
+					.perform(post("/operation/testEnum").contentType(MediaType.TEXT_PLAIN)
+							.content(resultsBinaryDefault4))
+					.andExpect(status().isOk()).andReturn().getResponse().getContentAsByteArray();
+			logger.info("Done testing POST /operation/testEnum end point " + Arrays.toString(resultsPredict4));
+			
 
 		} catch (HttpStatusCodeException ex) {
 			logger.error("predictTest failed", ex);
@@ -387,31 +412,35 @@ public class ModelRunnerControllerTest extends ModelRunnerTestApp {
 
 		try {
 			String simpleModelPath = new String(pluginRoot + SEP + "test");
-			ProcessBuilder pb = new ProcessBuilder("javac", "Multiplier.java");
+			ProcessBuilder pb = new ProcessBuilder("javac", "SimpleMockModel.java");
 			pb.directory(new File(simpleModelPath));
 
-			logger.info("Setting directory to : " + simpleModelPath + " before building simple model class file");
-			logger.info("executing command: \"javac Multiplier.java\" from directory " + simpleModelPath);
+			logger.info("generateSimpleModel: Setting directory to : " + simpleModelPath
+					+ " before building simple model class file");
+			logger.info("generateSimpleModel: executing command: \"javac SimpleMockModel.java\" from directory "
+					+ simpleModelPath);
 			Process p = pb.start();
 			// get the error stream of the process and print it
 			InputStream error = p.getErrorStream();
-			for (int i = 0; i < error.available(); i++) {
-				logger.error("" + error.read());
-			}
-
+			printCmdError(error);
+			
 			PrintWriter printWriter = new PrintWriter(p.getOutputStream());
 			BufferedReader bufferedReader = new BufferedReader(new InputStreamReader(p.getInputStream()));
+			printCmdOutput(bufferedReader);
 			bufferedReader.close();
 			printWriter.flush();
 			exitVal = p.waitFor();
 
-			logger.info("Exit Value for javac cmd: " + exitVal);
+			logger.info("generateSimpleModel: Exit Value for javac cmd: " + exitVal);
 
-			pb = new ProcessBuilder("jar", "-cvf", "model.jar", "Multiplier.class");
+			pb = new ProcessBuilder("jar", "-cvf", "model.jar", "SimpleMockModel.class");
 			pb.directory(new File(simpleModelPath));
 
-			logger.info("Setting directory to : " + simpleModelPath + " before producing simple model.jar");
-			logger.info("executing command: \"jar -cvf model.jar Multiplier.class\" from directory " + simpleModelPath);
+			logger.info("generateSimpleModel: Setting directory to : " + simpleModelPath
+					+ " before producing simple model.jar");
+			logger.info(
+					"generateSimpleModel: executing command: \"jar -cvf model.jar SimpleMockModel.class\" from directory "
+							+ simpleModelPath);
 			p = pb.start();
 			// get the error stream of the process and print it
 			error = p.getErrorStream();
@@ -421,21 +450,80 @@ public class ModelRunnerControllerTest extends ModelRunnerTestApp {
 
 			printWriter = new PrintWriter(p.getOutputStream());
 			bufferedReader = new BufferedReader(new InputStreamReader(p.getInputStream()));
-			bufferedReader.close();
+			printCmdOutput(bufferedReader);
+
 			printWriter.flush();
 			exitVal = p.waitFor();
 
-			logger.info("Exit Value for jar cmd: " + exitVal);
+			logger.info("generateSimpleModel: Exit Value for jar cmd: " + exitVal);
+			
+			// find the $PATH
+			pb = new ProcessBuilder("which", "javac");
+			pb.directory(new File(simpleModelPath));
 
+			logger.info("generateSimpleModel: executing command: \"which javac\"");
+			p = pb.start();
+			// get the error stream of the process and print it
+			error = p.getErrorStream();
+			printCmdError(error);
+			printWriter = new PrintWriter(p.getOutputStream());
+			bufferedReader = new BufferedReader(new InputStreamReader(p.getInputStream()));
+			printCmdOutput(bufferedReader);
+
+			printWriter.flush();
+			exitVal = p.waitFor();
+
+			logger.info("generateSimpleModel: Exit Value for which javac cmd: " + exitVal);
+			
+			// Just to find where jar program is 
+			pb = new ProcessBuilder("which", "jar");
+			pb.directory(new File(simpleModelPath));
+			logger.info( "generateSimpleModel: executing command: \"which jar\"");
+			
+			p = pb.start();
+			// get the error stream of the process and print it
+			error = p.getErrorStream();
+			printCmdError(error);
+			printWriter = new PrintWriter(p.getOutputStream());
+			bufferedReader = new BufferedReader(new InputStreamReader(p.getInputStream()));
+			printCmdOutput(bufferedReader);
+			printWriter.flush();
+			exitVal = p.waitFor();
+
+			logger.info("generateSimpleModel: Exit Value for which jar cmd: " + exitVal);
 		} catch (Exception ex) {
-
-			logger.error("Failed producing simple model.jar ", ex);
+			logger.error("generateSimpleModel: Failed producing simple model.jar ", ex);
 			return;
 		}
 		if (exitVal != 0)
-			logger.error("Failed producing simple model.jar");
+			logger.error("generateSimpleModel: Failed producing simple model.jar");
 		else
-			logger.info("Completed producing simple model.jar!");
+			logger.info("generateSimpleModel: Completed producing simple model.jar!");
 
+	}
+
+	/**
+	 * Print out contents of BufferedReader
+	 * 
+	 * @param bufferedReader
+	 * @throws IOException
+	 */
+	private void printCmdOutput(BufferedReader bufferedReader) throws IOException {
+		String currentLine;
+
+		while ((currentLine = bufferedReader.readLine()) != null) {
+			logger.info("printCmdOuput: " + currentLine);
+		}
+		bufferedReader.close();
+	}
+	
+	/*
+	 * print out command error message
+	 */
+	private void printCmdError(InputStream error) throws IOException {
+		for (int i = 0; i < error.available(); i++) {
+			logger.error("printCmdError: " + error.read());
+		}
+		error.close();
 	}
 }

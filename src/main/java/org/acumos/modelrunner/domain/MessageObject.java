@@ -72,6 +72,7 @@ public class MessageObject {
 	}
 
 	private String cname;
+	private boolean isEnum;
 	private Class<?> cls;
 	private ArrayList<AttributeEntity> attributes;
 
@@ -87,6 +88,14 @@ public class MessageObject {
 
 	public void setCname(String cname) {
 		this.cname = cname;
+	}
+	
+	public boolean isEnum() {
+		return isEnum;
+	}
+
+	public void setEnum(boolean isEnum) {
+		this.isEnum = isEnum;
 	}
 
 	public Class<?> getCls() {
