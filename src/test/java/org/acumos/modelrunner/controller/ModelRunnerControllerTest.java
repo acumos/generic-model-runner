@@ -412,6 +412,42 @@ public class ModelRunnerControllerTest extends ModelRunnerTestApp {
 
 		try {
 			String simpleModelPath = new String(pluginRoot + SEP + "test");
+			// find the $PATH
+			ProcessBuilder	pb0 = new ProcessBuilder("which", "javac");
+			pb0.directory(new File(simpleModelPath));
+
+			logger.info("generateSimpleModel: executing command: \"which javac\"");
+			Process p0 = pb0.start();
+			// get the error stream of the process and print it
+			InputStream error0 = p0.getErrorStream();
+			printCmdError(error0);
+			PrintWriter printWriter0 = new PrintWriter(p0.getOutputStream());
+			BufferedReader bufferedReader0 = new BufferedReader(new InputStreamReader(p0.getInputStream()));
+			printCmdOutput(bufferedReader0);
+
+			printWriter0.flush();
+			exitVal = p0.waitFor();
+
+			logger.info("generateSimpleModel: Exit Value for which javac cmd: " + exitVal);
+
+			// Just to find where jar program is
+			pb0 = new ProcessBuilder("which", "jar");
+			pb0.directory(new File(simpleModelPath));
+			logger.info("generateSimpleModel: executing command: \"which jar\"");
+
+			p0 = pb0.start();
+			// get the error stream of the process and print it
+			error0 = p0.getErrorStream();
+			printCmdError(error0);
+			printWriter0 = new PrintWriter(p0.getOutputStream());
+			bufferedReader0 = new BufferedReader(new InputStreamReader(p0.getInputStream()));
+			printCmdOutput(bufferedReader0);
+			printWriter0.flush();
+			exitVal = p0.waitFor();
+
+			logger.info("generateSimpleModel: Exit Value for which jar cmd: " + exitVal);
+			// Done find $PATH
+						
 			ProcessBuilder pb = new ProcessBuilder("javac", "SimpleMockModel.java");
 			pb.directory(new File(simpleModelPath));
 
@@ -456,41 +492,6 @@ public class ModelRunnerControllerTest extends ModelRunnerTestApp {
 			exitVal = p.waitFor();
 
 			logger.info("generateSimpleModel: Exit Value for jar cmd: " + exitVal);
-			
-			// find the $PATH
-			pb = new ProcessBuilder("which", "javac");
-			pb.directory(new File(simpleModelPath));
-
-			logger.info("generateSimpleModel: executing command: \"which javac\"");
-			p = pb.start();
-			// get the error stream of the process and print it
-			error = p.getErrorStream();
-			printCmdError(error);
-			printWriter = new PrintWriter(p.getOutputStream());
-			bufferedReader = new BufferedReader(new InputStreamReader(p.getInputStream()));
-			printCmdOutput(bufferedReader);
-
-			printWriter.flush();
-			exitVal = p.waitFor();
-
-			logger.info("generateSimpleModel: Exit Value for which javac cmd: " + exitVal);
-			
-			// Just to find where jar program is 
-			pb = new ProcessBuilder("which", "jar");
-			pb.directory(new File(simpleModelPath));
-			logger.info( "generateSimpleModel: executing command: \"which jar\"");
-			
-			p = pb.start();
-			// get the error stream of the process and print it
-			error = p.getErrorStream();
-			printCmdError(error);
-			printWriter = new PrintWriter(p.getOutputStream());
-			bufferedReader = new BufferedReader(new InputStreamReader(p.getInputStream()));
-			printCmdOutput(bufferedReader);
-			printWriter.flush();
-			exitVal = p.waitFor();
-
-			logger.info("generateSimpleModel: Exit Value for which jar cmd: " + exitVal);
 		} catch (Exception ex) {
 			logger.error("generateSimpleModel: Failed producing simple model.jar ", ex);
 			return;
