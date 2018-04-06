@@ -73,6 +73,7 @@ import org.springframework.web.bind.annotation.RequestPart;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
 
+import com.google.common.collect.ImmutableList;
 import com.google.common.io.Files;
 import com.google.protobuf.ByteString;
 import hex.genmodel.MojoModel;
@@ -2699,22 +2700,46 @@ public class RunnerController {
 		int exitVal = -1;
 
 		try {
-			String protort = pluginRoot + SEP + "protobuf-java-" + protoRTVersion + ".jar";
-			ProcessBuilder pb = new ProcessBuilder("jar", "-xvf", protort);
-			pb.directory(new File(pluginClassPath));
+			// Find $JAVA_HOME
+			ImmutableList<String> cmd = ImmutableList.of("/bin/bash", "-c", "echo $JAVA_HOME");
+			ProcessBuilder pb = new ProcessBuilder(cmd);
+			logger.info("updateProtoJar: executing command: \"echo $JAVA_HOME\"");
 
-			logger.info("Setting directory to : " + pluginClassPath + " before producing/updating pbuff.jar");
-			logger.info("executing command: \"jar -xvf " + protort + "\" from directory " + pluginClassPath);
 			Process p = pb.start();
 			// get the error stream of the process and print it
 			InputStream error = p.getErrorStream();
-			for (int i = 0; i < error.available(); i++) {
-				logger.error("" + error.read());
-			}
-
+			printCmdError(error);
 			PrintWriter printWriter = new PrintWriter(p.getOutputStream());
+			BufferedReader bufferedReader0 = new BufferedReader(new InputStreamReader(p.getInputStream()));
+			ArrayList<String> output = printCmdOutput(bufferedReader0);
+			String javaPath = "";
+			if (!output.isEmpty())
+				javaPath = output.get(0);
+			printWriter.flush();
+			exitVal = p.waitFor();
+
+			logger.info("updateProtoJar: Exit Value for which \"echo $JAVA_HOME\": " + exitVal);
+
+			String jarCmd = "jar";
+
+			if (javaPath != null && javaPath.length() != 0) // use absolute path
+				jarCmd = javaPath + SEP + "bin" + SEP + "jar";
+
+			String protort = pluginRoot + SEP + "protobuf-java-" + protoRTVersion + ".jar";
+			pb = new ProcessBuilder(jarCmd, "-xvf", protort);
+			pb.directory(new File(pluginClassPath));
+
+			logger.info("Setting directory to : " + pluginClassPath + " before producing/updating pbuff.jar");
+			logger.info("executing command: \"" + jarCmd + " -xvf " + protort + "\" from directory " + pluginClassPath);
+			p = pb.start();
+			// get the error stream of the process and print it
+			error = p.getErrorStream();
+			printCmdError(error);
+
+			printWriter = new PrintWriter(p.getOutputStream());
 			BufferedReader bufferedReader = new BufferedReader(new InputStreamReader(p.getInputStream()));
-			bufferedReader.close();
+			printCmdOutput(bufferedReader);
+
 			printWriter.flush();
 			exitVal = p.waitFor();
 
@@ -2734,6 +2759,41 @@ public class RunnerController {
 		else
 			logger.info("Completed producing/updating pbuff.jar!");
 
+	}
+
+	/**
+	 * print out output of an command
+	 * 
+	 * @param bufferedReader
+	 * @return output
+	 * @throws IOException
+	 */
+	private ArrayList<String> printCmdOutput(BufferedReader bufferedReader) throws IOException {
+		String currentLine;
+		ArrayList<String> output = new ArrayList<>();
+
+		while ((currentLine = bufferedReader.readLine()) != null) {
+			logger.info("printCmdOuput: " + currentLine);
+
+			int i;
+			for (i = 0; i < currentLine.length(); i++)
+				if (!Character.isWhitespace(currentLine.charAt(i))) {
+					output.add(currentLine);
+					break;
+				}
+		}
+		bufferedReader.close();
+		return output;
+	}
+
+	/*
+	 * print out command error message
+	 */
+	private void printCmdError(InputStream error) throws IOException {
+		for (int i = 0; i < error.available(); i++) {
+			logger.error("printCmdError: " + error.read());
+		}
+		error.close();
 	}
 
 	/**

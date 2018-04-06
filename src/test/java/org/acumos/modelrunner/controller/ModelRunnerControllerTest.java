@@ -433,7 +433,7 @@ public class ModelRunnerControllerTest extends ModelRunnerTestApp {
 
 			logger.info("generateSimpleModel: Exit Value for which javac cmd: " + exitVal);
 			
-			// Just to find where $JAVA_HOME is
+			// Find $JAVA_HOME 
 			ImmutableList<String>  cmd = ImmutableList.of("/bin/bash","-c","echo $JAVA_HOME"); 
 			pb0 = new ProcessBuilder(cmd);
 			logger.info("generateSimpleModel: executing command: \"echo $JAVA_HOME\"");
@@ -452,10 +452,9 @@ public class ModelRunnerControllerTest extends ModelRunnerTestApp {
 			exitVal = p0.waitFor();
 
 			logger.info("generateSimpleModel: Exit Value for which \"echo $JAVA_HOME\": " + exitVal);
-			// Done find $JAVA_HOME
+			// Done finding $JAVA_HOME
 			
-
-			// Just to find where jar program is
+			// Find jar program
 			pb0 = new ProcessBuilder("which", "jar");
 			pb0.directory(new File(simpleModelPath));
 			logger.info("generateSimpleModel: executing command: \"which jar\"");
@@ -471,7 +470,7 @@ public class ModelRunnerControllerTest extends ModelRunnerTestApp {
 			exitVal = p0.waitFor();
 
 			logger.info("generateSimpleModel: Exit Value for which jar cmd: " + exitVal);
-			// Done find $PATH
+			// Done finding jar
 						
 			ProcessBuilder pb = new ProcessBuilder("javac", "SimpleMockModel.java");
 			pb.directory(new File(simpleModelPath));
