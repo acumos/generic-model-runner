@@ -31,6 +31,7 @@ import java.io.InputStreamReader;
 import java.io.PrintWriter;
 import java.nio.file.Files;
 import java.nio.file.Paths;
+import java.util.ArrayList;
 import java.util.Arrays;
 
 import org.junit.Before;
@@ -48,6 +49,8 @@ import org.springframework.test.web.servlet.request.RequestPostProcessor;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 import org.springframework.web.client.HttpStatusCodeException;
 import org.springframework.web.context.WebApplicationContext;
+
+import com.google.common.collect.ImmutableList;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -429,6 +432,28 @@ public class ModelRunnerControllerTest extends ModelRunnerTestApp {
 			exitVal = p0.waitFor();
 
 			logger.info("generateSimpleModel: Exit Value for which javac cmd: " + exitVal);
+			
+			// Just to find where $JAVA_HOME is
+			ImmutableList<String>  cmd = ImmutableList.of("/bin/bash","-c","echo $JAVA_HOME"); 
+			pb0 = new ProcessBuilder(cmd);
+			logger.info("generateSimpleModel: executing command: \"echo $JAVA_HOME\"");
+			
+			p0 = pb0.start();
+			// get the error stream of the process and print it
+			error0 = p0.getErrorStream();
+			printCmdError(error0);
+			printWriter0 = new PrintWriter(p0.getOutputStream());
+			bufferedReader0 = new BufferedReader(new InputStreamReader(p0.getInputStream()));
+			ArrayList<String> output = printCmdOutput(bufferedReader0);
+			String javaPath = "";
+			if (!output.isEmpty())
+				javaPath = output.get(0);
+			printWriter0.flush();
+			exitVal = p0.waitFor();
+
+			logger.info("generateSimpleModel: Exit Value for which \"echo $JAVA_HOME\": " + exitVal);
+			// Done find $JAVA_HOME
+			
 
 			// Just to find where jar program is
 			pb0 = new ProcessBuilder("which", "jar");
@@ -468,14 +493,19 @@ public class ModelRunnerControllerTest extends ModelRunnerTestApp {
 			exitVal = p.waitFor();
 
 			logger.info("generateSimpleModel: Exit Value for javac cmd: " + exitVal);
-
-			pb = new ProcessBuilder("jar", "-cvf", "model.jar", "SimpleMockModel.class");
+			String jarCmd = "jar";
+			
+			if(javaPath != null && javaPath.length() != 0) // use absolute path
+				jarCmd = javaPath + SEP + "bin" + SEP + "jar";
+			
+			pb = new ProcessBuilder(jarCmd, "-cvf", "model.jar", "SimpleMockModel.class");
+			
 			pb.directory(new File(simpleModelPath));
 
 			logger.info("generateSimpleModel: Setting directory to : " + simpleModelPath
 					+ " before producing simple model.jar");
 			logger.info(
-					"generateSimpleModel: executing command: \"jar -cvf model.jar SimpleMockModel.class\" from directory "
+					"generateSimpleModel: executing command: \"" + jarCmd + " -cvf model.jar SimpleMockModel.class\" from directory "
 							+ simpleModelPath);
 			p = pb.start();
 			// get the error stream of the process and print it
@@ -504,18 +534,31 @@ public class ModelRunnerControllerTest extends ModelRunnerTestApp {
 	}
 
 	/**
-	 * Print out contents of BufferedReader
-	 * 
-	 * @param bufferedReader
+	 * print out output of an command
+	 * @param 
+	 *     bufferedReader
+	 * @return 
+	 *     output
 	 * @throws IOException
 	 */
-	private void printCmdOutput(BufferedReader bufferedReader) throws IOException {
+	private ArrayList<String> printCmdOutput(BufferedReader bufferedReader) throws IOException {
 		String currentLine;
+		ArrayList<String> output = new ArrayList<>();
 
 		while ((currentLine = bufferedReader.readLine()) != null) {
 			logger.info("printCmdOuput: " + currentLine);
+			
+			if(currentLine.length() != 0) {
+				int i;
+				for (i = 0; i < currentLine.length(); i ++)
+					if (!Character.isWhitespace(currentLine.charAt(i))){
+						output.add(currentLine);
+						break;
+					}
+			}
 		}
 		bufferedReader.close();
+		return output;
 	}
 	
 	/*
