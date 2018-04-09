@@ -1641,9 +1641,11 @@ public class RunnerController {
 									if (!started)
 										started = true;
 
-									enumList.add(forNumberMethod.invoke(null, (Integer) obj));
-									enumArrayList.add(obj);
-									predictionAdded = true;
+									if(forNumberMethod.invoke(null, (Integer) obj) != null) {
+										enumList.add(forNumberMethod.invoke(null, (Integer) obj));
+										enumArrayList.add(obj);
+										predictionAdded = true;
+									}
 								} else {
 									if (started)
 										break;
@@ -1661,10 +1663,12 @@ public class RunnerController {
 							for (Object obj : predictList) {
 								logger.info("Object is " + obj.getClass().getName());
 								if (obj instanceof Integer) {
-									addPrediction.invoke(object, forNumberMethod.invoke(null, (Integer) obj));
-									predictionAdded = true;
-									predictList.remove(obj);
-									break;
+									if (forNumberMethod.invoke(null, (Integer) obj) != null) {
+										addPrediction.invoke(object, forNumberMethod.invoke(null, (Integer) obj));
+										predictionAdded = true;
+										predictList.remove(obj);
+										break;
+									}
 								}
 							}
 						}
