@@ -68,3 +68,8 @@ Version 2.1.1, 5 April 2018
 
 * Support non-scalar ENUM data type in the proto file for all POST end points.
 * The ENUM can be standalone or embedded in a message
+
+Version 2.1.2, 16 April 2018
+============================
+
+* Remove the use of getVersion.sh which gets the latest version of protobuf runtime library and implement corresponding steps using ProcessBuilder Java class.
