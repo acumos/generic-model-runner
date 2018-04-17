@@ -20,12 +20,13 @@
 
 package org.acumos.modelrunner.controller;
 
+import org.acumos.modelrunner.utils.ExecCmdUtil;
+
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
 import java.io.BufferedReader;
 import java.io.File;
-import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.PrintWriter;
@@ -169,6 +170,10 @@ public class ModelRunnerControllerTest extends ModelRunnerTestApp {
 			MockMultipartFile testCSV = new MockMultipartFile("csvFile", "testTransform.csv", "text/csv",
 					"operand\n2\n7\n8\n".getBytes());
 			byte[] modelbytes0 = Files.readAllBytes(new File(testPath + SEP + "model.jar").toPath());
+			/*
+			 * https://stackoverflow.com/questions/28673651/how-to-get-the-path-of-src-test-
+			 * resources-directory-in-junit
+			 */
 			byte[] protobytes0 = Files.readAllBytes(Paths.get("src", "test", "resources", "simplemodel.proto"));
 			MockMultipartFile testProto = new MockMultipartFile("proto", "simplemodel.proto", null, protobytes0);
 			MockMultipartFile testModel = new MockMultipartFile("model", "model.jar", null, modelbytes0);
@@ -422,10 +427,10 @@ public class ModelRunnerControllerTest extends ModelRunnerTestApp {
 			Process p0 = pb0.start();
 			// get the error stream of the process and print it
 			InputStream error0 = p0.getErrorStream();
-			printCmdError(error0);
+			ExecCmdUtil.printCmdError(error0);
 			PrintWriter printWriter0 = new PrintWriter(p0.getOutputStream());
 			BufferedReader bufferedReader0 = new BufferedReader(new InputStreamReader(p0.getInputStream()));
-			printCmdOutput(bufferedReader0);
+			ExecCmdUtil.printCmdOutput(bufferedReader0);
 
 			printWriter0.flush();
 			exitVal = p0.waitFor();
@@ -441,10 +446,10 @@ public class ModelRunnerControllerTest extends ModelRunnerTestApp {
 			p0 = pb0.start();
 			// get the error stream of the process and print it
 			error0 = p0.getErrorStream();
-			printCmdError(error0);
+			ExecCmdUtil.printCmdError(error0);
 			printWriter0 = new PrintWriter(p0.getOutputStream());
 			bufferedReader0 = new BufferedReader(new InputStreamReader(p0.getInputStream()));
-			ArrayList<String> output = printCmdOutput(bufferedReader0);
+			ArrayList<String> output = ExecCmdUtil.printCmdOutput(bufferedReader0);
 			String javaPath = "";
 			if (!output.isEmpty())
 				javaPath = output.get(0);
@@ -462,10 +467,10 @@ public class ModelRunnerControllerTest extends ModelRunnerTestApp {
 			p0 = pb0.start();
 			// get the error stream of the process and print it
 			error0 = p0.getErrorStream();
-			printCmdError(error0);
+			ExecCmdUtil.printCmdError(error0);
 			printWriter0 = new PrintWriter(p0.getOutputStream());
 			bufferedReader0 = new BufferedReader(new InputStreamReader(p0.getInputStream()));
-			printCmdOutput(bufferedReader0);
+			ExecCmdUtil.printCmdOutput(bufferedReader0);
 			printWriter0.flush();
 			exitVal = p0.waitFor();
 
@@ -482,11 +487,11 @@ public class ModelRunnerControllerTest extends ModelRunnerTestApp {
 			Process p = pb.start();
 			// get the error stream of the process and print it
 			InputStream error = p.getErrorStream();
-			printCmdError(error);
+			ExecCmdUtil.printCmdError(error);
 
 			PrintWriter printWriter = new PrintWriter(p.getOutputStream());
 			BufferedReader bufferedReader = new BufferedReader(new InputStreamReader(p.getInputStream()));
-			printCmdOutput(bufferedReader);
+			ExecCmdUtil.printCmdOutput(bufferedReader);
 			bufferedReader.close();
 			printWriter.flush();
 			exitVal = p.waitFor();
@@ -514,7 +519,7 @@ public class ModelRunnerControllerTest extends ModelRunnerTestApp {
 
 			printWriter = new PrintWriter(p.getOutputStream());
 			bufferedReader = new BufferedReader(new InputStreamReader(p.getInputStream()));
-			printCmdOutput(bufferedReader);
+			ExecCmdUtil.printCmdOutput(bufferedReader);
 
 			printWriter.flush();
 			exitVal = p.waitFor();
@@ -529,40 +534,5 @@ public class ModelRunnerControllerTest extends ModelRunnerTestApp {
 		else
 			logger.info("generateSimpleModel: Completed producing simple model.jar!");
 
-	}
-
-	/**
-	 * print out output of an command
-	 * 
-	 * @param bufferedReader
-	 * @return output
-	 * @throws IOException
-	 */
-	private ArrayList<String> printCmdOutput(BufferedReader bufferedReader) throws IOException {
-		String currentLine;
-		ArrayList<String> output = new ArrayList<>();
-
-		while ((currentLine = bufferedReader.readLine()) != null) {
-			logger.info("printCmdOuput: " + currentLine);
-
-			int i;
-			for (i = 0; i < currentLine.length(); i++)
-				if (!Character.isWhitespace(currentLine.charAt(i))) {
-					output.add(currentLine);
-					break;
-				}
-		}
-		bufferedReader.close();
-		return output;
-	}
-
-	/*
-	 * print out command error message
-	 */
-	private void printCmdError(InputStream error) throws IOException {
-		for (int i = 0; i < error.available(); i++) {
-			logger.error("printCmdError: " + error.read());
-		}
-		error.close();
 	}
 }
