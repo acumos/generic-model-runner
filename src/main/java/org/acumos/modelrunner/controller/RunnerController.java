@@ -35,8 +35,6 @@ import java.io.PrintWriter;
 import java.io.Writer;
 import java.lang.reflect.Method;
 import java.lang.reflect.Type;
-import java.net.URL;
-import java.net.URLClassLoader;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Paths;
 import java.util.ArrayList;
@@ -47,10 +45,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.Properties;
 import java.util.Random;
-import java.util.Scanner;
 import java.util.StringTokenizer;
 import java.util.UUID;
-import java.util.jar.JarEntry;
 import java.util.jar.JarOutputStream;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -58,6 +54,7 @@ import javax.ws.rs.core.MediaType;
 
 import org.acumos.modelrunner.domain.*;
 import org.acumos.modelrunner.domain.MessageObject.AttributeEntity;
+import org.acumos.modelrunner.utils.*;
 import org.apache.commons.io.IOUtils;
 import org.metawidget.util.simple.StringUtils;
 import org.slf4j.Logger;
@@ -107,7 +104,6 @@ public class RunnerController {
 	private String modelConfig;
 
 	private static final Logger logger = LoggerFactory.getLogger(RunnerController.class);
-	private static final Class<?>[] parameters = new Class[] { URL.class };
 	private static final String SEP = File.separator;
 	private static final String NEWLINE = System.lineSeparator();
 	private static final String TMPPATH = System.getProperty("java.io.tmpdir");
@@ -144,7 +140,7 @@ public class RunnerController {
 	private ArrayList<String> classNames = new ArrayList<>();
 	private ArrayList<String> enumNames = new ArrayList<>();
 	private Properties prop = new Properties();
-	private String protoRTVersion = null;
+	private String protoRTVersion = "3.5.1";
 	private ClassLoader cl = null;
 	private int protoIdx = 0;
 
@@ -232,14 +228,14 @@ public class RunnerController {
 	public ResponseEntity<Map<String, String>> putModelConfig(@RequestPart("modelConfig") MultipartFile configFile) {
 		logger.info("Receiving /putModelConfig PUT request...");
 		Map<String, String> results = new LinkedHashMap<>();
-
+		BufferedOutputStream stream = null;
 		try {
 			if (configFile != null && !configFile.isEmpty()) {
 				byte[] bytes = configFile.getBytes();
 
 				// Create the file on server
 				File configPropertiesFile = new File(PROJECTROOT + modelConfig);
-				BufferedOutputStream stream = new BufferedOutputStream(new FileOutputStream(configPropertiesFile));
+				stream = new BufferedOutputStream(new FileOutputStream(configPropertiesFile));
 				stream.write(bytes);
 				stream.close();
 
@@ -251,12 +247,12 @@ public class RunnerController {
 			results.put("status", "bad request");
 			results.put("message", ex.getMessage());
 			return new ResponseEntity<>(results, HttpStatus.BAD_REQUEST);
-		}
-
+		} 
+		
 		results.put("status", "ok");
 		return new ResponseEntity<>(results, HttpStatus.OK);
 	}
-
+	
 	/**
 	 * getBinaryDefault converts the uploaded csv file based on the default .proto
 	 * file
@@ -271,7 +267,7 @@ public class RunnerController {
 		logger.info("Receiving /getBinaryDefault POST request...");
 		return getNewBinary_(csvFile, null, operation);
 	}
-
+	
 	/**
 	 * 
 	 * @param csvFile
@@ -306,6 +302,10 @@ public class RunnerController {
 	private byte[] getNewBinary_(MultipartFile file, MultipartFile proto, String operation) {
 		try {
 			Object df = getInputClassBuilder(file, proto, operation); // df is of {InputClass}.Builder type
+			if(df == null) {
+				logger.error("getNewBinary_: Failed getting binary stream inputs:");
+				return new byte[0];
+			}
 			Method dfBuilder = df.getClass().getMethod("build");
 			Object obj = dfBuilder.invoke(df);
 
@@ -321,7 +321,8 @@ public class RunnerController {
 			return new byte[0];
 		}
 	}
-
+	
+	
 	/**
 	 * 
 	 * @param csvFile
@@ -414,14 +415,14 @@ public class RunnerController {
 	}
 
 	/**
-	 * Get {InputClass}.Builder class based on uploaded data file and proto file
+	 * Get {InputClass}.Builder class based on uploaded data file and proto file.
+	 * This is the first step for serialization.
 	 * 
 	 * @param file
 	 * @param proto
 	 * @return {InputClass}.Builder
 	 * @throws Exception
 	 */
-
 	private Object getInputClassBuilder(MultipartFile file, MultipartFile proto, String operation) throws Exception {
 		if (file.isEmpty()) {
 			logger.error("getInputClassBuilder: You failed to upload " + file.getOriginalFilename()
@@ -1001,7 +1002,6 @@ public class RunnerController {
 							inputAddOrSetRow.invoke(thisBuilder, innerObj);
 						}
 						break;
-
 					}
 				}
 
@@ -1257,7 +1257,7 @@ public class RunnerController {
 			Files.copy(modelSource, modelJarPath);
 
 			cl = RunnerController.class.getClassLoader();
-			addFile(modelJarPath);
+			AddUrlUtil.addFile(modelJarPath);
 			logger.info("Jar file path=" + modelJarPath);
 			List<?> predictList = null;
 
@@ -1267,22 +1267,30 @@ public class RunnerController {
 			logger.info("getMethods: " + Arrays.toString(modelClass.getMethods()));
 
 			String paramType = getMethodParamType(modelClass, modelMethodName);
-
+			if(paramType == null) {
+				logger.debug("doPredictGeneric: paramType of model method is NULL");
+				return null;
+			}
+			logger.info(modelMethodName + " method parameter type=" + paramType);
 			Method methodPredict = null;
 
-			logger.info(modelMethodName + " method parameter type=" + paramType);
-
 			switch (paramType) {
-
 			case "java.io.File":
-
 				File file = new File(genfile);
 				methodPredict = modelClass.getDeclaredMethod(modelMethodName, File.class);
+				if(methodPredict == null) {
+					logger.debug("doPredictGeneric: cannot getDeclaredMethod " + modelMethodName);
+					return null;
+				}
 				predictList = (List<?>) methodPredict.invoke(null, file);
 				break;
 
 			case "java.lang.String":
 				methodPredict = modelClass.getDeclaredMethod(modelMethodName, String.class);
+				if(methodPredict == null) {
+					logger.debug("doPredictGeneric: cannot getDeclaredMethod " + modelMethodName);
+					return null;
+				}
 				predictList = (List<?>) methodPredict.invoke(null, rowString.toString());
 				break;
 
@@ -2090,10 +2098,12 @@ public class RunnerController {
 			ServiceObject so = serviceList.get(operation);
 			if (so == null) {
 				logger.error("Inside operation(): Invalid operation [" + operation + "]");
+				return null;
 			}
 			inputClassName = so.getInputClass();
 			outputClassName = so.getOutputClass();
 
+			// First step is to de-serialize the binary stream
 			// dframe = DataFrame.parseFrom(datain);
 			Class<?> inputClass = classList.get(inputClassName).getCls();
 			Method method = inputClass.getMethod("parseFrom", new Class[] { byte[].class });
@@ -2142,7 +2152,7 @@ public class RunnerController {
 		// purge plugin root directories if already existed
 		File dir = new File(pluginRoot);
 		if (dir.exists()) {
-			boolean deleted = deleteDirectory(dir);
+			boolean deleted = ExecCmdUtil.deleteDirectory(dir);
 			logger.info("plugin root directory " + pluginRoot + " is deleted? " + deleted);
 		}
 		// Now (re)create plugin root directories
@@ -2164,12 +2174,12 @@ public class RunnerController {
 		modelZip = new String(PROJECTROOT + defaultModel);
 		defaultProtofile = new String(PROJECTROOT + defaultProto);
 
-		downloadProtoJavaRuntimeJar();
+		downloadProtoJavaRuntime();
 		generateProto(protoString); // Use null for now.
 
 		cl = RunnerController.class.getClassLoader();
 
-		addFile(protoJarPath);
+		AddUrlUtil.addFile(protoJarPath);
 
 		for (String cname : classNames) {
 			MessageObject mobj = classList.get(cname);
@@ -2294,7 +2304,8 @@ public class RunnerController {
 
 		String msgname = "";
 		if (outerClsName != null && outerClsName.length() > 0) {
-			msgname = outerClsName + ((isEnum) ? "$" : ".");
+//			msgname = outerClsName + ((isEnum) ? "$" : ".");
+			msgname = outerClsName + "$";
 		}
 
 		msgname += arr[idx + 1].endsWith("{") ? arr[idx + 1].substring(0, arr[idx + 1].length() - 1) : arr[idx + 1];
@@ -2586,7 +2597,7 @@ public class RunnerController {
 				+ "dataset.proto";
 
 		try {
-			exitVal = runCommand(cmd);
+			exitVal = ExecCmdUtil.runCommand(cmd);
 			String path = (pluginPkgName == null) ? protoOutputPath
 					: protoOutputPath + SEP + pluginPkgName.replaceAll("\\.", SEP);
 
@@ -2642,21 +2653,37 @@ public class RunnerController {
 	/**
 	 * Download Protobuf Java Runtime Jar
 	 */
-	private void downloadProtoJavaRuntimeJar() {
-
+	private void downloadProtoJavaRuntime() {
+		logger.info("downloadProtoJavaRuntime: The default protobuf runtime version is " + protoRTVersion);
 		try {
-			String cmd0 = PROJECTROOT + SEP + "bin" + SEP + "getVersion.sh";
-			protoRTVersion = execCommand(cmd0);
+			String cmdStr =   "curl --silent https://repo1.maven.org/maven2/com/google/protobuf/protobuf-java/maven-metadata.xml | grep -Po '(?<=<version>)([0-9\\\\.]+(-SNAPSHOT)?)' | sort --version-sort -r | head -n 1";
+			
+			ImmutableList<String> cmd01 = ImmutableList.of("/bin/bash", "-c", cmdStr);
+			ProcessBuilder pb = new ProcessBuilder(cmd01);
+			logger.info("downloadProtoJavaRuntime: executing command: " + cmdStr);
 
+			Process p = pb.start();
+			// get the error stream of the process and print it
+			InputStream error = p.getErrorStream();
+			ExecCmdUtil.printCmdError(error);
+			PrintWriter printWriter = new PrintWriter(p.getOutputStream());
+			BufferedReader bufferedReader0 = new BufferedReader(new InputStreamReader(p.getInputStream()));
+			ArrayList<String> output = ExecCmdUtil.printCmdOutput(bufferedReader0);
+			if (!output.isEmpty())
+				protoRTVersion = output.get(0);
+			
+			printWriter.flush();
+			int exitVal0 = p.waitFor();
+			
 			String mavenUrl = "https://repo1.maven.org/maven2/com/google/protobuf/protobuf-java/" + protoRTVersion
 					+ "/protobuf-java-" + protoRTVersion + ".jar";
-			logger.info("mavenurl = " + mavenUrl);
-			logger.info("Protobuf Runtime Version is " + protoRTVersion);
+			logger.info("downloadProtoJavaRuntime: mavenurl = " + mavenUrl);
+			logger.info("The latest protobuf runtime Version is " + protoRTVersion);
 
 			String cmd = "curl -o " + pluginRoot + SEP + "protobuf-java-" + protoRTVersion + ".jar " + mavenUrl;
 			logger.info("executing command " + cmd);
 			int exitVal = -1;
-			exitVal = runCommand(cmd);
+			exitVal = ExecCmdUtil.runCommand(cmd);
 
 			if (exitVal != 0)
 				logger.error("Failed downloading Protobuf Runtime Library!");
@@ -2686,8 +2713,7 @@ public class RunnerController {
 				+ "DatasetProto" + protoIdx + ".java -d " + pluginClassPath;
 
 		try {
-			exitVal = runCommand(cmd);
-
+			exitVal = ExecCmdUtil.runCommand(cmd);
 		} catch (Exception ex) {
 			logger.error("Failed in buildProtoClasses(): ", ex);
 		}
@@ -2712,10 +2738,10 @@ public class RunnerController {
 			Process p = pb.start();
 			// get the error stream of the process and print it
 			InputStream error = p.getErrorStream();
-			printCmdError(error);
+			ExecCmdUtil.printCmdError(error);
 			PrintWriter printWriter = new PrintWriter(p.getOutputStream());
 			BufferedReader bufferedReader0 = new BufferedReader(new InputStreamReader(p.getInputStream()));
-			ArrayList<String> output = printCmdOutput(bufferedReader0);
+			ArrayList<String> output = ExecCmdUtil.printCmdOutput(bufferedReader0);
 			String javaPath = "";
 			if (!output.isEmpty())
 				javaPath = output.get(0);
@@ -2738,11 +2764,11 @@ public class RunnerController {
 			p = pb.start();
 			// get the error stream of the process and print it
 			error = p.getErrorStream();
-			printCmdError(error);
+			ExecCmdUtil.printCmdError(error);
 
 			printWriter = new PrintWriter(p.getOutputStream());
 			BufferedReader bufferedReader = new BufferedReader(new InputStreamReader(p.getInputStream()));
-			printCmdOutput(bufferedReader);
+			ExecCmdUtil.printCmdOutput(bufferedReader);
 
 			printWriter.flush();
 			exitVal = p.waitFor();
@@ -2750,7 +2776,7 @@ public class RunnerController {
 			logger.info("Exit Value: " + exitVal);
 			File plugin = new File(pluginClassPath);
 			JarOutputStream target = new JarOutputStream(new FileOutputStream(protoJarPath));
-			add(plugin, plugin, target);
+			AddUrlUtil.add(plugin, plugin, target);
 			target.close();
 
 		} catch (Exception ex) {
@@ -2764,205 +2790,4 @@ public class RunnerController {
 			logger.info("Completed producing/updating pbuff.jar!");
 
 	}
-
-	/**
-	 * print out output of an command
-	 * 
-	 * @param bufferedReader
-	 * @return output
-	 * @throws IOException
-	 */
-	private ArrayList<String> printCmdOutput(BufferedReader bufferedReader) throws IOException {
-		String currentLine;
-		ArrayList<String> output = new ArrayList<>();
-
-		while ((currentLine = bufferedReader.readLine()) != null) {
-			logger.info("printCmdOuput: " + currentLine);
-
-			int i;
-			for (i = 0; i < currentLine.length(); i++)
-				if (!Character.isWhitespace(currentLine.charAt(i))) {
-					output.add(currentLine);
-					break;
-				}
-		}
-		bufferedReader.close();
-		return output;
-	}
-
-	/*
-	 * print out command error message
-	 */
-	private void printCmdError(InputStream error) throws IOException {
-		for (int i = 0; i < error.available(); i++) {
-			logger.error("printCmdError: " + error.read());
-		}
-		error.close();
-	}
-
-	/**
-	 * 
-	 * @param root
-	 * @param source
-	 * @param target
-	 * @throws IOException
-	 */
-	private void add(File root, File source, JarOutputStream target) throws IOException {
-		BufferedInputStream in = null;
-		try {
-			if (source.isDirectory()) {
-				String name = source.getPath().replace("\\", "/");
-				if (!name.isEmpty()) {
-					if (!name.endsWith("/")) {
-						name += "/";
-					}
-					JarEntry entry = new JarEntry(name);
-					entry.setTime(source.lastModified());
-					target.putNextEntry(entry);
-					target.closeEntry();
-				}
-				for (File nestedFile : source.listFiles()) {
-					add(root, nestedFile, target);
-				}
-				return;
-			}
-
-			String relPath = source.getCanonicalPath().substring(root.getCanonicalPath().length() + 1,
-					source.getCanonicalPath().length());
-			if (!relPath.endsWith("class")) {
-				return;
-			}
-
-			JarEntry entry = new JarEntry(relPath.replace("\\", "/"));
-			entry.setTime(source.lastModified());
-			target.putNextEntry(entry);
-			in = new BufferedInputStream(new FileInputStream(source));
-
-			byte[] buffer = new byte[1024];
-			while (true) {
-				int count = in.read(buffer);
-				if (count == -1) {
-					break;
-				}
-				target.write(buffer, 0, count);
-			}
-			target.closeEntry();
-		} finally {
-			if (in != null) {
-				in.close();
-			}
-		}
-	}
-
-	/**
-	 * 
-	 * @param cmd
-	 *            command to be run with no output
-	 * @return error code
-	 * @throws Exception
-	 */
-	private int runCommand(String cmd) throws Exception {
-		logger.info("Exec: " + cmd);
-		Process p = Runtime.getRuntime().exec(cmd);
-
-		// get the error stream of the process and print it
-		InputStream error = p.getErrorStream();
-		for (int i = 0; i < error.available(); i++) {
-			logger.error("" + error.read());
-		}
-
-		int exitVal = p.waitFor();
-		logger.info("Exit Value: " + exitVal);
-		return exitVal;
-	}
-
-	/**
-	 * https://stackoverflow.com/questions/5711084/java-runtime-getruntime-getting-output-from-executing-a-command-line-program
-	 * 
-	 * @param cmd
-	 *            command to be executed
-	 * @return result of executing command
-	 * @throws IOException
-	 *             On failure
-	 */
-	private String execCommand(String cmd) throws IOException {
-
-		Process proc = Runtime.getRuntime().exec(cmd);
-		InputStream is = proc.getInputStream();
-		Scanner s = new java.util.Scanner(is);
-		// Scanner s = scanner.useDelimiter("\\A");
-
-		String val = "";
-		if (s.hasNext()) {
-			val = s.next();
-		} else {
-			val = "";
-		}
-		s.close();
-		return val;
-	}
-
-	/**
-	 * Deleting a directory recursively :
-	 * http://www.baeldung.com/java-delete-directory
-	 * 
-	 * @param directoryToBeDeleted
-	 * @return true or false
-	 */
-	boolean deleteDirectory(File directoryToBeDeleted) {
-		File[] allContents = directoryToBeDeleted.listFiles();
-		if (allContents != null) {
-			for (File file : allContents) {
-				deleteDirectory(file);
-			}
-		}
-		return directoryToBeDeleted.delete();
-	}
-
-	/**
-	 * Adds the content pointed by the URL to the classpath.
-	 * 
-	 * @param u
-	 *            the URL pointing to the content to be added
-	 * @throws IOException
-	 *             On failure
-	 */
-	private static void addURL(URL u) throws IOException {
-		URLClassLoader sysloader = (URLClassLoader) ClassLoader.getSystemClassLoader();
-		Class<?> sysclass = URLClassLoader.class;
-		try {
-			Method method = sysclass.getDeclaredMethod("addURL", parameters);
-			method.setAccessible(true);
-			method.invoke(sysloader, new Object[] { u });
-		} catch (Throwable t) {
-			logger.error("Failed in addURL(): ", t);
-			throw new IOException("Error, could not add URL to system classloader");
-		}
-	}
-
-	/**
-	 * Adds a file to the classpath.
-	 * 
-	 * @param s
-	 *            a String pointing to the file
-	 * @throws IOException
-	 *             On failure
-	 */
-	public static void addFile(String s) throws IOException {
-		File f = new File(s);
-		addFile(f);
-	}
-
-	/**
-	 * Adds a file to the classpath
-	 * 
-	 * @param f
-	 *            the file to be added
-	 * @throws IOException
-	 *             On failure
-	 */
-	public static void addFile(File f) throws IOException {
-		addURL(f.toURI().toURL());
-	}
-
 }
