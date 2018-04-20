@@ -84,6 +84,7 @@ import hex.genmodel.easy.prediction.DimReductionModelPrediction;
 import hex.genmodel.easy.prediction.MultinomialModelPrediction;
 import hex.genmodel.easy.prediction.RegressionModelPrediction;
 import hex.genmodel.easy.prediction.Word2VecPrediction;
+import hex.ModelCategory;
 import io.swagger.annotations.ApiOperation;
 
 @RestController
@@ -247,12 +248,12 @@ public class RunnerController {
 			results.put("status", "bad request");
 			results.put("message", ex.getMessage());
 			return new ResponseEntity<>(results, HttpStatus.BAD_REQUEST);
-		} 
-		
+		}
+
 		results.put("status", "ok");
 		return new ResponseEntity<>(results, HttpStatus.OK);
 	}
-	
+
 	/**
 	 * getBinaryDefault converts the uploaded csv file based on the default .proto
 	 * file
@@ -267,7 +268,7 @@ public class RunnerController {
 		logger.info("Receiving /getBinaryDefault POST request...");
 		return getNewBinary_(csvFile, null, operation);
 	}
-	
+
 	/**
 	 * 
 	 * @param csvFile
@@ -302,7 +303,7 @@ public class RunnerController {
 	private byte[] getNewBinary_(MultipartFile file, MultipartFile proto, String operation) {
 		try {
 			Object df = getInputClassBuilder(file, proto, operation); // df is of {InputClass}.Builder type
-			if(df == null) {
+			if (df == null) {
 				logger.error("getNewBinary_: Failed getting binary stream inputs:");
 				return new byte[0];
 			}
@@ -321,8 +322,7 @@ public class RunnerController {
 			return new byte[0];
 		}
 	}
-	
-	
+
 	/**
 	 * 
 	 * @param csvFile
@@ -1267,7 +1267,7 @@ public class RunnerController {
 			logger.info("getMethods: " + Arrays.toString(modelClass.getMethods()));
 
 			String paramType = getMethodParamType(modelClass, modelMethodName);
-			if(paramType == null) {
+			if (paramType == null) {
 				logger.debug("doPredictGeneric: paramType of model method is NULL");
 				return null;
 			}
@@ -1278,7 +1278,7 @@ public class RunnerController {
 			case "java.io.File":
 				File file = new File(genfile);
 				methodPredict = modelClass.getDeclaredMethod(modelMethodName, File.class);
-				if(methodPredict == null) {
+				if (methodPredict == null) {
 					logger.debug("doPredictGeneric: cannot getDeclaredMethod " + modelMethodName);
 					return null;
 				}
@@ -1287,7 +1287,7 @@ public class RunnerController {
 
 			case "java.lang.String":
 				methodPredict = modelClass.getDeclaredMethod(modelMethodName, String.class);
-				if(methodPredict == null) {
+				if (methodPredict == null) {
 					logger.debug("doPredictGeneric: cannot getDeclaredMethod " + modelMethodName);
 					return null;
 				}
@@ -1649,7 +1649,7 @@ public class RunnerController {
 									if (!started)
 										started = true;
 
-									if(forNumberMethod.invoke(null, (Integer) obj) != null) {
+									if (forNumberMethod.invoke(null, (Integer) obj) != null) {
 										enumList.add(forNumberMethod.invoke(null, (Integer) obj));
 										enumArrayList.add(obj);
 										predictionAdded = true;
@@ -1796,8 +1796,13 @@ public class RunnerController {
 					Object obj;
 					for (int j = 0; j < rowCount; j++) {
 						obj = list.get(j);
-
 						switch (oae.getType()) {
+						/*
+						 * Force all the numeric fields into Double since H2O RowData only Supports
+						 * String and Double according to
+						 * https://h2o-release.s3.amazonaws.com/h2o/rel-turing/10/docs-website/h2o-
+						 * genmodel/javadoc/hex/genmodel/easy/exception/PredictUnknownTypeException.html
+						 */
 						case DOUBLE:
 							double attrValDouble = ((Double) obj).doubleValue();
 							row.put(oae.getName(), attrValDouble);
@@ -1805,7 +1810,7 @@ public class RunnerController {
 
 						case FLOAT:
 							float attrValFloat = ((Float) obj).floatValue();
-							row.put(oae.getName(), attrValFloat);
+							row.put(oae.getName(), Double.parseDouble(new Float(attrValFloat).toString()));
 							break;
 
 						case INT32:
@@ -1814,7 +1819,7 @@ public class RunnerController {
 						case FIXED32:
 						case SFIXED32:
 							int attrValInt = ((Integer) obj).intValue();
-							row.put(oae.getName(), attrValInt);
+							row.put(oae.getName(), Double.parseDouble(new Integer(attrValInt).toString()));
 							break;
 
 						case INT64:
@@ -1823,12 +1828,13 @@ public class RunnerController {
 						case FIXED64:
 						case SFIXED64:
 							long attrValLong = ((Long) obj).longValue();
-							row.put(oae.getName(), attrValLong);
+							row.put(oae.getName(), Double.parseDouble(new Long(attrValLong).toString()));
 							break;
 
+						/* RowData does not support boolean, so convert it to String */
 						case BOOL:
 							boolean attrValBool = ((Boolean) obj).booleanValue();
-							row.put(oae.getName(), attrValBool);
+							row.put(oae.getName(), Boolean.toString(attrValBool));
 							break;
 
 						case STRING:
@@ -1865,6 +1871,12 @@ public class RunnerController {
 					Object obj = oAttrMethod.invoke(df);
 
 					switch (oae.getType()) {
+					/*
+					 * Force all the numeric fields into Double since H2O RowData only Supports
+					 * String and Double according to
+					 * https://h2o-release.s3.amazonaws.com/h2o/rel-turing/10/docs-website/h2o-
+					 * genmodel/javadoc/hex/genmodel/easy/exception/PredictUnknownTypeException.html
+					 */
 					case DOUBLE:
 						double attrValDouble = ((Double) obj).doubleValue();
 						row.put(oae.getName(), attrValDouble);
@@ -1872,7 +1884,7 @@ public class RunnerController {
 
 					case FLOAT:
 						float attrValFloat = ((Float) obj).floatValue();
-						row.put(oae.getName(), attrValFloat);
+						row.put(oae.getName(), Double.parseDouble(new Float(attrValFloat).toString()));
 						break;
 
 					case INT32:
@@ -1881,7 +1893,7 @@ public class RunnerController {
 					case FIXED32:
 					case SFIXED32:
 						int attrValInt = ((Integer) obj).intValue();
-						row.put(oae.getName(), attrValInt);
+						row.put(oae.getName(), Double.parseDouble(new Integer(attrValInt).toString()));
 						break;
 
 					case INT64:
@@ -1890,12 +1902,13 @@ public class RunnerController {
 					case FIXED64:
 					case SFIXED64:
 						long attrValLong = ((Long) obj).longValue();
-						row.put(oae.getName(), attrValLong);
+						row.put(oae.getName(), Double.parseDouble(new Long(attrValLong).toString()));
 						break;
 
+					/* RowData does not support boolean, so convert it to String */
 					case BOOL:
 						boolean attrValBool = ((Boolean) obj).booleanValue();
-						row.put(oae.getName(), attrValBool);
+						row.put(oae.getName(), Boolean.toString(attrValBool));
 						break;
 
 					case STRING:
@@ -1954,119 +1967,105 @@ public class RunnerController {
 					mojo = MojoModel.load(modelZip);
 				model = new EasyPredictModelWrapper(mojo);
 			} // try ends
-
 			catch (IOException ie) {
-				logger.error("Failed in loading H2O Model: ", ie);
+				logger.error("doPredictH2O: Failed in loading H2O Model: ", ie);
 				return null;
-
 			} // catch ends
 
 			ArrayList<RowData> rows = new ArrayList<>();
 			getH2ORowData(df, inputClassName, rows);
-
 			ArrayList<Object> predictList = new ArrayList<>();
-
 			for (RowData row : rows) {
 				/*
 				 * We handle the following model categories: Binomial Multinomial Regression
 				 * Clustering AutoEncoder DimReduction WordEmbedding Unknown
 				 */
-
-				String current_model_category = mojo.getModelCategory().toString();
-				logger.info("model category again: " + current_model_category);
-
-				String pr = null;
+				ModelCategory currentModelCategory = mojo.getModelCategory();
+				logger.info("doPredictH2O: model category is " + currentModelCategory.toString());
 				Object p = null;
+				Object pobj = null;
 
 				try {
-
-					switch (current_model_category) {
-
-					case "Binomial":
+					switch (currentModelCategory) {
+					case Binomial:
 						p = model.predictBinomial(row);
-						String bnmpred = ((BinomialModelPrediction) p).label;
-						pr = bnmpred;
+						pobj = ((BinomialModelPrediction) p).label;
 						break;
 
-					case "Multinomial":
+					case Multinomial:
 						p = model.predictMultinomial(row);
-						String mnmpred = ((MultinomialModelPrediction) p).label;
-						pr = mnmpred;
+						pobj = ((MultinomialModelPrediction) p).label;
 						break;
 
-					case "Regression":
+					case Regression:
 						p = model.predictRegression(row);
-						double regpred = ((RegressionModelPrediction) p).value;
-						pr = Double.toString(regpred);
+						// pobj is double type
+						pobj = ((RegressionModelPrediction) p).value;
 						break;
 
-					case "Clustering":
+					case Clustering:
 						p = model.predictClustering(row);
-						int clspred = ((ClusteringModelPrediction) p).cluster;
-						pr = Integer.toString(clspred);
+						// pobj is int type
+						pobj = ((ClusteringModelPrediction) p).cluster;
 						break;
 
-					case "AutoEncoder":
+					case AutoEncoder:
 						p = model.predictAutoEncoder(row);
-						double[] autopred = ((AutoEncoderModelPrediction) p).reconstructed;
-						pr = Arrays.toString(autopred);
+						// pobj is double[] type
+						pobj = ((AutoEncoderModelPrediction) p).reconstructed;
 						break;
 
-					case "DimReduction":
+					case DimReduction:
 						p = model.predictDimReduction(row);
-						double[] dimredpred = ((DimReductionModelPrediction) p).dimensions;
-						pr = Arrays.toString(dimredpred);
+						// pobj is double[] type
+						pobj = ((DimReductionModelPrediction) p).dimensions;
 						break;
 
 					// TODO: See if this works
-					case "WordEmbedding":
+					case WordEmbedding:
 						p = model.predictWord2Vec(row);
-						HashMap<String, float[]> word2vecpred = ((Word2VecPrediction) p).wordEmbeddings;
-						pr = word2vecpred.toString();
+						// pobj is HashMap<String, float[]>
+						pobj = ((Word2VecPrediction) p).wordEmbeddings;
 						break;
 
-					case "Unknown":
+					case Unknown:
 						logger.error(
 								"Unknown model category. Results not available. Refer to http://docs.h2o.ai/h2o/latest-stable/h2o-genmodel/javadoc/hex ModelCategory.html");
-						pr = "Unknown h2o model category. Results not available. Refer to http://docs.h2o.ai/h2o/latest-stable/h2o-genmodel/javadoc/hex/ModelCategory.html";
+						pobj = "Unknown h2o model category. Results not available. Refer to http://docs.h2o.ai/h2o/latest-stable/h2o-genmodel/javadoc/hex/ModelCategory.html";
 						break;
 
 					default:
 						logger.error(
 								"Model category not recognized. Results not guaranteed.Refer to http://docs.h2o.ai/h2o/latest-stable/h2o-genmodel/javadoc/hex/ModelCategory.html");
-						pr = "Your model did not match any supported category. Results not available.Refer to http://docs.h2o.ai/h2o/latest-stable/h2o-genmodel/javadoc/hex/ModelCategory.html";
-
+						pobj = "Your model did not match any supported category. Results not available.Refer to http://docs.h2o.ai/h2o/latest-stable/h2o-genmodel/javadoc/hex/ModelCategory.html";
+						break;
 					}
-
 				} // try ends
 				catch (PredictException pe) {
-					logger.error("Failed getting prediction results from H2O model:", pe);
+					logger.error("doPredictH2O: Failed getting prediction results from H2O model:", pe);
 					pe.getMessage();
 				} // catch ends
-
-				logger.info("The prediction is  " + pr);
-
-				if (p != null) {
-					predictList.add(p);
+				logger.info("doPredictH2O: the prediction is  " + pobj.toString());
+				if (pobj != null) {
+					predictList.add(pobj);
+					pobj = null;
 					p = null;
 				}
 			}
-
 			// Create a Prediction and set its value depending on the output of
 			// the H2o predict method
-			Object pobj = getPredictionRow(outputClassName, predictList);
-
-			Method toByteArray = pobj.getClass().getMethod("toByteArray");
-
-			logger.info("In predict method: Done Prediction, returning binary serialization of prediction. ");
-			return (byte[]) (toByteArray.invoke(pobj));
-
+			Object prow = getPredictionRow(outputClassName, predictList);
+			if (prow == null) {
+				logger.info("doPredictionH2O: No prediction");
+				return new byte[0];
+			}
+			Method toByteArray = prow.getClass().getMethod("toByteArray");
+			logger.info("doPredictH2O: Done Prediction, returning binary serialization of prediction. ");
+			return (byte[]) (toByteArray.invoke(prow));
 		} catch (Exception ex) {
 			logger.error("Failed in doPredictH2O() ", ex);
-			return null;
-
+			return new byte[0];
 		}
-
 	}
 
 	/**
@@ -2304,7 +2303,7 @@ public class RunnerController {
 
 		String msgname = "";
 		if (outerClsName != null && outerClsName.length() > 0) {
-//			msgname = outerClsName + ((isEnum) ? "$" : ".");
+			// msgname = outerClsName + ((isEnum) ? "$" : ".");
 			msgname = outerClsName + "$";
 		}
 
@@ -2656,8 +2655,8 @@ public class RunnerController {
 	private void downloadProtoJavaRuntime() {
 		logger.info("downloadProtoJavaRuntime: The default protobuf runtime version is " + protoRTVersion);
 		try {
-			String cmdStr =   "curl --silent https://repo1.maven.org/maven2/com/google/protobuf/protobuf-java/maven-metadata.xml | grep -Po '(?<=<version>)([0-9\\\\.]+(-SNAPSHOT)?)' | sort --version-sort -r | head -n 1";
-			
+			String cmdStr = "curl --silent https://repo1.maven.org/maven2/com/google/protobuf/protobuf-java/maven-metadata.xml | grep -Po '(?<=<version>)([0-9\\\\.]+(-SNAPSHOT)?)' | sort --version-sort -r | head -n 1";
+
 			ImmutableList<String> cmd01 = ImmutableList.of("/bin/bash", "-c", cmdStr);
 			ProcessBuilder pb = new ProcessBuilder(cmd01);
 			logger.info("downloadProtoJavaRuntime: executing command: " + cmdStr);
@@ -2671,10 +2670,10 @@ public class RunnerController {
 			ArrayList<String> output = ExecCmdUtil.printCmdOutput(bufferedReader0);
 			if (!output.isEmpty())
 				protoRTVersion = output.get(0);
-			
+
 			printWriter.flush();
 			int exitVal0 = p.waitFor();
-			
+
 			String mavenUrl = "https://repo1.maven.org/maven2/com/google/protobuf/protobuf-java/" + protoRTVersion
 					+ "/protobuf-java-" + protoRTVersion + ".jar";
 			logger.info("downloadProtoJavaRuntime: mavenurl = " + mavenUrl);
