@@ -1941,7 +1941,8 @@ public class RunnerController {
 					logger.info(row.toString());
 				}
 			}
-			rows.add(row);
+			if(!row.isEmpty())
+				rows.add(row);
 		} catch (Exception ex) {
 			logger.error("Failed in getH2ORowData(): ", ex);
 		}
@@ -1981,7 +1982,7 @@ public class RunnerController {
 				 * Clustering AutoEncoder DimReduction WordEmbedding Unknown
 				 */
 				ModelCategory currentModelCategory = mojo.getModelCategory();
-				logger.info("doPredictH2O: model category is " + currentModelCategory.toString());
+				logger.info("doPredictH2O: model category is " + currentModelCategory.toString() + " | current row is [" + row.toString() + "]");
 				Object p = null;
 				Object pobj = null;
 
