@@ -73,3 +73,7 @@ Version 2.1.2, 16 April 2018
 ============================
 
 * Remove the use of getVersion.sh which gets the latest version of protobuf runtime library and implement corresponding steps using ProcessBuilder Java class.
+
+Version 2.1.3, 25 April 2018
+============================
+* Add conditional check to make sure empty rowData will not be fed into the H2O model. 
