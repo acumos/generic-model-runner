@@ -271,13 +271,13 @@ public class ModelRunnerControllerTest extends ModelRunnerTestApp {
 					.getResponse().getContentAsByteArray();
 			logger.info("Done testing POST /getBinaryDefault end point " + Arrays.toString(resultsBinaryDefault));
 
-			// testing /operation/{operation} end point, use transform in this case
-			logger.info("Testing /operation/{operation} POST end point");
+			// testing /{operation} end point, use transform in this case
+			logger.info("Testing /{operation} POST end point");
 			byte[] resultsPredict = this.mockMvc
-					.perform(post("/operation/transform").contentType(MediaType.TEXT_PLAIN)
+					.perform(post("/transform").contentType(MediaType.TEXT_PLAIN)
 							.content(resultsBinaryDefault))
 					.andExpect(status().isOk()).andReturn().getResponse().getContentAsByteArray();
-			logger.info("Done testing POST /operation/{operation} end point " + Arrays.toString(resultsPredict));
+			logger.info("Done testing POST /{operation} end point " + Arrays.toString(resultsPredict));
 
 			// Use sampleConfig3.properties which calls the classify method of the silly
 			// model
@@ -318,13 +318,13 @@ public class ModelRunnerControllerTest extends ModelRunnerTestApp {
 					.file(csvfile3).param("operation", "classify")).andExpect(status().isOk()).andReturn().getResponse()
 					.getContentAsByteArray();
 
-			// testing /operation/{operation} end point, use classify in this case
-			logger.info("Testing /operation/classify POST end point");
+			// testing /{operation} end point, use classify in this case
+			logger.info("Testing /classify POST end point");
 			byte[] resultsPredict1 = this.mockMvc
-					.perform(post("/operation/classify").contentType(MediaType.TEXT_PLAIN)
+					.perform(post("/classify").contentType(MediaType.TEXT_PLAIN)
 							.content(resultsBinaryDefault1))
 					.andExpect(status().isOk()).andReturn().getResponse().getContentAsByteArray();
-			logger.info("Done testing POST /operation/classify end point " + Arrays.toString(resultsPredict1));
+			logger.info("Done testing POST /classify end point " + Arrays.toString(resultsPredict1));
 
 			// Use sampleConfig3_2.properties which calls the classify method of the silly
 			// model
@@ -350,13 +350,13 @@ public class ModelRunnerControllerTest extends ModelRunnerTestApp {
 					.file(csvfile4).param("operation", "aggregate")).andExpect(status().isOk()).andReturn()
 					.getResponse().getContentAsByteArray();
 
-			// testing /operation/aggregate end point
-			logger.info("Testing /operation/aggregate POST end point");
+			// testing /aggregate end point
+			logger.info("Testing /aggregate POST end point");
 			byte[] resultsPredict2 = this.mockMvc
-					.perform(post("/operation/aggregate").contentType(MediaType.TEXT_PLAIN)
+					.perform(post("/aggregate").contentType(MediaType.TEXT_PLAIN)
 							.content(resultsBinaryDefault2))
 					.andExpect(status().isOk()).andReturn().getResponse().getContentAsByteArray();
-			logger.info("Done testing POST /operation/aggregate end point " + Arrays.toString(resultsPredict2));
+			logger.info("Done testing POST /aggregate end point " + Arrays.toString(resultsPredict2));
 
 			// Use sample4.proto
 			byte[] protobytes4 = Files.readAllBytes(Paths.get("src", "test", "resources", "sample4.proto"));
@@ -395,13 +395,13 @@ public class ModelRunnerControllerTest extends ModelRunnerTestApp {
 					.file(csvMock4).param("operation", "testEnum")).andExpect(status().isOk()).andReturn().getResponse()
 					.getContentAsByteArray();
 
-			// testing /operation/testEnum end point
-			logger.info("Testing /operation/testEnum POST end point");
+			// testing /testEnum end point
+			logger.info("Testing /testEnum POST end point");
 			byte[] resultsPredict4 = this.mockMvc
-					.perform(post("/operation/testEnum").contentType(MediaType.TEXT_PLAIN)
+					.perform(post("/testEnum").contentType(MediaType.TEXT_PLAIN)
 							.content(resultsBinaryDefault4))
 					.andExpect(status().isOk()).andReturn().getResponse().getContentAsByteArray();
-			logger.info("Done testing POST /operation/testEnum end point " + Arrays.toString(resultsPredict4));
+			logger.info("Done testing POST /testEnum end point " + Arrays.toString(resultsPredict4));
 
 		} catch (HttpStatusCodeException ex) {
 			logger.error("predictTest failed", ex);

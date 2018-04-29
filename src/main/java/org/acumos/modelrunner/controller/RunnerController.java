@@ -2079,9 +2079,9 @@ public class RunnerController {
 	 *            protobuf file
 	 * @return : A serialized version of prediction in binary stream
 	 */
-	@RequestMapping(value = "/operation/{operation}", method = RequestMethod.POST)
+	@RequestMapping(value = "/{operation}", method = RequestMethod.POST)
 	public byte[] operation(@RequestBody byte[] dataset, @PathVariable("operation") String operation) {
-		logger.info("/operation/" + operation + " GETTING POST REQUEST:");
+		logger.info("/" + operation + " GETTING POST REQUEST:");
 		logger.info(Arrays.toString(dataset));
 
 		try {
