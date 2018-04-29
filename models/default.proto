@@ -26,4 +26,3 @@ message Forecast {
 service Model {
   rpc testEnum (PetData) returns (Forecast);
 }
-
