@@ -1,29 +1,18 @@
-syntax="proto3";
-
-message PetData {
-        enum PET {
-        CAT = 0;
-        MOUSE = 1;
-        DOG = 2;
-        }
-        PET pet = 1;
-        repeated PET precious = 2;
-        repeated ANIMAL wild = 3;
+syntax = "proto3";
+option java_package = "com.google.protobuf";
+option java_outer_classname = "DatasetProto";
+service MaliciousService {
+rpc transform (DataFrame) returns (Prediction);
 }
-
-enum ANIMAL {
-        TIGER = 0;
-        GROUND_HOG = 1;
-        WOLF = 2;
+message DataFrameRow {
+int32 length = 1;
+double entropy = 2;
+double p_vowels = 3;
+int32 num_words = 4;
 }
-
-message Forecast {
-    repeated PetData.PET outlook1 = 1;
-    string outlook2 = 2;
-    ANIMAL outlook3 = 3;
+message DataFrame {
+repeated DataFrameRow rows = 1;
 }
-
-service Model {
-  rpc testEnum (PetData) returns (Forecast);
+message Prediction {
+repeated int32 malicious = 1;
 }
-
