@@ -330,9 +330,9 @@ public class RunnerController {
 	 * @return prediction binary stream in protobuf format
 	 */
 	@ApiOperation(value = "Gets a prediction binary stream in protobuf format for the training data in the provided csv file using default .proto file")
-	@RequestMapping(value = "/transformCSVDefault", method = RequestMethod.POST)
+	@RequestMapping(value = "/transformDefault", method = RequestMethod.POST)
 	public byte[] transform(@RequestPart("csvFile") MultipartFile csvFile, String operation) {
-		logger.info("Receiving /transformCSVDefault POST Request...");
+		logger.info("Receiving /transformDefault POST Request...");
 		return transform_(csvFile, null, null, operation);
 	}
 
@@ -346,10 +346,10 @@ public class RunnerController {
 	 * @return prediction binary stream in protobuf format
 	 */
 	@ApiOperation(value = "Gets a prediction binary stream in protobuf format for the training data in the provided csv file using the ML model and .proto file provided here")
-	@RequestMapping(value = "/transformCSV", method = RequestMethod.POST)
+	@RequestMapping(value = "/transform", method = RequestMethod.POST)
 	public byte[] transform(@RequestPart("csvFile") MultipartFile csvFile, @RequestPart("model") MultipartFile model,
 			@RequestPart("proto") MultipartFile proto, String operation) {
-		logger.info("Receiving /transformCSV POST Request...");
+		logger.info("Receiving /transform POST Request...");
 		return transform_(csvFile, model, proto, operation);
 	}
 
@@ -2079,9 +2079,9 @@ public class RunnerController {
 	 *            protobuf file
 	 * @return : A serialized version of prediction in binary stream
 	 */
-	@RequestMapping(value = "/{operation}", method = RequestMethod.POST)
+	@RequestMapping(value = "/operation/{operation}", method = RequestMethod.POST)
 	public byte[] operation(@RequestBody byte[] dataset, @PathVariable("operation") String operation) {
-		logger.info("/" + operation + " GETTING POST REQUEST:");
+		logger.info("/operation/" + operation + " GETTING POST REQUEST:");
 		logger.info(Arrays.toString(dataset));
 
 		try {
