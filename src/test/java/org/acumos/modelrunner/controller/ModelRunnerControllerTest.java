@@ -109,7 +109,7 @@ public class ModelRunnerControllerTest extends ModelRunnerTestApp {
 			this.mockMvc.perform(get("/hello"));
 			logger.info("Done testing GET method");
 
-			logger.info("Testing /putProto PUT method");
+			logger.info("Testing /proto PUT method");
 			byte[] protobytes = Files.readAllBytes(Paths.get("src", "test", "resources", "default.proto"));
 			MockMultipartFile proto = new MockMultipartFile("proto", "default.proto", null, protobytes);
 
@@ -119,7 +119,7 @@ public class ModelRunnerControllerTest extends ModelRunnerTestApp {
 			 * using-spring-mockmvc/40656484
 			 * 
 			 */
-			MockMultipartHttpServletRequestBuilder builder1 = MockMvcRequestBuilders.fileUpload("/putProto");
+			MockMultipartHttpServletRequestBuilder builder1 = MockMvcRequestBuilders.fileUpload("/proto");
 			builder1.with(new RequestPostProcessor() {
 				@Override
 				public MockHttpServletRequest postProcessRequest(MockHttpServletRequest request) {
@@ -129,12 +129,12 @@ public class ModelRunnerControllerTest extends ModelRunnerTestApp {
 			});
 			mockMvc.perform(builder1.file(proto)).andExpect(status().isOk());
 
-			logger.info("Done testing /putProto PUT end point");
+			logger.info("Done testing /proto PUT end point");
 
-			logger.info("Testing /putModel PUT method");
+			logger.info("Testing /model PUT method");
 			byte[] modelbytes = Files.readAllBytes(new File(testPath + SEP + "model.jar").toPath());
 			MockMultipartFile modelFile = new MockMultipartFile("model", "model.jar", null, modelbytes);
-			MockMultipartHttpServletRequestBuilder builder2 = MockMvcRequestBuilders.fileUpload("/putModel");
+			MockMultipartHttpServletRequestBuilder builder2 = MockMvcRequestBuilders.fileUpload("/model");
 			builder2.with(new RequestPostProcessor() {
 				@Override
 				public MockHttpServletRequest postProcessRequest(MockHttpServletRequest request) {
@@ -144,14 +144,14 @@ public class ModelRunnerControllerTest extends ModelRunnerTestApp {
 			});
 			mockMvc.perform(builder2.file(modelFile)).andExpect(status().isOk());
 
-			logger.info("Done testing /putModel PUT end point");
+			logger.info("Done testing /model PUT end point");
 
-			logger.info("Testing /putModelConfig PUT method");
+			logger.info("Testing /model/configuration PUT method");
 
 			byte[] configbytes0 = Files.readAllBytes(Paths.get("src", "test", "resources", "testConfig.properties"));
 			MockMultipartFile modelConfig = new MockMultipartFile("modelConfig", "testConfig.properties", null,
 					configbytes0);
-			MockMultipartHttpServletRequestBuilder builder3 = MockMvcRequestBuilders.fileUpload("/putModelConfig");
+			MockMultipartHttpServletRequestBuilder builder3 = MockMvcRequestBuilders.fileUpload("/model/configuration");
 			builder3.with(new RequestPostProcessor() {
 				@Override
 				public MockHttpServletRequest postProcessRequest(MockHttpServletRequest request) {
@@ -161,11 +161,11 @@ public class ModelRunnerControllerTest extends ModelRunnerTestApp {
 			});
 			mockMvc.perform(builder3.file(modelConfig)).andExpect(status().isOk());
 
-			logger.info("Done testing /putModelConfig PUT end point");
+			logger.info("Done testing /model/configuration PUT end point");
 
-			// testing /transform end point
+			// testing /transformCSV end point
 
-			logger.info("Testing /transform POST end point");
+			logger.info("Testing /transformCSV POST end point");
 
 			MockMultipartFile testCSV = new MockMultipartFile("csvFile", "testTransform.csv", "text/csv",
 					"operand\n2\n7\n8\n".getBytes());
@@ -177,25 +177,25 @@ public class ModelRunnerControllerTest extends ModelRunnerTestApp {
 			byte[] protobytes0 = Files.readAllBytes(Paths.get("src", "test", "resources", "simplemodel.proto"));
 			MockMultipartFile testProto = new MockMultipartFile("proto", "simplemodel.proto", null, protobytes0);
 			MockMultipartFile testModel = new MockMultipartFile("model", "model.jar", null, modelbytes0);
-			MockHttpServletRequestBuilder builder0 = MockMvcRequestBuilders.fileUpload("/transform").file(testCSV)
+			MockHttpServletRequestBuilder builder0 = MockMvcRequestBuilders.fileUpload("/transformCSV").file(testCSV)
 					.file(testModel).file(testProto).param("operation", "multiply");
 
 			byte[] resultsTransform0 = this.mockMvc.perform(builder0).andExpect(status().isOk()).andReturn()
 					.getResponse().getContentAsByteArray();
 
-			logger.info("Done testing /transform POST end point: " + resultsTransform0);
+			logger.info("Done testing /transformCSV POST end point: " + resultsTransform0);
 
-			// testing /transformDefault end point
-			logger.info("Testing /transformDefault POST end point");
+			// testing /transformCSVDefault end point
+			logger.info("Testing /transformCSVDefault POST end point");
 
 			MockMultipartFile f1 = new MockMultipartFile("csvFile", "testTransform.csv", "text/csv",
 					"multiplier_data\n3333\n5\n8\n".getBytes());
-			MockHttpServletRequestBuilder builder = MockMvcRequestBuilders.fileUpload("/transformDefault").file(f1)
+			MockHttpServletRequestBuilder builder = MockMvcRequestBuilders.fileUpload("/transformCSVDefault").file(f1)
 					.param("operation", "multiply");
 
 			byte[] resultsTransform = this.mockMvc.perform(builder).andExpect(status().isOk()).andReturn().getResponse()
 					.getContentAsByteArray();
-			logger.info("Done testing /transformDefault POST end point: " + resultsTransform);
+			logger.info("Done testing /transformCSVDefault POST end point: " + resultsTransform);
 
 			logger.info("Testing /getBinary POST method");
 
@@ -204,7 +204,7 @@ public class ModelRunnerControllerTest extends ModelRunnerTestApp {
 					new File(this.getClass().getResource("/sampleConfig1.properties").getFile()).toPath());
 			MockMultipartFile sampleConfig1 = new MockMultipartFile("modelConfig", "sampleConfig1.properties", null,
 					configbytes1);
-			MockMultipartHttpServletRequestBuilder builder4 = MockMvcRequestBuilders.fileUpload("/putModelConfig");
+			MockMultipartHttpServletRequestBuilder builder4 = MockMvcRequestBuilders.fileUpload("/model/configuration");
 			builder4.with(new RequestPostProcessor() {
 				@Override
 				public MockHttpServletRequest postProcessRequest(MockHttpServletRequest request) {
@@ -238,7 +238,7 @@ public class ModelRunnerControllerTest extends ModelRunnerTestApp {
 					new File(this.getClass().getResource("/sampleConfig2.properties").getFile()).toPath());
 			MockMultipartFile sampleConfig2 = new MockMultipartFile("modelConfig", "sampleConfig2.properties", null,
 					configbytes2);
-			MockMultipartHttpServletRequestBuilder builder5 = MockMvcRequestBuilders.fileUpload("/putModelConfig");
+			MockMultipartHttpServletRequestBuilder builder5 = MockMvcRequestBuilders.fileUpload("/model/configuration");
 			builder5.with(new RequestPostProcessor() {
 				@Override
 				public MockHttpServletRequest postProcessRequest(MockHttpServletRequest request) {
@@ -252,7 +252,7 @@ public class ModelRunnerControllerTest extends ModelRunnerTestApp {
 			byte[] protobytes2 = Files.readAllBytes(Paths.get("src", "test", "resources", "sample2.proto"));
 			MockMultipartFile proto2 = new MockMultipartFile("proto", "sample2.proto", null, protobytes2);
 
-			MockMultipartHttpServletRequestBuilder builder6 = MockMvcRequestBuilders.fileUpload("/putProto");
+			MockMultipartHttpServletRequestBuilder builder6 = MockMvcRequestBuilders.fileUpload("/proto");
 			builder6.with(new RequestPostProcessor() {
 				@Override
 				public MockHttpServletRequest postProcessRequest(MockHttpServletRequest request) {
@@ -271,13 +271,13 @@ public class ModelRunnerControllerTest extends ModelRunnerTestApp {
 					.getResponse().getContentAsByteArray();
 			logger.info("Done testing POST /getBinaryDefault end point " + Arrays.toString(resultsBinaryDefault));
 
-			// testing /operation/{operation} end point, use transform in this case
-			logger.info("Testing /operation/{operation} POST end point");
+			// testing /{operation} end point, use transform in this case
+			logger.info("Testing /{operation} POST end point");
 			byte[] resultsPredict = this.mockMvc
-					.perform(post("/operation/transform").contentType(MediaType.TEXT_PLAIN)
+					.perform(post("/transform").contentType(MediaType.TEXT_PLAIN)
 							.content(resultsBinaryDefault))
 					.andExpect(status().isOk()).andReturn().getResponse().getContentAsByteArray();
-			logger.info("Done testing POST /operation/{operation} end point " + Arrays.toString(resultsPredict));
+			logger.info("Done testing POST /{operation} end point " + Arrays.toString(resultsPredict));
 
 			// Use sampleConfig3.properties which calls the classify method of the silly
 			// model
@@ -285,7 +285,7 @@ public class ModelRunnerControllerTest extends ModelRunnerTestApp {
 					new File(this.getClass().getResource("/sampleConfig3.properties").getFile()).toPath());
 			MockMultipartFile sampleConfig3 = new MockMultipartFile("modelConfig", "sampleConfig3.properties", null,
 					configbytes3);
-			MockMultipartHttpServletRequestBuilder builder7 = MockMvcRequestBuilders.fileUpload("/putModelConfig");
+			MockMultipartHttpServletRequestBuilder builder7 = MockMvcRequestBuilders.fileUpload("/model/configuration");
 			builder7.with(new RequestPostProcessor() {
 				@Override
 				public MockHttpServletRequest postProcessRequest(MockHttpServletRequest request) {
@@ -299,7 +299,7 @@ public class ModelRunnerControllerTest extends ModelRunnerTestApp {
 			byte[] protobytes3 = Files.readAllBytes(Paths.get("src", "test", "resources", "sample3.proto"));
 			MockMultipartFile proto3 = new MockMultipartFile("proto", "sample3.proto", null, protobytes3);
 
-			MockMultipartHttpServletRequestBuilder builder8 = MockMvcRequestBuilders.fileUpload("/putProto");
+			MockMultipartHttpServletRequestBuilder builder8 = MockMvcRequestBuilders.fileUpload("/proto");
 			builder8.with(new RequestPostProcessor() {
 				@Override
 				public MockHttpServletRequest postProcessRequest(MockHttpServletRequest request) {
@@ -318,13 +318,13 @@ public class ModelRunnerControllerTest extends ModelRunnerTestApp {
 					.file(csvfile3).param("operation", "classify")).andExpect(status().isOk()).andReturn().getResponse()
 					.getContentAsByteArray();
 
-			// testing /operation/{operation} end point, use classify in this case
-			logger.info("Testing /operation/classify POST end point");
+			// testing /{operation} end point, use classify in this case
+			logger.info("Testing /classify POST end point");
 			byte[] resultsPredict1 = this.mockMvc
-					.perform(post("/operation/classify").contentType(MediaType.TEXT_PLAIN)
+					.perform(post("/classify").contentType(MediaType.TEXT_PLAIN)
 							.content(resultsBinaryDefault1))
 					.andExpect(status().isOk()).andReturn().getResponse().getContentAsByteArray();
-			logger.info("Done testing POST /operation/classify end point " + Arrays.toString(resultsPredict1));
+			logger.info("Done testing POST /classify end point " + Arrays.toString(resultsPredict1));
 
 			// Use sampleConfig3_2.properties which calls the classify method of the silly
 			// model
@@ -332,7 +332,7 @@ public class ModelRunnerControllerTest extends ModelRunnerTestApp {
 					new File(this.getClass().getResource("/sampleConfig3_2.properties").getFile()).toPath());
 			MockMultipartFile sampleConfig3_2 = new MockMultipartFile("modelConfig", "sampleConfig3_2.properties", null,
 					configbytes3_2);
-			MockMultipartHttpServletRequestBuilder builder9 = MockMvcRequestBuilders.fileUpload("/putModelConfig");
+			MockMultipartHttpServletRequestBuilder builder9 = MockMvcRequestBuilders.fileUpload("/model/configuration");
 			builder9.with(new RequestPostProcessor() {
 				@Override
 				public MockHttpServletRequest postProcessRequest(MockHttpServletRequest request) {
@@ -350,19 +350,19 @@ public class ModelRunnerControllerTest extends ModelRunnerTestApp {
 					.file(csvfile4).param("operation", "aggregate")).andExpect(status().isOk()).andReturn()
 					.getResponse().getContentAsByteArray();
 
-			// testing /operation/aggregate end point
-			logger.info("Testing /operation/aggregate POST end point");
+			// testing /aggregate end point
+			logger.info("Testing /aggregate POST end point");
 			byte[] resultsPredict2 = this.mockMvc
-					.perform(post("/operation/aggregate").contentType(MediaType.TEXT_PLAIN)
+					.perform(post("/aggregate").contentType(MediaType.TEXT_PLAIN)
 							.content(resultsBinaryDefault2))
 					.andExpect(status().isOk()).andReturn().getResponse().getContentAsByteArray();
-			logger.info("Done testing POST /operation/aggregate end point " + Arrays.toString(resultsPredict2));
+			logger.info("Done testing POST /aggregate end point " + Arrays.toString(resultsPredict2));
 
 			// Use sample4.proto
 			byte[] protobytes4 = Files.readAllBytes(Paths.get("src", "test", "resources", "sample4.proto"));
 			MockMultipartFile proto4 = new MockMultipartFile("proto", "sample4.proto", null, protobytes4);
 
-			MockMultipartHttpServletRequestBuilder builder10 = MockMvcRequestBuilders.fileUpload("/putProto");
+			MockMultipartHttpServletRequestBuilder builder10 = MockMvcRequestBuilders.fileUpload("/proto");
 			builder10.with(new RequestPostProcessor() {
 				@Override
 				public MockHttpServletRequest postProcessRequest(MockHttpServletRequest request) {
@@ -377,7 +377,7 @@ public class ModelRunnerControllerTest extends ModelRunnerTestApp {
 			MockMultipartFile sampleConfig4 = new MockMultipartFile("modelConfig", "sampleConfig4.properties", null,
 					configbytes4);
 			MockMultipartHttpServletRequestBuilder builderModelConfig4 = MockMvcRequestBuilders
-					.fileUpload("/putModelConfig");
+					.fileUpload("/model/configuration");
 			builderModelConfig4.with(new RequestPostProcessor() {
 				@Override
 				public MockHttpServletRequest postProcessRequest(MockHttpServletRequest request) {
@@ -395,13 +395,13 @@ public class ModelRunnerControllerTest extends ModelRunnerTestApp {
 					.file(csvMock4).param("operation", "testEnum")).andExpect(status().isOk()).andReturn().getResponse()
 					.getContentAsByteArray();
 
-			// testing /operation/testEnum end point
-			logger.info("Testing /operation/testEnum POST end point");
+			// testing /testEnum end point
+			logger.info("Testing /testEnum POST end point");
 			byte[] resultsPredict4 = this.mockMvc
-					.perform(post("/operation/testEnum").contentType(MediaType.TEXT_PLAIN)
+					.perform(post("/testEnum").contentType(MediaType.TEXT_PLAIN)
 							.content(resultsBinaryDefault4))
 					.andExpect(status().isOk()).andReturn().getResponse().getContentAsByteArray();
-			logger.info("Done testing POST /operation/testEnum end point " + Arrays.toString(resultsPredict4));
+			logger.info("Done testing POST /testEnum end point " + Arrays.toString(resultsPredict4));
 
 		} catch (HttpStatusCodeException ex) {
 			logger.error("predictTest failed", ex);
