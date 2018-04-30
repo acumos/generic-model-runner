@@ -77,3 +77,9 @@ Version 2.1.2, 16 April 2018
 Version 2.1.3, 25 April 2018
 ============================
 * Add conditional check to make sure empty rowData will not be fed into the H2O model. 
+
+Version 2.1.4, 30 April 2018
+============================
+* Change /operation/{operation} to /{operation}
+* Change /transform to /transformCSV
+* Change /transformDefault to /transformCSVDefault
