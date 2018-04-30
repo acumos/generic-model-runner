@@ -153,9 +153,9 @@ public class RunnerController {
 	 * @return ResponseEntity
 	 */
 	@ApiOperation(value = "Upload a machine learning model to replace the current model", response = Map.class)
-	@RequestMapping(value = "/putModel", method = RequestMethod.PUT)
+	@RequestMapping(value = "/model", method = RequestMethod.PUT)
 	public ResponseEntity<Map<String, String>> putModel(@RequestPart("model") MultipartFile model) {
-		logger.info("Receiving /putModel PUT request...");
+		logger.info("Receiving /model PUT request...");
 		Map<String, String> results = new LinkedHashMap<>();
 
 		try {
@@ -189,9 +189,9 @@ public class RunnerController {
 	 * @return ResponseEntity
 	 */
 	@ApiOperation(value = "Upload a protofile to replace the current default protofile", response = ResponseEntity.class)
-	@RequestMapping(value = "/putProto", method = RequestMethod.PUT)
+	@RequestMapping(value = "/proto", method = RequestMethod.PUT)
 	public ResponseEntity<Map<String, String>> putProto(@RequestPart("proto") MultipartFile proto) {
-		logger.info("Receiving /putProto PUT request...");
+		logger.info("Receiving /proto PUT request...");
 		Map<String, String> results = new LinkedHashMap<>();
 
 		try {
@@ -225,9 +225,9 @@ public class RunnerController {
 	 * @return ResponseEntity
 	 */
 	@ApiOperation(value = "Upload a model config file to replace current model configuration properties used by Generic Model Runner. H2O Model Runner does not use this file", response = ResponseEntity.class)
-	@RequestMapping(value = "/putModelConfig", method = RequestMethod.PUT)
+	@RequestMapping(value = "/model/configuration", method = RequestMethod.PUT)
 	public ResponseEntity<Map<String, String>> putModelConfig(@RequestPart("modelConfig") MultipartFile configFile) {
-		logger.info("Receiving /putModelConfig PUT request...");
+		logger.info("Receiving /model/configuration PUT request...");
 		Map<String, String> results = new LinkedHashMap<>();
 		BufferedOutputStream stream = null;
 		try {
@@ -330,9 +330,9 @@ public class RunnerController {
 	 * @return prediction binary stream in protobuf format
 	 */
 	@ApiOperation(value = "Gets a prediction binary stream in protobuf format for the training data in the provided csv file using default .proto file")
-	@RequestMapping(value = "/transformDefault", method = RequestMethod.POST)
+	@RequestMapping(value = "/transformCSVDefault", method = RequestMethod.POST)
 	public byte[] transform(@RequestPart("csvFile") MultipartFile csvFile, String operation) {
-		logger.info("Receiving /transformDefault POST Request...");
+		logger.info("Receiving /transformCSVDefault POST Request...");
 		return transform_(csvFile, null, null, operation);
 	}
 
@@ -346,10 +346,10 @@ public class RunnerController {
 	 * @return prediction binary stream in protobuf format
 	 */
 	@ApiOperation(value = "Gets a prediction binary stream in protobuf format for the training data in the provided csv file using the ML model and .proto file provided here")
-	@RequestMapping(value = "/transform", method = RequestMethod.POST)
+	@RequestMapping(value = "/transformCSV", method = RequestMethod.POST)
 	public byte[] transform(@RequestPart("csvFile") MultipartFile csvFile, @RequestPart("model") MultipartFile model,
 			@RequestPart("proto") MultipartFile proto, String operation) {
-		logger.info("Receiving /transform POST Request...");
+		logger.info("Receiving /transformCSV POST Request...");
 		return transform_(csvFile, model, proto, operation);
 	}
 
@@ -2079,9 +2079,9 @@ public class RunnerController {
 	 *            protobuf file
 	 * @return : A serialized version of prediction in binary stream
 	 */
-	@RequestMapping(value = "/operation/{operation}", method = RequestMethod.POST)
+	@RequestMapping(value = "/{operation}", method = RequestMethod.POST)
 	public byte[] operation(@RequestBody byte[] dataset, @PathVariable("operation") String operation) {
-		logger.info("/operation/" + operation + " GETTING POST REQUEST:");
+		logger.info("/" + operation + " GETTING POST REQUEST:");
 		logger.info(Arrays.toString(dataset));
 
 		try {
