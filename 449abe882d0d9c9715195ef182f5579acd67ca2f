@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "0bb66994_db122570",
+        "filename": "pom.xml",
+        "patchSetId": 4
+      },
+      "lineNbr": 7,
+      "author": {
+        "id": 4
+      },
+      "writtenOn": "2018-05-02T20:44:21Z",
+      "side": 1,
+      "message": "for such a major change to the interface contract, perhaps the version should be bumped up to 2.2.0 ?",
+      "revId": "449abe882d0d9c9715195ef182f5579acd67ca2f",
+      "serverId": "655300a2-7a56-4504-9153-881edd907bea",
+      "unresolved": false
+    }
+  ]
+}
