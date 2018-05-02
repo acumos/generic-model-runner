@@ -1,0 +1,55 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "7f422d50_48d341e5",
+        "filename": "docs/developer-guide.rst",
+        "patchSetId": 3
+      },
+      "lineNbr": 33,
+      "author": {
+        "id": 4
+      },
+      "writtenOn": "2018-05-02T12:05:25Z",
+      "side": 1,
+      "message": "This does not agree with the code, right?  Now it\u0027s just /(anything-you-want) right??",
+      "revId": "98ec8c996a929eea4090269a7cb0a885c16521ed",
+      "serverId": "655300a2-7a56-4504-9153-881edd907bea",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "2f3fd413_1a04ad6a",
+        "filename": "docs/release-notes.rst",
+        "patchSetId": 3
+      },
+      "lineNbr": 81,
+      "author": {
+        "id": 4
+      },
+      "writtenOn": "2018-05-02T12:05:25Z",
+      "side": 1,
+      "message": "It\u0027s *great* that you\u0027re keeping detailed release notes in Git.  I suggest re-ordering them so that the most recent change appears first, then the next oldest, etc.  Most people just want to see what\u0027s new, so having that at the top is a benefit.",
+      "revId": "98ec8c996a929eea4090269a7cb0a885c16521ed",
+      "serverId": "655300a2-7a56-4504-9153-881edd907bea",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "31e56bd2_1502f553",
+        "filename": "src/test/java/org/acumos/modelrunner/controller/ModelRunnerControllerTest.java",
+        "patchSetId": 3
+      },
+      "lineNbr": 189,
+      "author": {
+        "id": 4
+      },
+      "writtenOn": "2018-05-02T12:05:25Z",
+      "side": 1,
+      "message": "Fix name - you removed Default I think",
+      "revId": "98ec8c996a929eea4090269a7cb0a885c16521ed",
+      "serverId": "655300a2-7a56-4504-9153-881edd907bea",
+      "unresolved": false
+    }
+  ]
+}
