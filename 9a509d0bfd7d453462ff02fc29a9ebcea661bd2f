@@ -25,6 +25,30 @@
     },
     {
       "key": {
+        "uuid": "3abe874c_eac0a566",
+        "filename": "INFO.yaml",
+        "patchSetId": 2
+      },
+      "lineNbr": 45,
+      "author": {
+        "id": 85
+      },
+      "writtenOn": "2018-06-25T18:22:35Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "aa722c32_39214850",
+      "range": {
+        "startLine": 45,
+        "startChar": 16,
+        "endLine": 45,
+        "endChar": 18
+      },
+      "revId": "9a509d0bfd7d453462ff02fc29a9ebcea661bd2f",
+      "serverId": "655300a2-7a56-4504-9153-881edd907bea",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "d7273f5e_c4e757f4",
         "filename": "INFO.yaml",
         "patchSetId": 2
@@ -36,6 +60,30 @@
       "writtenOn": "2018-06-25T17:36:55Z",
       "side": 1,
       "message": "America/New_York for Teyu",
+      "range": {
+        "startLine": 55,
+        "startChar": 16,
+        "endLine": 55,
+        "endChar": 18
+      },
+      "revId": "9a509d0bfd7d453462ff02fc29a9ebcea661bd2f",
+      "serverId": "655300a2-7a56-4504-9153-881edd907bea",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "615753e5_dd9d1df2",
+        "filename": "INFO.yaml",
+        "patchSetId": 2
+      },
+      "lineNbr": 55,
+      "author": {
+        "id": 85
+      },
+      "writtenOn": "2018-06-25T18:22:35Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "d7273f5e_c4e757f4",
       "range": {
         "startLine": 55,
         "startChar": 16,
