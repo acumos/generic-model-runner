@@ -22,6 +22,30 @@
       "revId": "ecb7ff828649a9e825a4135cf6d35152871da29c",
       "serverId": "655300a2-7a56-4504-9153-881edd907bea",
       "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "fc9abb5b_40d8d29b",
+        "filename": "INFO.yaml",
+        "patchSetId": 3
+      },
+      "lineNbr": 50,
+      "author": {
+        "id": 85
+      },
+      "writtenOn": "2018-06-25T20:39:01Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "19af3da6_358082ef",
+      "range": {
+        "startLine": 50,
+        "startChar": 17,
+        "endLine": 50,
+        "endChar": 33
+      },
+      "revId": "ecb7ff828649a9e825a4135cf6d35152871da29c",
+      "serverId": "655300a2-7a56-4504-9153-881edd907bea",
+      "unresolved": false
     }
   ]
 }
