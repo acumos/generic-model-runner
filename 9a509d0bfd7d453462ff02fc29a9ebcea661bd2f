@@ -1,0 +1,50 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "aa722c32_39214850",
+        "filename": "INFO.yaml",
+        "patchSetId": 2
+      },
+      "lineNbr": 45,
+      "author": {
+        "id": 4
+      },
+      "writtenOn": "2018-06-25T17:36:55Z",
+      "side": 1,
+      "message": "America/New_York for Deven",
+      "range": {
+        "startLine": 45,
+        "startChar": 16,
+        "endLine": 45,
+        "endChar": 18
+      },
+      "revId": "9a509d0bfd7d453462ff02fc29a9ebcea661bd2f",
+      "serverId": "655300a2-7a56-4504-9153-881edd907bea",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "d7273f5e_c4e757f4",
+        "filename": "INFO.yaml",
+        "patchSetId": 2
+      },
+      "lineNbr": 55,
+      "author": {
+        "id": 4
+      },
+      "writtenOn": "2018-06-25T17:36:55Z",
+      "side": 1,
+      "message": "America/New_York for Teyu",
+      "range": {
+        "startLine": 55,
+        "startChar": 16,
+        "endLine": 55,
+        "endChar": 18
+      },
+      "revId": "9a509d0bfd7d453462ff02fc29a9ebcea661bd2f",
+      "serverId": "655300a2-7a56-4504-9153-881edd907bea",
+      "unresolved": false
+    }
+  ]
+}
