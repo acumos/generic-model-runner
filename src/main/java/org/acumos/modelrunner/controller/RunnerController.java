@@ -55,6 +55,7 @@ import javax.ws.rs.core.MediaType;
 import org.acumos.modelrunner.domain.*;
 import org.acumos.modelrunner.domain.MessageObject.AttributeEntity;
 import org.acumos.modelrunner.utils.*;
+import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.IOUtils;
 import org.metawidget.util.simple.StringUtils;
 import org.slf4j.Logger;
@@ -70,9 +71,20 @@ import org.springframework.web.bind.annotation.RequestPart;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
 
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
+
 import com.google.common.collect.ImmutableList;
+import com.google.common.collect.Lists;
 import com.google.common.io.Files;
 import com.google.protobuf.ByteString;
+import com.google.protobuf.InvalidProtocolBufferException;
+import com.google.protobuf.Message;
+import com.google.protobuf.Message.Builder;
+import com.google.protobuf.MessageOrBuilder;
+import com.google.protobuf.util.JsonFormat;
+import com.google.protobuf.util.JsonFormat.Printer;
+import com.google.protobuf.util.JsonFormat.TypeRegistry;
 import hex.genmodel.MojoModel;
 import hex.genmodel.easy.EasyPredictModelWrapper;
 import hex.genmodel.easy.RowData;
@@ -287,7 +299,178 @@ public class RunnerController {
 
 		return getNewBinary_(csvFile, proto, operation);
 	}
+	
+	/**
+	 * getBinaryJSONDefault converts the uploaded json file based on the default .proto
+	 * file
+	 * 
+	 * @param jsonFile
+	 *            JSON file
+	 * @param operation
+	 *            one of the operations matching service structure in protofile
+	 * @return binary stream in protobuf format as inputs for the predictor
+	 */
+	@ApiOperation(value = "Converts the JSON file to a binary stream in protobuf format using default.proto.")
+	@RequestMapping(value = "/getBinaryJSONDefault", method = RequestMethod.POST, produces = "application/octet-stream")
+	public byte[] getBinaryJSONDefault(@RequestPart("jsonFile") MultipartFile jsonFile, String operation) {
+		logger.info("Receiving /getBinaryJSONDefault POST request...");
+		return getJsonBinary_(jsonFile, null, operation);
+	}
 
+	/**
+	 * getBinaryJSON converts the uploaded json file based on the default.proto
+	 * 
+	 * @param jsonFile
+	 *            JSON file
+	 * @param proto
+	 *            Protobuf file
+	 * @param operation
+	 *            one of the operations matching service structure in protofile
+	 * @return binary stream in protobuf format as inputs for the predictor
+	 */
+	@ApiOperation(value = "Converts the JSON file to a binary stream in protobuf format using default.proto.")
+	@RequestMapping(value = "/getBinaryJSON", method = RequestMethod.POST, produces = "application/octet-stream")
+	public byte[] getBinaryJSON(@RequestPart("jsonFile") MultipartFile jsonFile, @RequestPart("proto") MultipartFile proto,
+			String operation) {
+		logger.info("Receiving /getBinaryJSON POST request...");
+		return getJsonBinary_(jsonFile, proto, operation);
+	}
+
+	/**
+	 * Serialize the json file based on the proto file into binary protobuf format
+	 * 
+	 * @param file
+	 *            json file containing headers
+	 * @param proto
+	 *            proto file
+	 * @param operation
+	 *            name of operation specified in the service structure of the proto
+	 *            file
+	 * @return
+	 */
+	private <T extends Message> byte[] getJsonBinary_(MultipartFile jsonFile, MultipartFile proto, String operation) {
+		try {
+			
+			Message message = (Message) getInputMessageBuilder(jsonFile, proto, operation);
+
+			logger.info("getJsonBinary_: Returning the following byte[] :");
+			byte[] barray = message.toByteArray();
+			logger.info(Arrays.toString(barray));
+			return barray;
+
+		} catch (Exception ex) {
+			logger.error("getJsonBinary_: Failed getting binary stream inputs:", ex);
+			return new byte[0];
+		}
+	}
+
+	public <T extends Message> List<T> convertJsonArrayToProto(T prototype, JsonNode array, String extensionName) {
+		List<T> messages = Lists.newArrayList();
+		for (JsonNode messageNode : array) {
+			try {
+				String nodeJson = new ObjectMapper().writeValueAsString(messageNode);
+				T message = convertJsonToProto(prototype, nodeJson, extensionName);
+				if (!message.equals(prototype)) {
+					messages.add(message);
+				}
+			} catch (IOException ex) {
+				// Should not be possible to throw in newer versions of ObjectMapper.
+				logger.error(String.format(
+						"The extension %s does not match the schema. It should be a %s. Please refer "
+								+ "to documentation of the extension.",
+						extensionName, prototype.getDescriptorForType().getName()));
+			}
+		}
+		return messages;
+	}
+
+	// Suppress because Proto has terrible type awareness with builders.
+	@SuppressWarnings("unchecked")
+	public <T extends Message> T convertJsonToProto(T prototype, String json, String extensionName) {
+		try {
+			Builder builder = prototype.newBuilderForType();
+			JsonFormat.parser()
+					.usingTypeRegistry(TypeRegistry.newBuilder().add(prototype.getDescriptorForType()).build())
+					.merge(json, builder);
+			
+			return (T) builder.build();
+		} catch (InvalidProtocolBufferException ex) {
+			logger.error("Extension " + extensionName + " cannot be converted into proto type "
+					+ prototype.getDescriptorForType().getFullName() + " - Details: " + ex.getMessage());
+
+			return prototype;
+		}
+	}
+	////
+	/**
+	 * This is the first step of serialization for dataset in JSON format
+	 * @param file
+	 * @param proto
+	 * @return MessageOrBuilder
+	 * @throws Exception
+	 */
+	private MessageOrBuilder getInputMessageBuilder(MultipartFile jsonFile, MultipartFile proto, String operation) {
+		try {
+			if (jsonFile.isEmpty()) {
+				logger.error("getInputMessageBuilder: You failed to upload " + jsonFile.getOriginalFilename()
+						+ " because the file was empty.");
+				return null;
+			}
+
+			if (operation == null) {
+				logger.error("getInputMessageBuilder: needs to specify operation");
+				return null;
+			}
+
+			String protoString = null;
+			if (proto != null && !proto.isEmpty()) {
+				long protosize = proto.getSize();
+
+				InputStream protoInput = new BufferedInputStream(proto.getInputStream());
+				byte[] protodata = new byte[(int) protosize];
+				char[] protoChar = new char[(int) protosize];
+				int bytesRead = protoInput.read(protodata);
+				for (int i = 0; i < bytesRead; i++) {
+					protoChar[i] = (char) protodata[i];
+				}
+
+				protoString = new String(protoChar);
+				protoInput.close();
+			}
+			
+			init(protoString);
+			ServiceObject so = serviceList.get(operation);
+			inputClassName = so.getInputClass();
+			long size = jsonFile.getSize();
+
+			File file = new File(jsonFile.getOriginalFilename());
+
+			// Create the file using the touch method of the FileUtils class.
+			// FileUtils.touch(file);
+
+			// Write bytes from the multipart file to disk.
+			FileUtils.writeByteArrayToFile(file, jsonFile.getBytes());
+			ObjectMapper mapper = new ObjectMapper();
+			JsonNode jsonData = mapper.readTree(file);
+
+			logger.info("json input = " + jsonData.toString());
+
+			Object defInstance = null;
+			Class<?> thisClass = classList.get(inputClassName).getCls();
+			Method defaultInstanceMethod = thisClass.getMethod("getDefaultInstance");
+			defInstance = defaultInstanceMethod.invoke(null); // thisMessage.getDefaultInstance()
+
+			String nodeJson = new ObjectMapper().writeValueAsString(jsonData);
+			Message message = convertJsonToProto((Message) defInstance, nodeJson, "model");
+			return message;
+
+		} catch (Exception ex) {
+			logger.error("getInputMessageBuilder(): Failed getting binary stream inputs:", ex);
+			return null;
+		}
+	}
+	
+	////
 	/**
 	 * Serialize the csv file based on the proto file into binary protobuf format
 	 * 
@@ -352,6 +535,41 @@ public class RunnerController {
 		logger.info("Receiving /transformCSV POST Request...");
 		return transform_(csvFile, model, proto, operation);
 	}
+	
+	/**
+	 * 
+	 * @param jsonFile
+	 *            JSON file
+	 * @param operation
+	 *            operation specified in the Service structure of the protofile            
+	 * @return prediction binary stream in protobuf format
+	 */
+	@ApiOperation(value = "Gets the output of the model in protobuf format.")
+	@RequestMapping(value = "/transformJSONDefault", method = RequestMethod.POST)
+	public byte[] transformJSON(@RequestPart("jsonFile") MultipartFile jsonFile, String operation) {
+		logger.info("Receiving /transformJSONDefault POST Request...");
+		return transform_(jsonFile, null, null, operation);
+	}
+
+	/**
+	 * @param jsonFile
+	 *            JSON File
+	 * @param model
+	 *            an ML model
+	 * @param proto
+	 *            Protobuf file
+	 * @param operation
+	 *            operation specified in the Service structure of the protofile
+	 * @return prediction binary stream in protobuf format
+	 */
+	@ApiOperation(value = "Gets the output of the model in protobuf format.")
+	@RequestMapping(value = "/transformJSON", method = RequestMethod.POST)
+	public byte[] transformJSON(@RequestPart("jsonFile") MultipartFile jsonFile, @RequestPart("model") MultipartFile model,
+			@RequestPart("proto") MultipartFile proto, String operation) {
+		logger.info("Receiving /transformJSON POST Request...");
+		return transform_(jsonFile, model, proto, operation);
+	}
+
 
 	/**
 	 * 
@@ -362,15 +580,27 @@ public class RunnerController {
 	 * @param proto
 	 *            Protofile
 	 * @param operation
-	 *            one of the operation in the service structure of the protofile
+	 *            one of the operation(s) in the service structure of the protofile
 	 * @return prediction binary stream in protobuf format
 	 */
 	private byte[] transform_(MultipartFile file, MultipartFile model, MultipartFile proto, String operation) {
 		try {
-			Object df = getInputClassBuilder(file, proto, operation); // df is of {InputClass}.Builder
+			String contentType = file.getContentType();
+			Object df = null;
+			Object obj =  null;
+			if ("application/vnd.ms-excel".equalsIgnoreCase(contentType) || "text/csv".equalsIgnoreCase(contentType)) {
+				df = getInputClassBuilder(file, proto, operation); // df is of {InputClass}.Builder
 
-			Method dfBuilder = df.getClass().getMethod("build");
-			Object obj = dfBuilder.invoke(df);
+				Method dfBuilder = df.getClass().getMethod("build");
+				obj = dfBuilder.invoke(df);
+			}
+			else if(contentType.toLowerCase().contains("json")) {
+				obj = (Object)getInputMessageBuilder(file, proto, operation); // obj is MesssageOrBuilder
+			}
+			else {
+				logger.error("transform_(): unsupported file type: " + contentType);
+				return null;
+			}
 
 			String modelLoc = null;
 			if (model != null && !model.isEmpty()) {
@@ -451,6 +681,7 @@ public class RunnerController {
 			}
 
 			protoString = new String(protoChar);
+			protoInput.close();
 		}
 
 		init(protoString);
@@ -1225,29 +1456,72 @@ public class RunnerController {
 	 */
 	private byte[] doPredictGeneric(Object df, String modelLoc) {
 		try {
-			StringBuffer rowString = new StringBuffer();
-
-			getRowString(df, inputClassName, null, rowString);
-			logger.info(rowString.toString());
-			String tempPath = TMPPATH + SEP + "tmpFiles";
-			File dir = new File(tempPath);
-			if (!dir.exists())
-				dir.mkdirs();
-			String genfile = tempPath + SEP + UUID.randomUUID() + "_genfile.csv";
-			FileWriter ff = new FileWriter(genfile);
-			ff.write(rowString.toString());
-			ff.close();
-
+			// Load model property
 			String propFile = new String(PROJECTROOT + modelConfig);
-			// Load property
 			Properties prop = new Properties();
 			InputStream input = new FileInputStream(propFile);
 			prop.load(input);
 
 			String modelMethodName = prop.getProperty("modelMethod");
 			String modelClassName = prop.getProperty("modelClassName");
+			String modelInputType = prop.getProperty("modelInputType");
+			String modelOutputType = prop.getProperty("modelOutputType");
+			
+			if(modelInputType == null)
+				modelInputType = new String("CSV");
+			
+			if(modelOutputType == null)
+				modelOutputType = new String("CSV");
 
-			logger.info("model class name and method=" + modelClassName + "  " + modelMethodName);
+			logger.info("doPredictGeneric(): model class name = " + modelClassName + " | model method = " + modelMethodName + " | model input = " + modelInputType );
+			
+			
+			String resultStr = null;
+			String tempPath = TMPPATH + SEP + "tmpFiles";
+			File dir = new File(tempPath);
+			if (!dir.exists())
+				dir.mkdirs();
+			String genfile = tempPath + SEP + UUID.randomUUID() + "_genfile";
+			
+			switch(modelInputType.toUpperCase()) {
+			case "CSV":
+				StringBuffer rowString = new StringBuffer();
+
+				getRowString(df, inputClassName, null, rowString);
+				logger.info(resultStr = rowString.toString());
+				genfile += ".csv";
+				break;
+			
+			case "JSON":
+				Class<?> inputClass = classList.get(inputClassName).getCls();
+				Object defInstance = null;
+				Method defaultInstanceMethod = inputClass.getMethod("getDefaultInstance");
+				defInstance = defaultInstanceMethod.invoke(null); // thisMessage.getDefaultInstance()
+				Printer printer = JsonFormat.printer().preservingProtoFieldNames().usingTypeRegistry(
+						TypeRegistry.newBuilder().add(((Message) defInstance).getDescriptorForType()).build());
+
+				try {
+					resultStr = printer.print((MessageOrBuilder) df);
+					logger.info("doPredictGeneric(): converting dataset to JSON string: " + resultStr);
+				} catch (Exception ex) {
+					resultStr = null;
+					logger.error("doPredictGeneric(): dataset is not in JSON Format: ", ex);
+				}
+				
+				genfile += ".json";
+				break;
+				
+			case "ARFF":
+				genfile += ".arff";
+				break;
+			
+			default:
+				break;
+			}
+			
+			FileWriter ff = new FileWriter(genfile);
+			ff.write(resultStr);
+			ff.close();
 
 			// model invoke and preparation
 
@@ -1291,7 +1565,7 @@ public class RunnerController {
 					logger.debug("doPredictGeneric: cannot getDeclaredMethod " + modelMethodName);
 					return null;
 				}
-				predictList = (List<?>) methodPredict.invoke(null, rowString.toString());
+				predictList = (List<?>) methodPredict.invoke(null, resultStr);
 				break;
 
 			default:
@@ -1302,20 +1576,40 @@ public class RunnerController {
 				logger.debug("predictlist is null");
 				return null;
 			}
-			int row_count = predictList.size();
-			Object[] predictor = new Object[row_count + 2];
-			for (int i = 0; i <= row_count + 1; i++)
-				predictor[i] = null;
-			Object pobj = getPredictionRow(outputClassName, predictList);
+			
+			byte[] results = new byte[0];
+			switch (modelOutputType.toUpperCase()) {
+			case "CSV":
+				Object pobj = getPredictionRow(outputClassName, predictList);
 
-			Method toByteArray = pobj.getClass().getMethod("toByteArray");
-			byte[] results = (byte[]) (toByteArray.invoke(pobj));
-			logger.info("In doPredictGeneric() : Prediction results - " + results.toString());
-			logger.info(
-					"In doPredictGeneric() : Done Prediction, returning binary serialization of above prediction results - "
-							+ Arrays.toString(results));
+				Method toByteArray = pobj.getClass().getMethod("toByteArray");
+				results = (byte[]) (toByteArray.invoke(pobj));
+				logger.info("In doPredictGeneric() : Prediction results - " + results.toString());
+				logger.info(
+						"In doPredictGeneric() : Done Prediction, returning binary serialization of above prediction results - "
+								+ Arrays.toString(results));
 
-			return results;
+				return results;
+
+			case "JSON": 
+				Object defInstance = null;
+				Class<?> outputClass = classList.get(outputClassName).getCls();
+				Method defaultInstanceMethod = outputClass.getMethod("getDefaultInstance");
+				defInstance = defaultInstanceMethod.invoke(null); // thisMessage.getDefaultInstance()
+				ObjectMapper mapper = new ObjectMapper();
+				// predictList should contain Json Ouput String from the predictor
+				JsonNode jsonData = mapper.readTree((String)predictList.get(0));
+				String nodeJson = new ObjectMapper().writeValueAsString(jsonData);
+				Message message = convertJsonToProto((Message) defInstance, nodeJson, "model");
+
+				logger.info("doPredictGeneric: Returning the following byte[] :");
+				results = message.toByteArray();
+				logger.info(Arrays.toString(results));
+				return results;
+
+			default:
+				return results;
+			}
 
 		} catch (Exception ex) {
 			logger.error("Failed in doPredictGeneric: ", ex);
@@ -1941,7 +2235,7 @@ public class RunnerController {
 					logger.info(row.toString());
 				}
 			}
-			if(!row.isEmpty())
+			if (!row.isEmpty())
 				rows.add(row);
 		} catch (Exception ex) {
 			logger.error("Failed in getH2ORowData(): ", ex);
@@ -1982,7 +2276,8 @@ public class RunnerController {
 				 * Clustering AutoEncoder DimReduction WordEmbedding Unknown
 				 */
 				ModelCategory currentModelCategory = mojo.getModelCategory();
-				logger.info("doPredictH2O: model category is " + currentModelCategory.toString() + " | current row is [" + row.toString() + "]");
+				logger.info("doPredictH2O: model category is " + currentModelCategory.toString() + " | current row is ["
+						+ row.toString() + "]");
 				Object p = null;
 				Object pobj = null;
 
@@ -2106,6 +2401,7 @@ public class RunnerController {
 			// First step is to de-serialize the binary stream
 			// dframe = DataFrame.parseFrom(datain);
 			Class<?> inputClass = classList.get(inputClassName).getCls();
+
 			Method method = inputClass.getMethod("parseFrom", new Class[] { byte[].class });
 
 			Object df;
@@ -2115,6 +2411,7 @@ public class RunnerController {
 				logger.error(
 						"Inside operation(): possibly INVALID dataset - dataset needs to be in binary protobuf format: ",
 						ex);
+
 				return null;
 			}
 

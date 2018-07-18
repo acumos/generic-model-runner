@@ -197,8 +197,127 @@ public class ModelRunnerControllerTest extends ModelRunnerTestApp {
 					.getContentAsByteArray();
 			logger.info("Done testing /transformCSVDefault POST end point: " + resultsTransform);
 
-			logger.info("Testing /getBinary POST method");
+			////
+			logger.info("Testing transformJSON POST end point");
 
+			// first change configuration properties to use JSON inputs/outputs formats
+			byte[] configbytesJson = Files.readAllBytes(
+					new File(this.getClass().getResource("/sampleConfigJson.properties").getFile()).toPath());
+			MockMultipartFile sampleConfigJson = new MockMultipartFile("modelConfig", "sampleConfigJson.properties",
+					null, configbytesJson);
+			MockMultipartHttpServletRequestBuilder builderConfigJson = MockMvcRequestBuilders
+					.fileUpload("/model/configuration");
+			builderConfigJson.with(new RequestPostProcessor() {
+				@Override
+				public MockHttpServletRequest postProcessRequest(MockHttpServletRequest request) {
+					request.setMethod("PUT");
+					return request;
+				}
+			});
+			mockMvc.perform(builderConfigJson.file(sampleConfigJson)).andExpect(status().isOk());
+
+			String jsonStr = "{\"rows\":[{\"operand\":2},{\"operand\":3},{\"operand\":4}]}";
+			MockMultipartFile jsondata = new MockMultipartFile("jsonFile", "testRandom.json", "text/json",
+					jsonStr.getBytes());
+
+			byte[] protobytesJson0 = Files.readAllBytes(Paths.get("src", "test", "resources", "sampleJson0.proto"));
+			MockMultipartFile protoJson0 = new MockMultipartFile("proto", "sampleJson0.proto", null, protobytesJson0);
+
+			MockHttpServletRequestBuilder builderTransformJson = MockMvcRequestBuilders.fileUpload("/transformJSON")
+					.file(jsondata).file(modelFile).file(protoJson0).param("operation", "testJSON");
+
+			byte[] resultsTransformJson0 = this.mockMvc.perform(builderTransformJson).andExpect(status().isOk())
+					.andReturn().getResponse().getContentAsByteArray();
+
+			logger.info("Done testing transformJSON POST end point: " + resultsTransformJson0);
+
+			// testing transformJSONDefault end point, using sampleJson0.proto
+
+			MockMultipartHttpServletRequestBuilder builderProtoJson = MockMvcRequestBuilders.fileUpload("/proto");
+			builderProtoJson.with(new RequestPostProcessor() {
+				@Override
+				public MockHttpServletRequest postProcessRequest(MockHttpServletRequest request) {
+					request.setMethod("PUT");
+					return request;
+				}
+			});
+			mockMvc.perform(builderProtoJson.file(protoJson0)).andExpect(status().isOk());
+			logger.info("Testing /transformJSONDefault POST end point");
+
+			builderTransformJson = MockMvcRequestBuilders.fileUpload("/transformJSONDefault").file(jsondata)
+					.param("operation", "testJSON");
+			resultsTransformJson0 = this.mockMvc.perform(builderTransformJson).andExpect(status().isOk()).andReturn()
+					.getResponse().getContentAsByteArray();
+			logger.info("Done testing /transformJSONDefault POST end point: " + resultsTransformJson0);
+
+			//// end of transformJSONDefault
+			//// Starting of getBinaryJSON
+
+			logger.info("Testing /getBinaryJSON POST method");
+
+			String jsonStr1 = "{\"rows\":[{\"DOY\":166,\"LATITUDE\":49.047339,\"LONGITUDE\":-90.3977,\"pseudo_f1\":155525,\"pseudo_f2\":185.455,\"pseudo_f3\":\"Apple - iPhone7\",\"padding\":1},"
+					+ "{\"DOY\":72,\"LATITUDE\":42.657982,\"LONGITUDE\":-81.153009,\"pseudo_f1\":1641166667,\"pseudo_f2\":30.679,\"pseudo_f3\":\"Apple - iPhone7\",\"padding\":2}],"
+					+ "\"rows2\":[{\"subrow\":2,\"subrow2\":22222222,\"subrow3\":-2,\"subrow4\":-222222,\"subrow5\":555,\"subrow6\":5,\"overheads\":[true,true]},"
+					+ "{\"subrow\":3,\"subrow2\":33333333,\"subrow3\":-3,\"subrow4\":-33333333,\"subrow5\":666,\"subrow6\":6,\"overheads\":[false,false,false]}]}";
+
+			MockMultipartFile inpJsonfile = new MockMultipartFile("jsonFile", "testRandom1.json", "text/json",
+					jsonStr1.getBytes());
+
+			byte[] bytesTestJson = Files
+					.readAllBytes(new File(this.getClass().getResource("/sampleJson1.proto").getFile()).toPath());
+			MockMultipartFile protoTestJson = new MockMultipartFile("proto", "sampleJson1.proto", null, bytesTestJson);
+			MockHttpServletRequestBuilder builderGBJ = MockMvcRequestBuilders.fileUpload("/getBinaryJSON")
+					.file(inpJsonfile).file(protoTestJson);
+
+			byte[] resultsBinJson = this.mockMvc.perform(builderGBJ.param("operation", "predict"))
+					.andExpect(status().isOk()).andReturn().getResponse().getContentAsByteArray();
+
+			logger.info("Done testing /getBinaryJSON POST end point: " + Arrays.toString(resultsBinJson));
+
+			// testing /getBinaryJSONDefault end point
+			logger.info("Testing /getBinaryJSONDefault POST end point");
+
+			// Set default.proto to sampleJson1.proto
+			MockMultipartHttpServletRequestBuilder builderJsonProto = MockMvcRequestBuilders.fileUpload("/proto");
+			builderJsonProto.with(new RequestPostProcessor() {
+				@Override
+				public MockHttpServletRequest postProcessRequest(MockHttpServletRequest request) {
+					request.setMethod("PUT");
+					return request;
+				}
+			});
+			mockMvc.perform(builderJsonProto.file(protoTestJson)).andExpect(status().isOk());
+
+			byte[] resultsBinDefaultJson = this.mockMvc
+					.perform(MockMvcRequestBuilders.fileUpload("/getBinaryJSONDefault").file(inpJsonfile)
+							.param("operation", "predict"))
+					.andExpect(status().isOk()).andReturn().getResponse().getContentAsByteArray();
+			logger.info("Done testing POST /getBinaryJSONDefault end point " + Arrays.toString(resultsBinDefaultJson));
+
+			// testing /{operation} end point, use predict in this case
+			logger.info("Testing /{operation} POST end point");
+			// first change configuration properties to use JSON inputs/outputs formats
+			byte[] configbytesJson1 = Files.readAllBytes(
+					new File(this.getClass().getResource("/sampleConfigJson1.properties").getFile()).toPath());
+			MockMultipartFile sampleConfigJson1 = new MockMultipartFile("modelConfig", "sampleConfigJson1.properties",
+					null, configbytesJson1);
+			MockMultipartHttpServletRequestBuilder builderConfigJson1 = MockMvcRequestBuilders
+					.fileUpload("/model/configuration");
+			builderConfigJson1.with(new RequestPostProcessor() {
+				@Override
+				public MockHttpServletRequest postProcessRequest(MockHttpServletRequest request) {
+					request.setMethod("PUT");
+					return request;
+				}
+			});
+			mockMvc.perform(builderConfigJson1.file(sampleConfigJson1)).andExpect(status().isOk());
+
+			byte[] resultsPredictJSON = this.mockMvc
+					.perform(post("/predict").contentType(MediaType.TEXT_PLAIN).content(resultsBinDefaultJson))
+					.andExpect(status().isOk()).andReturn().getResponse().getContentAsByteArray();
+			logger.info("Done testing POST /{operation} end point " + Arrays.toString(resultsPredictJSON));
+
+			logger.info("Testing /getBinary POST method");
 			// first change configuration properties to use multiplyAll method
 			byte[] configbytes1 = Files.readAllBytes(
 					new File(this.getClass().getResource("/sampleConfig1.properties").getFile()).toPath());
@@ -274,8 +393,7 @@ public class ModelRunnerControllerTest extends ModelRunnerTestApp {
 			// testing /{operation} end point, use transform in this case
 			logger.info("Testing /{operation} POST end point");
 			byte[] resultsPredict = this.mockMvc
-					.perform(post("/transform").contentType(MediaType.TEXT_PLAIN)
-							.content(resultsBinaryDefault))
+					.perform(post("/transform").contentType(MediaType.TEXT_PLAIN).content(resultsBinaryDefault))
 					.andExpect(status().isOk()).andReturn().getResponse().getContentAsByteArray();
 			logger.info("Done testing POST /{operation} end point " + Arrays.toString(resultsPredict));
 
@@ -293,7 +411,7 @@ public class ModelRunnerControllerTest extends ModelRunnerTestApp {
 					return request;
 				}
 			});
-			mockMvc.perform(builder5.file(sampleConfig3)).andExpect(status().isOk());
+			mockMvc.perform(builder7.file(sampleConfig3)).andExpect(status().isOk());
 
 			// Use sample3.proto
 			byte[] protobytes3 = Files.readAllBytes(Paths.get("src", "test", "resources", "sample3.proto"));
@@ -321,8 +439,7 @@ public class ModelRunnerControllerTest extends ModelRunnerTestApp {
 			// testing /{operation} end point, use classify in this case
 			logger.info("Testing /classify POST end point");
 			byte[] resultsPredict1 = this.mockMvc
-					.perform(post("/classify").contentType(MediaType.TEXT_PLAIN)
-							.content(resultsBinaryDefault1))
+					.perform(post("/classify").contentType(MediaType.TEXT_PLAIN).content(resultsBinaryDefault1))
 					.andExpect(status().isOk()).andReturn().getResponse().getContentAsByteArray();
 			logger.info("Done testing POST /classify end point " + Arrays.toString(resultsPredict1));
 
@@ -353,8 +470,7 @@ public class ModelRunnerControllerTest extends ModelRunnerTestApp {
 			// testing /aggregate end point
 			logger.info("Testing /aggregate POST end point");
 			byte[] resultsPredict2 = this.mockMvc
-					.perform(post("/aggregate").contentType(MediaType.TEXT_PLAIN)
-							.content(resultsBinaryDefault2))
+					.perform(post("/aggregate").contentType(MediaType.TEXT_PLAIN).content(resultsBinaryDefault2))
 					.andExpect(status().isOk()).andReturn().getResponse().getContentAsByteArray();
 			logger.info("Done testing POST /aggregate end point " + Arrays.toString(resultsPredict2));
 
@@ -398,8 +514,7 @@ public class ModelRunnerControllerTest extends ModelRunnerTestApp {
 			// testing /testEnum end point
 			logger.info("Testing /testEnum POST end point");
 			byte[] resultsPredict4 = this.mockMvc
-					.perform(post("/testEnum").contentType(MediaType.TEXT_PLAIN)
-							.content(resultsBinaryDefault4))
+					.perform(post("/testEnum").contentType(MediaType.TEXT_PLAIN).content(resultsBinaryDefault4))
 					.andExpect(status().isOk()).andReturn().getResponse().getContentAsByteArray();
 			logger.info("Done testing POST /testEnum end point " + Arrays.toString(resultsPredict4));
 

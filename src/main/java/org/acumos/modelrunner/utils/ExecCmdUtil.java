@@ -92,8 +92,6 @@ public class ExecCmdUtil {
 		ArrayList<String> output = new ArrayList<>();
 
 		while ((currentLine = bufferedReader.readLine()) != null) {
-			logger.info("printCmdOuput: " + currentLine);
-
 			int i;
 			for (i = 0; i < currentLine.length(); i++)
 				if (!Character.isWhitespace(currentLine.charAt(i))) {
