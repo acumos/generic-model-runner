@@ -1,0 +1,250 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "cd52ebf2_bcaa4b9e",
+        "filename": "docs/developer-guide.rst",
+        "patchSetId": 3
+      },
+      "lineNbr": 33,
+      "author": {
+        "id": 4
+      },
+      "writtenOn": "2018-07-18T20:10:42Z",
+      "side": 1,
+      "message": "Drop \"nine\" just say \"following\" make your life easier :)",
+      "range": {
+        "startLine": 33,
+        "startChar": 10,
+        "endLine": 33,
+        "endChar": 14
+      },
+      "revId": "b0261609c53ea5ec46b2bcf2ef9e6c8f9af8e8a7",
+      "serverId": "655300a2-7a56-4504-9153-881edd907bea",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "aff0811e_8258fec7",
+        "filename": "docs/release-notes.rst",
+        "patchSetId": 3
+      },
+      "lineNbr": 24,
+      "author": {
+        "id": 4
+      },
+      "writtenOn": "2018-07-18T20:10:42Z",
+      "side": 1,
+      "message": "add blank line so RST doesn\u0027t complain",
+      "revId": "b0261609c53ea5ec46b2bcf2ef9e6c8f9af8e8a7",
+      "serverId": "655300a2-7a56-4504-9153-881edd907bea",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "99f557d0_c8b93d15",
+        "filename": "models/model.template",
+        "patchSetId": 3
+      },
+      "lineNbr": 14,
+      "author": {
+        "id": 4
+      },
+      "writtenOn": "2018-07-18T20:10:42Z",
+      "side": 1,
+      "message": "Why is File here?",
+      "range": {
+        "startLine": 14,
+        "startChar": 43,
+        "endLine": 14,
+        "endChar": 47
+      },
+      "revId": "b0261609c53ea5ec46b2bcf2ef9e6c8f9af8e8a7",
+      "serverId": "655300a2-7a56-4504-9153-881edd907bea",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "385fe162_2a76e0f7",
+        "filename": "src/main/java/org/acumos/modelrunner/controller/RunnerController.java",
+        "patchSetId": 3
+      },
+      "lineNbr": 321,
+      "author": {
+        "id": 4
+      },
+      "writtenOn": "2018-07-18T20:10:42Z",
+      "side": 1,
+      "message": "On the default, or on the one specified here?",
+      "range": {
+        "startLine": 321,
+        "startChar": 63,
+        "endLine": 321,
+        "endChar": 70
+      },
+      "revId": "b0261609c53ea5ec46b2bcf2ef9e6c8f9af8e8a7",
+      "serverId": "655300a2-7a56-4504-9153-881edd907bea",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "d548e729_da0eab1c",
+        "filename": "src/main/java/org/acumos/modelrunner/controller/RunnerController.java",
+        "patchSetId": 3
+      },
+      "lineNbr": 363,
+      "author": {
+        "id": 4
+      },
+      "writtenOn": "2018-07-18T20:10:42Z",
+      "side": 1,
+      "message": "Typo",
+      "range": {
+        "startLine": 363,
+        "startChar": 42,
+        "endLine": 363,
+        "endChar": 43
+      },
+      "revId": "b0261609c53ea5ec46b2bcf2ef9e6c8f9af8e8a7",
+      "serverId": "655300a2-7a56-4504-9153-881edd907bea",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "1409e45b_3f580ada",
+        "filename": "src/main/java/org/acumos/modelrunner/controller/RunnerController.java",
+        "patchSetId": 3
+      },
+      "lineNbr": 396,
+      "author": {
+        "id": 4
+      },
+      "writtenOn": "2018-07-18T20:10:42Z",
+      "side": 1,
+      "message": "Remove don\u0027t comment out",
+      "revId": "b0261609c53ea5ec46b2bcf2ef9e6c8f9af8e8a7",
+      "serverId": "655300a2-7a56-4504-9153-881edd907bea",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "e6f6ceaa_3c2c62ab",
+        "filename": "src/main/java/org/acumos/modelrunner/controller/RunnerController.java",
+        "patchSetId": 3
+      },
+      "lineNbr": 424,
+      "author": {
+        "id": 4
+      },
+      "writtenOn": "2018-07-18T20:10:42Z",
+      "side": 1,
+      "message": "Need to return null here?",
+      "revId": "b0261609c53ea5ec46b2bcf2ef9e6c8f9af8e8a7",
+      "serverId": "655300a2-7a56-4504-9153-881edd907bea",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "1e2e0dfd_f0b31c6b",
+        "filename": "src/main/java/org/acumos/modelrunner/controller/RunnerController.java",
+        "patchSetId": 3
+      },
+      "lineNbr": 430,
+      "author": {
+        "id": 4
+      },
+      "writtenOn": "2018-07-18T20:10:42Z",
+      "side": 1,
+      "message": "Do you need to close this stream?",
+      "range": {
+        "startLine": 430,
+        "startChar": 33,
+        "endLine": 430,
+        "endChar": 52
+      },
+      "revId": "b0261609c53ea5ec46b2bcf2ef9e6c8f9af8e8a7",
+      "serverId": "655300a2-7a56-4504-9153-881edd907bea",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "30a84176_176a5f13",
+        "filename": "src/main/java/org/acumos/modelrunner/controller/RunnerController.java",
+        "patchSetId": 3
+      },
+      "lineNbr": 546,
+      "author": {
+        "id": 4
+      },
+      "writtenOn": "2018-07-18T20:10:42Z",
+      "side": 1,
+      "message": "Prediction?",
+      "range": {
+        "startLine": 546,
+        "startChar": 31,
+        "endLine": 546,
+        "endChar": 41
+      },
+      "revId": "b0261609c53ea5ec46b2bcf2ef9e6c8f9af8e8a7",
+      "serverId": "655300a2-7a56-4504-9153-881edd907bea",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "7c508e29_e5e25bfd",
+        "filename": "src/main/java/org/acumos/modelrunner/controller/RunnerController.java",
+        "patchSetId": 3
+      },
+      "lineNbr": 564,
+      "author": {
+        "id": 4
+      },
+      "writtenOn": "2018-07-18T20:10:42Z",
+      "side": 1,
+      "message": "Prediction?",
+      "range": {
+        "startLine": 564,
+        "startChar": 31,
+        "endLine": 564,
+        "endChar": 41
+      },
+      "revId": "b0261609c53ea5ec46b2bcf2ef9e6c8f9af8e8a7",
+      "serverId": "655300a2-7a56-4504-9153-881edd907bea",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "674bb247_920723a9",
+        "filename": "src/main/java/org/acumos/modelrunner/utils/ExecCmdUtil.java",
+        "patchSetId": 3
+      },
+      "lineNbr": 96,
+      "author": {
+        "id": 4
+      },
+      "writtenOn": "2018-07-18T20:10:42Z",
+      "side": 1,
+      "message": "remove don\u0027t comment out",
+      "revId": "b0261609c53ea5ec46b2bcf2ef9e6c8f9af8e8a7",
+      "serverId": "655300a2-7a56-4504-9153-881edd907bea",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "0ad56d81_fc97218f",
+        "filename": "src/main/java/org/acumos/modelrunner/utils/ExecCmdUtil.java",
+        "patchSetId": 3
+      },
+      "lineNbr": 100,
+      "author": {
+        "id": 4
+      },
+      "writtenOn": "2018-07-18T20:10:42Z",
+      "side": 1,
+      "message": "Why not just use currentLine.trim().length() ?",
+      "revId": "b0261609c53ea5ec46b2bcf2ef9e6c8f9af8e8a7",
+      "serverId": "655300a2-7a56-4504-9153-881edd907bea",
+      "unresolved": false
+    }
+  ]
+}
