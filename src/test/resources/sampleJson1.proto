@@ -1,0 +1,39 @@
+syntax = "proto3";
+
+message DataFrameRow {
+int32 DOY = 1;
+float LATITUDE = 2;
+float LONGITUDE = 3;
+int64 pseudo_f1 = 4;
+double pseudo_f2 = 5;
+string pseudo_f3 = 6;
+enum PADDING {
+	USEFUL = 0;
+	HELPFUL = 1;
+	HOPEFUL = 2;
+}
+PADDING padding = 7;
+}
+
+message AnotherDataFrameRow {
+fixed32 subrow = 1;
+fixed64 subrow2 = 2;
+sfixed32 subrow3 = 3;
+sfixed64 subrow4 = 4;
+uint64 subrow5 = 5;
+uint32 subrow6 = 6;
+repeated bool overheads = 7;
+}
+
+message InputFrame {
+ 	repeated DataFrameRow rows = 1;
+ 	repeated AnotherDataFrameRow rows2 = 2;
+}
+message Prediction {
+	repeated string prediction= 1;
+}
+
+service Model {
+  rpc predict (InputFrame) returns (Prediction);
+}
+

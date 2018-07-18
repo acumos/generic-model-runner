@@ -4,7 +4,7 @@
 	<modelVersion>4.0.0</modelVersion>
 	<groupId>org.acumos.generic-model-runner</groupId>
 	<artifactId>h2o-genericjava-modelrunner</artifactId>
-	<version>2.1.4-SNAPSHOT</version>
+	<version>2.2.1-SNAPSHOT</version>
 
 	<name>Acumos H2O/Generic Java Model Runner</name>
 	<description>Acumos H2O/Generic Java Model Runner</description>
@@ -20,7 +20,7 @@
 		<project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
 		<!-- Stand-alone RESTFul application -->
 		<start-class>org.acumos.modelrunner.Application</start-class>
-		<springfox.version>2.7.0</springfox.version>
+		<springfox.version>2.8.0</springfox.version>
 		<!-- Jenkins invokes mvn with argument -Dbuild.number=${BUILD_NUMBER} -->
 		<build.number>0</build.number>
 		<!-- Not supplied to all jobs; e.g., Javadoc -->
@@ -79,7 +79,7 @@
 		<dependency>
 			<groupId>com.google.protobuf</groupId>
 			<artifactId>protobuf-java-util</artifactId>
-			<version>3.0.0-beta-1</version>
+			<version>3.5.1</version>
 		</dependency>
 		<dependency>
 			<groupId>com.google.api</groupId>
@@ -87,7 +87,7 @@
 			<version>1.0.0</version>
 		</dependency>
 		<dependency>
-    		<groupId>com.google.api.grpc</groupId>
+			<groupId>com.google.api.grpc</groupId>
 			<artifactId>googleapis-common-protos</artifactId>
 			<version>0.0.3</version>
 		</dependency>
@@ -126,6 +126,34 @@
 			<groupId>org.springframework.boot</groupId>
 			<artifactId>spring-boot-autoconfigure</artifactId>
 		</dependency>
+		<!-- https://mvnrepository.com/artifact/com.github.os72/protobuf-dynamic -->
+		<dependency>
+			<groupId>com.github.os72</groupId>
+			<artifactId>protobuf-dynamic</artifactId>
+			<version>0.9.4</version>
+		</dependency>
+		<!-- https://mvnrepository.com/artifact/com.google.api.client/google-api-client-json -->
+		<dependency>
+			<groupId>com.google.api.client</groupId>
+			<artifactId>google-api-client-json</artifactId>
+			<version>1.2.3-alpha</version>
+		</dependency>
+		<!-- https://mvnrepository.com/artifact/com.google.api.client/google-api-client-util -->
+		<dependency>
+			<groupId>com.google.api.client</groupId>
+			<artifactId>google-api-client-util</artifactId>
+			<version>1.2.3-alpha</version>
+		</dependency>
+		<!-- https://mvnrepository.com/artifact/com.google.api.client/google-api-client-http -->
+		<dependency>
+			<groupId>com.google.api.client</groupId>
+			<artifactId>google-api-client-http</artifactId>
+			<version>1.2.3-alpha</version>
+		</dependency>
+
+
+
+
 	</dependencies>
 
 	<build>

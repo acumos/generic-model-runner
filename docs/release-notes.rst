@@ -21,6 +21,12 @@ Generic Model Runner Release Notes
 ==================================
 
 The server is deployed within a Docker image in the Docker registry.
+Version 2.2.1, 18 April 2018
+============================
+* Add /getBinaryJSOn
+* Add /getBinaryJSONDefault
+* Add /transformJSON
+* Add /transformJSONDefault
 
 Version 2.2.0, 30 April 2018
 ============================
