@@ -1,0 +1,17 @@
+syntax = "proto3";
+option java_package = "org.acumos.test";
+option java_outer_classname = "HelloThere";
+message InputFrameRow {
+int64 operand = 1;
+}
+
+message InputFrame {
+ 	repeated InputFrameRow rows = 1;
+}
+message Product {
+	repeated InputFrameRow rows= 1;
+}
+service Predict {
+	rpc testJSON(InputFrame) returns (Product);
+
+}

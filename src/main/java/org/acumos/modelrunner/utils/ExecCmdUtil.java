@@ -92,7 +92,9 @@ public class ExecCmdUtil {
 		ArrayList<String> output = new ArrayList<>();
 
 		while ((currentLine = bufferedReader.readLine()) != null) {
-			logger.info("printCmdOuput: " + currentLine);
+			/* 	Use it when we need it
+			 *  logger.info("printCmdOutput: " + currentLine);
+			 */ 
 
 			int i;
 			for (i = 0; i < currentLine.length(); i++)
