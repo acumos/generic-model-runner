@@ -65,7 +65,13 @@ public class SimpleMockModel {
 		ArrayList<Object> predictList = new ArrayList<Object>();
 
 		StringTokenizer st = new StringTokenizer(str, "\n");
+		boolean header = true;
 		while (st.hasMoreTokens()) {
+			if(header) {
+			        st.nextToken();
+				header = false;
+				continue;
+			}	
 			predictedClassValue = getMultiplyLong(st.nextToken());
 			predictList.add(predictedClassValue);
 		}
