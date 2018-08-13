@@ -1248,7 +1248,7 @@ public class RunnerController {
 	 * in the case of nestedmsg.proto First iteration : parent - DataFrame, child -
 	 * DataFrameRow Second iteration: parent - DataFrameRow, child - SubFrameRow
 	 */
-	private void getRowString(Object df, String parentName, String attributeName, StringBuffer rowStr) {
+	private void getRowString(Object df, String parentName, String attributeName, StringBuffer rowStr, StringBuffer headerStr) {
 		try {
 			logger.info("getRowString: " + parentName);
 			MessageObject parentMsg = classList.get(parentName);
@@ -1258,7 +1258,7 @@ public class RunnerController {
 			for (AttributeEntity ae : parentAttributes) {
 				if (attributeName != null && !attributeName.equals(ae.getName()))
 					continue;
-
+				boolean commaAppended = false;
 				if (ae.isRepeated()) {
 					String pAttrMethodName = StringUtils.camelCase("get_" + ae.getName(), '_');
 					Method getCount = parentCls.getMethod(pAttrMethodName + "Count");
@@ -1269,22 +1269,28 @@ public class RunnerController {
 					List<?> list = (List<?>) getList.invoke(df); // list of child objects or list of primitive types
 
 					Object obj;
-					for (int j = 0; j < rowCount; j++) {
+					int j;
+					
+					for (j = 0; j < rowCount; j++) {
 						obj = list.get(j);
+						
+						commaAppended = false;
+						if (rowStr.length() != 0 && rowStr.charAt(rowStr.length()-1) != '\n') {
+							rowStr.append(",");
+							commaAppended = true;
+						}
 
 						switch (ae.getType()) {
 						case DOUBLE:
 							double attrValDouble = ((Double) obj).doubleValue();
-							if (rowStr.length() != 0)
-								rowStr.append(",");
 							rowStr.append(attrValDouble);
+							appendHeader(headerStr, ae.getName());
 							break;
 
 						case FLOAT:
 							float attrValFloat = ((Float) obj).floatValue();
-							if (rowStr.length() != 0)
-								rowStr.append(",");
 							rowStr.append(attrValFloat);
+							appendHeader(headerStr, ae.getName());
 							break;
 
 						case INT32:
@@ -1293,9 +1299,8 @@ public class RunnerController {
 						case FIXED32:
 						case SFIXED32:
 							int attrValInt = ((Integer) obj).intValue();
-							if (rowStr.length() != 0)
-								rowStr.append(",");
 							rowStr.append(attrValInt);
+							appendHeader(headerStr, ae.getName());
 							break;
 
 						case INT64:
@@ -1304,30 +1309,26 @@ public class RunnerController {
 						case FIXED64:
 						case SFIXED64:
 							long attrValLong = ((Long) obj).longValue();
-							if (rowStr.length() != 0)
-								rowStr.append(",");
 							rowStr.append(attrValLong);
+							appendHeader(headerStr, ae.getName());
 							break;
 
 						case BOOL:
 							boolean attrValBool = ((Boolean) obj).booleanValue();
-							if (rowStr.length() != 0)
-								rowStr.append(",");
 							rowStr.append(attrValBool);
+							appendHeader(headerStr, ae.getName());
 							break;
 
 						case STRING:
 							String attrValStr = (String) obj;
-							if (rowStr.length() != 0)
-								rowStr.append(",");
 							rowStr.append(attrValStr);
+							appendHeader(headerStr, ae.getName());
 							break;
 
 						case BYTES:
 							byte[] attrValByte = ((ByteString) obj).toByteArray();
-							if (rowStr.length() != 0)
-								rowStr.append(",");
 							rowStr.append(attrValByte);
+							appendHeader(headerStr, ae.getName());
 							break;
 
 						default:
@@ -1340,37 +1341,45 @@ public class RunnerController {
 								Class<?> cls = classList.get(innerClassName).getCls();
 								Method getNumber = cls.getMethod("getNumber");
 								int attrValEnum = (int) getNumber.invoke(obj);
-								if (rowStr.length() != 0)
-									rowStr.append(",");
 								rowStr.append(attrValEnum);
 							} else if (classNames.contains(innerClassName = ae.getType())
 									|| classNames.contains(innerClassName = (parentName + "." + ae.getType()))) {
-								getRowString(obj, innerClassName, null, rowStr);
+								// strip newly added ","
+								if(commaAppended)
+									rowStr.deleteCharAt(rowStr.length()-1);
+								getRowString(obj, innerClassName, null, rowStr, headerStr);
 							} else {
+								// strip newly added ","
+								if(commaAppended)
+									rowStr.deleteCharAt(rowStr.length()-1);
 								logger.error("getRowString: class " + ae.getType() + " or class " + innerClassName
 										+ " not found");
 							}
 							break;
 						}
 					}
+					
 				} else {
 					String pAttrMethodName = StringUtils.camelCase("get_" + ae.getName(), '_');
 					Method pAttrMethod = parentCls.getMethod(pAttrMethodName);
 					Object obj = pAttrMethod.invoke(df);
+					commaAppended = false;
+					if (rowStr.length() != 0 && rowStr.charAt(rowStr.length()-1) != '\n') {
+						rowStr.append(",");
+						commaAppended = true;
+					}
 
 					switch (ae.getType()) {
 					case DOUBLE:
 						double gcValDouble = ((Double) obj).doubleValue();
-						if (rowStr.length() != 0)
-							rowStr.append(",");
 						rowStr.append(gcValDouble);
+						appendHeader(headerStr, ae.getName());	
 						break;
 
 					case FLOAT:
 						float gcValFloat = ((Float) obj).floatValue();
-						if (rowStr.length() != 0)
-							rowStr.append(",");
 						rowStr.append(gcValFloat);
+						appendHeader(headerStr, ae.getName());
 						break;
 
 					case INT32:
@@ -1379,9 +1388,8 @@ public class RunnerController {
 					case FIXED32:
 					case SFIXED32:
 						int gcValInt = ((Integer) obj).intValue();
-						if (rowStr.length() != 0)
-							rowStr.append(",");
 						rowStr.append(gcValInt);
+						appendHeader(headerStr, ae.getName());
 						break;
 
 					case INT64:
@@ -1390,30 +1398,28 @@ public class RunnerController {
 					case FIXED64:
 					case SFIXED64:
 						long gcValLong = ((Long) obj).longValue();
-						if (rowStr.length() != 0)
-							rowStr.append(",");
 						rowStr.append(gcValLong);
+						appendHeader(headerStr, ae.getName());
 						break;
 
 					case BOOL:
 						boolean gcValBool = ((Boolean) obj).booleanValue();
-						if (rowStr.length() != 0)
-							rowStr.append(",");
 						rowStr.append(gcValBool);
+						appendHeader(headerStr, ae.getName());
 						break;
 
 					case STRING:
 						String gcValStr = (String) obj;
-						if (rowStr.length() != 0)
-							rowStr.append(",");
 						rowStr.append(gcValStr);
+						appendHeader(headerStr, ae.getName());
 						break;
+						
 					case BYTES:
 						byte[] gcValByte = ((ByteString) obj).toByteArray();
-						if (rowStr.length() != 0)
-							rowStr.append(",");
 						rowStr.append(gcValByte);
+						appendHeader(headerStr, ae.getName());
 						break;
+						
 					default:
 						String innerClassName;
 
@@ -1424,13 +1430,17 @@ public class RunnerController {
 							Class<?> cls = classList.get(innerClassName).getCls();
 							Method getNumber = cls.getMethod("getNumber");
 							int attrValEnum = (int) getNumber.invoke(obj);
-							if (rowStr.length() != 0)
-								rowStr.append(",");
 							rowStr.append(attrValEnum);
 						} else if (classNames.contains(innerClassName = ae.getType())
 								|| classNames.contains(innerClassName = (parentName + "." + ae.getType()))) {
-							getRowString(obj, innerClassName, null, rowStr);
+							// strip newly added ","
+							if(commaAppended)
+								rowStr.deleteCharAt(rowStr.length()-1);
+							getRowString(obj, innerClassName, null, rowStr, headerStr);
 						} else {
+							// strip newly added ","
+							if(commaAppended)
+								rowStr.deleteCharAt(rowStr.length()-1);
 							logger.error("getRowString: class " + ae.getType() + " or class " + innerClassName
 									+ " not found");
 						}
@@ -1438,15 +1448,26 @@ public class RunnerController {
 						break;
 					}
 				}
-				// rowStr.append("\n");
+		//		rowStr.append("\n");
 
 				logger.info(rowStr.toString());
 			}
+			// testing
+			appendHeader(headerStr, "\n");
+			rowStr.append("\n");
 		} catch (Exception ex) {
 			logger.error("Failed in getRowString(): ", ex);
 		}
 	}
 
+	private void appendHeader(StringBuffer headerStr, String field) {
+		if(headerStr.indexOf("\n") == -1) {
+			if(headerStr.length() != 0 && !field.equals("\n"))
+				headerStr.append(",");
+			headerStr.append(field);
+		}
+	}
+	
 	/**
 	 * This procedure uses Java ML model to do prediction
 	 * 
@@ -1486,9 +1507,9 @@ public class RunnerController {
 			switch(modelInputType.toUpperCase()) {
 			case "CSV":
 				StringBuffer rowString = new StringBuffer();
-
-				getRowString(df, inputClassName, null, rowString);
-				logger.info(resultStr = rowString.toString());
+				StringBuffer headerStr = new StringBuffer();
+				getRowString(df, inputClassName, null, rowString, headerStr);
+				logger.info(resultStr = headerStr.toString() + rowString.toString());
 				genfile += ".csv";
 				break;
 			
