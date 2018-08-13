@@ -132,27 +132,6 @@
 			<artifactId>protobuf-dynamic</artifactId>
 			<version>0.9.4</version>
 		</dependency>
-		<!-- https://mvnrepository.com/artifact/com.google.api.client/google-api-client-json -->
-		<dependency>
-			<groupId>com.google.api.client</groupId>
-			<artifactId>google-api-client-json</artifactId>
-			<version>1.2.3-alpha</version>
-		</dependency>
-		<!-- https://mvnrepository.com/artifact/com.google.api.client/google-api-client-util -->
-		<dependency>
-			<groupId>com.google.api.client</groupId>
-			<artifactId>google-api-client-util</artifactId>
-			<version>1.2.3-alpha</version>
-		</dependency>
-		<!-- https://mvnrepository.com/artifact/com.google.api.client/google-api-client-http -->
-		<dependency>
-			<groupId>com.google.api.client</groupId>
-			<artifactId>google-api-client-http</artifactId>
-			<version>1.2.3-alpha</version>
-		</dependency>
-
-
-
 
 	</dependencies>
 
