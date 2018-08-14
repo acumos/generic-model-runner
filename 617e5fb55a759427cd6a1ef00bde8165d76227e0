@@ -1,0 +1,50 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "b0a8c075_1b96759f",
+        "filename": "pom.xml",
+        "patchSetId": 4
+      },
+      "lineNbr": 14,
+      "author": {
+        "id": 4
+      },
+      "writtenOn": "2018-08-14T17:51:12Z",
+      "side": 1,
+      "message": "So this didn\u0027t work at all?      1.5.14.RELEASE",
+      "range": {
+        "startLine": 14,
+        "startChar": 11,
+        "endLine": 14,
+        "endChar": 25
+      },
+      "revId": "617e5fb55a759427cd6a1ef00bde8165d76227e0",
+      "serverId": "655300a2-7a56-4504-9153-881edd907bea",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "47ed73a8_de1f4a0d",
+        "filename": "src/main/java/org/acumos/modelrunner/controller/RunnerController.java",
+        "patchSetId": 4
+      },
+      "lineNbr": 1451,
+      "author": {
+        "id": 4
+      },
+      "writtenOn": "2018-08-14T17:51:12Z",
+      "side": 1,
+      "message": "Pls remove don\u0027t comment out",
+      "range": {
+        "startLine": 1451,
+        "startChar": 0,
+        "endLine": 1451,
+        "endChar": 26
+      },
+      "revId": "617e5fb55a759427cd6a1ef00bde8165d76227e0",
+      "serverId": "655300a2-7a56-4504-9153-881edd907bea",
+      "unresolved": false
+    }
+  ]
+}
