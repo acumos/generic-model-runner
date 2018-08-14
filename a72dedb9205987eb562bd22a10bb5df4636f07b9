@@ -1,0 +1,50 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "258058fc_ee75bf86",
+        "filename": "pom.xml",
+        "patchSetId": 3
+      },
+      "lineNbr": 15,
+      "author": {
+        "id": 4
+      },
+      "writtenOn": "2018-08-14T11:56:32Z",
+      "side": 1,
+      "message": "Please upgrade to 1.15.14.RELEASE and test.",
+      "range": {
+        "startLine": 15,
+        "startChar": 11,
+        "endLine": 15,
+        "endChar": 24
+      },
+      "revId": "a72dedb9205987eb562bd22a10bb5df4636f07b9",
+      "serverId": "655300a2-7a56-4504-9153-881edd907bea",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "e0d64816_a974b97e",
+        "filename": "src/main/java/org/acumos/modelrunner/controller/RunnerController.java",
+        "patchSetId": 3
+      },
+      "lineNbr": 1279,
+      "author": {
+        "id": 4
+      },
+      "writtenOn": "2018-08-14T11:56:32Z",
+      "side": 1,
+      "message": "Consider stripping the newline from the rowStr up front instead of changing every single appender to look for it. Would be less code, less complexity.",
+      "range": {
+        "startLine": 1279,
+        "startChar": 0,
+        "endLine": 1279,
+        "endChar": 7
+      },
+      "revId": "a72dedb9205987eb562bd22a10bb5df4636f07b9",
+      "serverId": "655300a2-7a56-4504-9153-881edd907bea",
+      "unresolved": false
+    }
+  ]
+}
