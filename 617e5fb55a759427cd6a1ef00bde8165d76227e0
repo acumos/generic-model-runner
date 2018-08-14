@@ -25,6 +25,30 @@
     },
     {
       "key": {
+        "uuid": "70a2ecc7_563b9892",
+        "filename": "pom.xml",
+        "patchSetId": 4
+      },
+      "lineNbr": 14,
+      "author": {
+        "id": 39
+      },
+      "writtenOn": "2018-08-14T21:24:01Z",
+      "side": 1,
+      "message": "No. It doesn\u0027t. I\u0027ve updated a bunch of other artifacts in order for it to work and failed. Finally, I\u0027ve found a newer version - 2.0.4.RELEASE, which does work.",
+      "parentUuid": "b0a8c075_1b96759f",
+      "range": {
+        "startLine": 14,
+        "startChar": 11,
+        "endLine": 14,
+        "endChar": 25
+      },
+      "revId": "617e5fb55a759427cd6a1ef00bde8165d76227e0",
+      "serverId": "655300a2-7a56-4504-9153-881edd907bea",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "47ed73a8_de1f4a0d",
         "filename": "src/main/java/org/acumos/modelrunner/controller/RunnerController.java",
         "patchSetId": 4
@@ -36,6 +60,30 @@
       "writtenOn": "2018-08-14T17:51:12Z",
       "side": 1,
       "message": "Pls remove don\u0027t comment out",
+      "range": {
+        "startLine": 1451,
+        "startChar": 0,
+        "endLine": 1451,
+        "endChar": 26
+      },
+      "revId": "617e5fb55a759427cd6a1ef00bde8165d76227e0",
+      "serverId": "655300a2-7a56-4504-9153-881edd907bea",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "1dae128d_d6de6b65",
+        "filename": "src/main/java/org/acumos/modelrunner/controller/RunnerController.java",
+        "patchSetId": 4
+      },
+      "lineNbr": 1451,
+      "author": {
+        "id": 39
+      },
+      "writtenOn": "2018-08-14T21:24:01Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "47ed73a8_de1f4a0d",
       "range": {
         "startLine": 1451,
         "startChar": 0,
