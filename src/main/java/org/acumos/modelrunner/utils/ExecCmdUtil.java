@@ -84,7 +84,9 @@ public class ExecCmdUtil {
 	 * print out output of an command
 	 * 
 	 * @param bufferedReader
-	 * @return output
+	 *            the contents of bufferedReader which contains the results of the commands
+	 * @return 
+	 *            results of commands
 	 * @throws IOException
 	 */
 	public static ArrayList<String> printCmdOutput(BufferedReader bufferedReader) throws IOException {
@@ -116,8 +118,10 @@ public class ExecCmdUtil {
 	 * Deleting a directory recursively :
 	 * http://www.baeldung.com/java-delete-directory
 	 * 
-	 * @param directoryToBeDeleted
-	 * @return true or false
+	 * @param directoryToBeDeleted 
+	 *        directory to be deleted
+	 * @return 
+	 *        true or false
 	 */
 	public static boolean deleteDirectory(File directoryToBeDeleted) {
 		File[] allContents = directoryToBeDeleted.listFiles();
