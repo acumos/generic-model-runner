@@ -22,6 +22,10 @@ Generic Model Runner Release Notes
 
 The server is deployed within a Docker image in the Docker registry.
 
+Version 2.2.3, 20 August 2018
+=============================
+* Allow missing data in the last field of CSV input dataset
+
 Version 2.2.2, 13 August 2018
 =============================
 * Auto-generate a header for all generic Java models when the model input is CSV format. The model runner will combine this header with de-serialized data after un-marshaling binary stream and feed it into the model.

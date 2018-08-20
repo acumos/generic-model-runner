@@ -271,7 +271,9 @@ public class RunnerController {
 	 * file
 	 * 
 	 * @param csvFile
-	 *            CSV file
+	 *            CSV file that contains the header and dataset
+	 * @param operation
+	 *            one of the operations specified in the proto file
 	 * @return binary stream in protobuf format as inputs for the predictor
 	 */
 	@ApiOperation(value = "Converts the csv file to a binary stream in protobuf format using default.proto. The header is required in the csv file. The header fields must match with ones in the proto file")
@@ -289,7 +291,8 @@ public class RunnerController {
 	 *            Protobuf file
 	 * @param operation
 	 *            one of the operations matching service structure in protofile
-	 * @return
+	 * @return 
+	 *            binary stream in protobuf format
 	 */
 	@ApiOperation(value = "Serialize the csv file based on the .proto file provided here. This .proto file will not replace the default protofile ")
 	@RequestMapping(value = "/getBinary", method = RequestMethod.POST, produces = MediaType.APPLICATION_OCTET_STREAM)
@@ -509,8 +512,11 @@ public class RunnerController {
 	/**
 	 * 
 	 * @param csvFile
-	 *            CSV file
-	 * @return prediction binary stream in protobuf format
+	 *            input dataset in CSV format
+	 * @param operation
+	 *            one of the operations from proto file
+	 * @return 
+	 *            prediction binary stream in protobuf format
 	 */
 	@ApiOperation(value = "Gets a prediction binary stream in protobuf format for the training data in the provided csv file using default .proto file")
 	@RequestMapping(value = "/transformCSVDefault", method = RequestMethod.POST)
@@ -739,7 +745,7 @@ public class RunnerController {
 						case DOUBLE:
 							inputAddOrSetRow = thisBuilder.getClass().getMethod(iAttrMethodName, double.class);
 							for (idx = 0; idx < headerFields.length; idx++) {
-								if (array[idx].length() == 0) // skip missing field
+								if (idx >= array.length || array[idx] == null || array[idx].length() == 0) // skip missing field
 									continue;
 								if (headerFields[idx].equals(ae.getName()))
 									inputAddOrSetRow.invoke(thisBuilder, Double.parseDouble(array[idx]));
@@ -748,7 +754,7 @@ public class RunnerController {
 						case FLOAT:
 							inputAddOrSetRow = thisBuilder.getClass().getMethod(iAttrMethodName, float.class);
 							for (idx = 0; idx < headerFields.length; idx++) {
-								if (array[idx].length() == 0) // skip missing field
+								if (idx >= array.length || array[idx] == null || array[idx].length() == 0) // skip missing field
 									continue;
 								if (headerFields[idx].equals(ae.getName()))
 									inputAddOrSetRow.invoke(thisBuilder, Float.parseFloat(array[idx]));
@@ -761,7 +767,7 @@ public class RunnerController {
 						case SFIXED32:
 							inputAddOrSetRow = thisBuilder.getClass().getMethod(iAttrMethodName, int.class);
 							for (idx = 0; idx < headerFields.length; idx++) {
-								if (array[idx].length() == 0) // skip missing field
+								if (idx >= array.length || array[idx] == null || array[idx].length() == 0) // skip missing field
 									continue;
 								if (headerFields[idx].equals(ae.getName()))
 									inputAddOrSetRow.invoke(thisBuilder, Integer.parseInt(array[idx]));
@@ -774,7 +780,7 @@ public class RunnerController {
 						case SFIXED64:
 							inputAddOrSetRow = thisBuilder.getClass().getMethod(iAttrMethodName, long.class);
 							for (idx = 0; idx < headerFields.length; idx++) {
-								if (array[idx].length() == 0) // skip missing field
+								if (idx >= array.length || array[idx] == null || array[idx].length() == 0) // skip missing field
 									continue;
 								if (headerFields[idx].equals(ae.getName()))
 									inputAddOrSetRow.invoke(thisBuilder, Long.parseLong(array[idx]));
@@ -783,7 +789,7 @@ public class RunnerController {
 						case BOOL:
 							inputAddOrSetRow = thisBuilder.getClass().getMethod(iAttrMethodName, boolean.class);
 							for (idx = 0; idx < headerFields.length; idx++) {
-								if (array[idx].length() == 0) // skip missing field
+								if (idx >= array.length || array[idx] == null || array[idx].length() == 0) // skip missing field
 									continue;
 								if (headerFields[idx].equals(ae.getName()))
 									inputAddOrSetRow.invoke(thisBuilder, Boolean.parseBoolean(array[idx]));
@@ -792,7 +798,7 @@ public class RunnerController {
 						case STRING:
 							inputAddOrSetRow = thisBuilder.getClass().getMethod(iAttrMethodName, String.class);
 							for (idx = 0; idx < headerFields.length; idx++) {
-								if (array[idx].length() == 0) // skip missing field
+								if (idx >= array.length || array[idx] == null || array[idx].length() == 0) // skip missing field
 									continue;
 
 								if (headerFields[idx].equals(ae.getName()))
@@ -802,7 +808,7 @@ public class RunnerController {
 						case BYTES:
 							inputAddOrSetRow = thisBuilder.getClass().getMethod(iAttrMethodName, ByteString.class);
 							for (idx = 0; idx < headerFields.length; idx++) {
-								if (array[idx].length() == 0) // skip missing field
+								if (idx >= array.length || array[idx] == null || array[idx].length() == 0) // skip missing field
 									continue;
 
 								if (headerFields[idx].equals(ae.getName())) {
@@ -829,7 +835,7 @@ public class RunnerController {
 								Method forNumberMethod = innerCls.getDeclaredMethod("forNumber", int.class);
 
 								for (idx = 0; idx < headerFields.length; idx++) {
-									if (array[idx].length() == 0) // skip missing field
+									if (idx >= array.length || array[idx] == null || array[idx].length() == 0) // skip missing field
 										continue;
 									if (headerFields[idx].equals(ae.getName())) {
 										inputAddOrSetRow.invoke(thisBuilder,
@@ -856,7 +862,7 @@ public class RunnerController {
 						case DOUBLE:
 							inputAddOrSetRow = thisBuilder.getClass().getMethod(iAttrMethodName, double.class);
 							for (idx = 0; idx < headerFields.length; idx++) {
-								if (array[idx].length() == 0) // skip missing field
+								if (idx >= array.length || array[idx] == null || array[idx].length() == 0) // skip missing field
 									continue;
 
 								if (headerFields[idx].equals(ae.getName())) {
@@ -870,7 +876,7 @@ public class RunnerController {
 							inputAddOrSetRow = thisBuilder.getClass().getMethod(iAttrMethodName, float.class);
 
 							for (idx = 0; idx < headerFields.length; idx++) {
-								if (array[idx].length() == 0) // skip missing field
+								if (idx >= array.length || array[idx] == null || array[idx].length() == 0) // skip missing field
 									continue;
 
 								if (headerFields[idx].equals(ae.getName())) {
@@ -887,7 +893,7 @@ public class RunnerController {
 							inputAddOrSetRow = thisBuilder.getClass().getMethod(iAttrMethodName, int.class);
 
 							for (idx = 0; idx < headerFields.length; idx++) {
-								if (array[idx].length() == 0) // skip missing field
+								if (idx >= array.length || array[idx] == null || array[idx].length() == 0) // skip missing field
 									continue;
 
 								if (headerFields[idx].equals(ae.getName())) {
@@ -903,7 +909,7 @@ public class RunnerController {
 						case SFIXED64:
 							inputAddOrSetRow = thisBuilder.getClass().getMethod(iAttrMethodName, long.class);
 							for (idx = 0; idx < headerFields.length; idx++) {
-								if (array[idx].length() == 0) // skip missing field
+								if (idx >= array.length || array[idx] == null || array[idx].length() == 0) // skip missing field
 									continue;
 
 								if (headerFields[idx].equals(ae.getName())) {
@@ -915,7 +921,7 @@ public class RunnerController {
 						case BOOL:
 							inputAddOrSetRow = thisBuilder.getClass().getMethod(iAttrMethodName, boolean.class);
 							for (idx = 0; idx < headerFields.length; idx++) {
-								if (array[idx].length() == 0) // skip missing field
+								if (idx >= array.length || array[idx] == null || array[idx].length() == 0) // skip missing field
 									continue;
 
 								if (headerFields[idx].equals(ae.getName())) {
@@ -927,7 +933,7 @@ public class RunnerController {
 						case STRING:
 							inputAddOrSetRow = thisBuilder.getClass().getMethod(iAttrMethodName, String.class);
 							for (idx = 0; idx < headerFields.length; idx++) {
-								if (array[idx].length() == 0) // skip missing field
+								if (idx >= array.length || array[idx] == null || array[idx].length() == 0) // skip missing field
 									continue;
 
 								if (headerFields[idx].equals(ae.getName())) {
@@ -939,7 +945,7 @@ public class RunnerController {
 						case BYTES:
 							inputAddOrSetRow = thisBuilder.getClass().getMethod(iAttrMethodName, ByteString.class);
 							for (idx = 0; idx < headerFields.length; idx++) {
-								if (array[idx].length() == 0) // skip missing field
+								if (idx >= array.length || array[idx] == null || array[idx].length() == 0) // skip missing field
 									continue;
 
 								if (headerFields[idx].equals(ae.getName())) {
@@ -968,7 +974,7 @@ public class RunnerController {
 								Method forNumberMethod = innerCls.getDeclaredMethod("forNumber", int.class);
 
 								for (idx = 0; idx < headerFields.length; idx++) {
-									if (array[idx].length() == 0) // skip missing field
+									if (idx >= array.length || array[idx] == null || array[idx].length() == 0) // skip missing field
 										continue;
 									if (headerFields[idx].equals(ae.getName())) {
 										logger.info("getDeclaredMethods: "
@@ -1033,7 +1039,7 @@ public class RunnerController {
 					case DOUBLE:
 						inputAddOrSetRow = thisBuilder.getClass().getMethod(iAttrMethodName, double.class);
 						for (idx = 0; idx < headerFields.length; idx++) {
-							if (array[idx].length() == 0) // skip missing field
+							if (idx >= array.length || array[idx] == null || array[idx].length() == 0) // skip missing field
 								continue;
 							if (headerFields[idx].equals(ae.getName()))
 								inputAddOrSetRow.invoke(thisBuilder, Double.parseDouble(array[idx]));
@@ -1042,7 +1048,7 @@ public class RunnerController {
 					case FLOAT:
 						inputAddOrSetRow = thisBuilder.getClass().getMethod(iAttrMethodName, float.class);
 						for (idx = 0; idx < headerFields.length; idx++) {
-							if (array[idx].length() == 0) // skip missing field
+							if (idx >= array.length || array[idx] == null || array[idx].length() == 0) // skip missing field
 								continue;
 							if (headerFields[idx].equals(ae.getName()))
 								inputAddOrSetRow.invoke(thisBuilder, Float.parseFloat(array[idx]));
@@ -1055,7 +1061,7 @@ public class RunnerController {
 					case SFIXED32:
 						inputAddOrSetRow = thisBuilder.getClass().getMethod(iAttrMethodName, int.class);
 						for (idx = 0; idx < headerFields.length; idx++) {
-							if (array[idx].length() == 0) // skip missing field
+							if (idx >= array.length || array[idx] == null || array[idx].length() == 0) // skip missing field
 								continue;
 							if (headerFields[idx].equals(ae.getName()))
 								inputAddOrSetRow.invoke(thisBuilder, Integer.parseInt(array[idx]));
@@ -1068,7 +1074,7 @@ public class RunnerController {
 					case SFIXED64:
 						inputAddOrSetRow = thisBuilder.getClass().getMethod(iAttrMethodName, long.class);
 						for (idx = 0; idx < headerFields.length; idx++) {
-							if (array[idx].length() == 0) // skip missing field
+							if (idx >= array.length || array[idx] == null || array[idx].length() == 0) // skip missing field
 								continue;
 							if (headerFields[idx].equals(ae.getName()))
 								inputAddOrSetRow.invoke(thisBuilder, Long.parseLong(array[idx]));
@@ -1077,7 +1083,7 @@ public class RunnerController {
 					case BOOL:
 						inputAddOrSetRow = thisBuilder.getClass().getMethod(iAttrMethodName, boolean.class);
 						for (idx = 0; idx < headerFields.length; idx++) {
-							if (array[idx].length() == 0) // skip missing field
+							if (idx >= array.length || array[idx] == null || array[idx].length() == 0) // skip missing field
 								continue;
 							if (headerFields[idx].equals(ae.getName()))
 								inputAddOrSetRow.invoke(thisBuilder, Boolean.parseBoolean(array[idx]));
@@ -1086,7 +1092,7 @@ public class RunnerController {
 					case STRING:
 						inputAddOrSetRow = thisBuilder.getClass().getMethod(iAttrMethodName, String.class);
 						for (idx = 0; idx < headerFields.length; idx++) {
-							if (array[idx].length() == 0) // skip missing field
+							if (idx >= array.length || array[idx] == null || array[idx].length() == 0) // skip missing field
 								continue;
 
 							if (headerFields[idx].equals(ae.getName()))
@@ -1096,7 +1102,7 @@ public class RunnerController {
 					case BYTES:
 						inputAddOrSetRow = thisBuilder.getClass().getMethod(iAttrMethodName, ByteString.class);
 						for (idx = 0; idx < headerFields.length; idx++) {
-							if (array[idx].length() == 0) // skip missing field
+							if (idx >= array.length || array[idx] == null || array[idx].length() == 0) // skip missing field
 								continue;
 
 							if (headerFields[idx].equals(ae.getName())) {
@@ -1126,7 +1132,7 @@ public class RunnerController {
 					case DOUBLE:
 						inputAddOrSetRow = thisBuilder.getClass().getMethod(iAttrMethodName, double.class);
 						for (idx = 0; idx < headerFields.length; idx++) {
-							if (array[idx].length() == 0) // skip missing field
+							if (idx >= array.length || array[idx] == null || array[idx].length() == 0) // skip missing field
 								continue;
 
 							if (headerFields[idx].equals(ae.getName())) {
@@ -1140,7 +1146,7 @@ public class RunnerController {
 						inputAddOrSetRow = thisBuilder.getClass().getMethod(iAttrMethodName, float.class);
 
 						for (idx = 0; idx < headerFields.length; idx++) {
-							if (array[idx].length() == 0) // skip missing field
+							if (idx >= array.length || array[idx] == null || array[idx].length() == 0) // skip missing field
 								continue;
 
 							if (headerFields[idx].equals(ae.getName())) {
@@ -1157,7 +1163,7 @@ public class RunnerController {
 						inputAddOrSetRow = thisBuilder.getClass().getMethod(iAttrMethodName, int.class);
 
 						for (idx = 0; idx < headerFields.length; idx++) {
-							if (array[idx].length() == 0) // skip missing field
+							if (idx >= array.length || array[idx] == null || array[idx].length() == 0) // skip missing field
 								continue;
 
 							if (headerFields[idx].equals(ae.getName())) {
@@ -1174,7 +1180,7 @@ public class RunnerController {
 						inputAddOrSetRow = thisBuilder.getClass().getMethod(iAttrMethodName, long.class);
 
 						for (idx = 0; idx < headerFields.length; idx++) {
-							if (array[idx].length() == 0) // skip missing field
+							if (idx >= array.length || array[idx] == null || array[idx].length() == 0) // skip missing field
 								continue;
 
 							if (headerFields[idx].equals(ae.getName())) {
@@ -1186,7 +1192,7 @@ public class RunnerController {
 					case BOOL:
 						inputAddOrSetRow = thisBuilder.getClass().getMethod(iAttrMethodName, boolean.class);
 						for (idx = 0; idx < headerFields.length; idx++) {
-							if (array[idx].length() == 0) // skip missing field
+							if (array[idx] == null  && array[idx].length() == 0) // skip missing field
 								continue;
 
 							if (headerFields[idx].equals(ae.getName())) {
@@ -1198,7 +1204,7 @@ public class RunnerController {
 					case STRING:
 						inputAddOrSetRow = thisBuilder.getClass().getMethod(iAttrMethodName, String.class);
 						for (idx = 0; idx < headerFields.length; idx++) {
-							if (array[idx].length() == 0) // skip missing field
+							if (idx >= array.length || array[idx] == null || array[idx].length() == 0) // skip missing field
 								continue;
 
 							if (headerFields[idx].equals(ae.getName())) {
@@ -1210,7 +1216,7 @@ public class RunnerController {
 					case BYTES:
 						inputAddOrSetRow = thisBuilder.getClass().getMethod(iAttrMethodName, ByteString.class);
 						for (idx = 0; idx < headerFields.length; idx++) {
-							if (array[idx].length() == 0) // skip missing field
+							if (idx >= array.length || array[idx] == null || array[idx].length() == 0) // skip missing field
 								continue;
 
 							if (headerFields[idx].equals(ae.getName())) {
