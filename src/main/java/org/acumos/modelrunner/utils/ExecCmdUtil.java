@@ -36,9 +36,10 @@ public class ExecCmdUtil {
 	/**
 	 * 
 	 * @param cmd
-	 *            command to be run with no output
-	 * @return error code
+	 *            Command to be run with no output
+	 * @return Error code
 	 * @throws Exception
+	 *            If an Exception occurs
 	 */
 	public static int runCommand(String cmd) throws Exception {
 		logger.info("Exec: " + cmd);
@@ -59,10 +60,10 @@ public class ExecCmdUtil {
 	 * https://stackoverflow.com/questions/5711084/java-runtime-getruntime-getting-output-from-executing-a-command-line-program
 	 * 
 	 * @param cmd
-	 *            command to be executed
-	 * @return result of executing command
+	 *            Command to be executed
+	 * @return Result of executing command
 	 * @throws IOException
-	 *             On failure
+	 *            If an I/O error occurs
 	 */
 	public static String execCommand(String cmd) throws IOException {
 		Process proc = Runtime.getRuntime().exec(cmd);
@@ -84,10 +85,11 @@ public class ExecCmdUtil {
 	 * print out output of an command
 	 * 
 	 * @param bufferedReader
-	 *            the contents of bufferedReader which contains the results of the commands
+	 *            The contents of bufferedReader which contains the results of the commands
 	 * @return 
-	 *            results of commands
+	 *            Results of commands
 	 * @throws IOException
+	 *            If an I/O error occurs
 	 */
 	public static ArrayList<String> printCmdOutput(BufferedReader bufferedReader) throws IOException {
 		String currentLine;
@@ -119,9 +121,8 @@ public class ExecCmdUtil {
 	 * http://www.baeldung.com/java-delete-directory
 	 * 
 	 * @param directoryToBeDeleted 
-	 *        directory to be deleted
-	 * @return 
-	 *        true or false
+	 *            Directory to be deleted
+	 * @return True if directory was deleted or false if an error occurs
 	 */
 	public static boolean deleteDirectory(File directoryToBeDeleted) {
 		File[] allContents = directoryToBeDeleted.listFiles();

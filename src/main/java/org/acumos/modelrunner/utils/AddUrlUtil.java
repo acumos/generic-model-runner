@@ -38,9 +38,13 @@ public class AddUrlUtil {
 	
 	/**
 	 * @param root
+	 *            The root of the source files
 	 * @param source
+	 *            The directory/file(s) to be put in the jar
 	 * @param target
+	 *            The jar output stream
 	 * @throws IOException
+	 *            If an I/O error occurs
 	 */
 	public static void add(File root, File source, JarOutputStream target) throws IOException {
 		BufferedInputStream in = null;
