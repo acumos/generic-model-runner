@@ -23,23 +23,28 @@ Generic Model Runner Release Notes
 The server is deployed within a Docker image in the Docker registry.
 
 Version 2.2.3, 20 August 2018
-=============================
-* Allow missing data in the last field of CSV input dataset
+-----------------------------
+
+* Allow missing data in the last field of CSV input dataset (ACUMOS-1613)
+* Remove Java Doc warnings
 
 Version 2.2.2, 13 August 2018
-=============================
-* Auto-generate a header for all generic Java models when the model input is CSV format. The model runner will combine this header with de-serialized data after un-marshaling binary stream and feed it into the model.
+-----------------------------
+
+* Auto-generate a header for all generic Java models when the model input is CSV format. The model runner will combine this header with de-serialized data after un-marshaling binary stream and feed it into the model (ACUMOS-1580)
 
 Version 2.2.1, 18 July 2018
-============================
-* Add /getBinaryJSON
-* Add /getBinaryJSONDefault
-* Add /transformJSON
-* Add /transformJSONDefault
+---------------------------
+
+* Add /getBinaryJSON (ACUMOS-1164)
+* Add /getBinaryJSONDefault (ACUMOS-1164)
+* Add /transformJSON (ACUMOS-1164)
+* Add /transformJSONDefault (ACUMOS-1164)
 
 Version 2.2.0, 30 April 2018
-============================
-* Change /operation/{operation} to /{operation}
+----------------------------
+
+* Change /operation/{operation} to /{operation} (ACUMOS-769)
 * Change /transform to /transformCSV
 * Change /transformDefault to /transformCSVDefault
 * Change /putProto to /proto
@@ -47,27 +52,29 @@ Version 2.2.0, 30 April 2018
 * Change /putModelConfig to /model/configuration
 
 Version 2.1.3, 25 April 2018
-============================
-* Add conditional check to make sure empty rowData will not be fed into the H2O model.
+----------------------------
+
+* Add conditional check to make sure empty rowData will not be fed into the H2O model (ACUMOS-728)
+* Force all the numeric input fields of H2O models to double/String (ACUMOS-716)
 
 Version 2.1.2, 16 April 2018
-============================
+----------------------------
 
-* Remove the use of getVersion.sh which gets the latest version of protobuf runtime library and implement corresponding steps using ProcessBuilder Java class. 
+* Remove the use of getVersion.sh which gets the latest version of protobuf runtime library and implement corresponding steps using ProcessBuilder Java class (ACUMOS-673) 
 
 Version 2.1.1, 5 April 2018
-===========================
+---------------------------
 
-* Support non-scalar ENUM data type in the proto file for all POST end points.
-* The ENUM can be standalone or embedded in a message
+* Support non-scalar ENUM data type in the proto file for all POST end points (ACUMOS-631)
+* The ENUM can be standalone or embedded in a message (ACUMOS-631)
 
 Version 2.1.0, 4 April 2018
-===========================
+---------------------------
 
-* Support embedded messages - messages defined inside another messages
+* Support embedded messages - messages defined inside another messages (ACUMOS-632)
 
 Version 2.0.1, 15 March 2018
-============================
+----------------------------
 
 * Enhance end points /transform, /transformDefault, /getBinary, /getBinaryDefault to accept nested message proto files with no naming restriction
 * Add /putModelConfig to allow uploading new modelConfig.properties
@@ -76,7 +83,7 @@ Version 2.0.1, 15 March 2018
 * Add JUnit test cases for all above end points.
 
 Version 2.0.0, 22 February 2018
-===============================
+-------------------------------
 
 * Add /operation/{operation} end point 
 * Only proto3 syntax is supported. 
@@ -87,12 +94,12 @@ Version 2.0.0, 22 February 2018
 * Support 15 scalar data types in all defined messages.
 
 Version 1.0.3, 3 January 2018
-=============================
+-----------------------------
 
 * Add /putModel end point and add /putProto end point
 
 Version 1.0.2, 6 December 2017
-==============================
+------------------------------
 
 * Support /predict, /transform, /transformDefault, /getBinary, /getBinaryDefault end points
 * The first line of the proto file must specify proto3 syntax 

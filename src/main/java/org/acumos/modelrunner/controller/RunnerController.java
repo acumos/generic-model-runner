@@ -197,7 +197,7 @@ public class RunnerController {
 	 * End point to upload a proto file
 	 * 
 	 * @param proto
-	 *            Protobuf file
+	 *            An .proto file that defines input/output messages corresponding to input/output of the ML model
 	 * @return ResponseEntity
 	 */
 	@ApiOperation(value = "Upload a protofile to replace the current default protofile", response = ResponseEntity.class)
@@ -233,7 +233,7 @@ public class RunnerController {
 	 * End point to upload a new model configuration properties file
 	 * 
 	 * @param configFile
-	 *            modelConfig.properties file
+	 *            The modelConfig.properties file for generic java ML model
 	 * @return ResponseEntity
 	 */
 	@ApiOperation(value = "Upload a model config file to replace current model configuration properties used by Generic Model Runner. H2O Model Runner does not use this file", response = ResponseEntity.class)
@@ -273,8 +273,8 @@ public class RunnerController {
 	 * @param csvFile
 	 *            CSV file that contains the header and dataset
 	 * @param operation
-	 *            one of the operations specified in the proto file
-	 * @return binary stream in protobuf format as inputs for the predictor
+	 *            One of the operations specified in the .proto file
+	 * @return The serialized input binary stream in protocol buffers format as inputs for the predictor
 	 */
 	@ApiOperation(value = "Converts the csv file to a binary stream in protobuf format using default.proto. The header is required in the csv file. The header fields must match with ones in the proto file")
 	@RequestMapping(value = "/getBinaryDefault", method = RequestMethod.POST, produces = "application/octet-stream")
@@ -288,11 +288,11 @@ public class RunnerController {
 	 * @param csvFile
 	 *            CSV file to be serialized
 	 * @param proto
-	 *            Protobuf file
+	 *            An .proto file that defines input/output messages corresponding to input/output of the ML model
 	 * @param operation
-	 *            one of the operations matching service structure in protofile
+	 *            One of the operations specified in the service structure of the .proto file
 	 * @return 
-	 *            binary stream in protobuf format
+	 *            The prediction in binary stream in protocol buffers format
 	 */
 	@ApiOperation(value = "Serialize the csv file based on the .proto file provided here. This .proto file will not replace the default protofile ")
 	@RequestMapping(value = "/getBinary", method = RequestMethod.POST, produces = MediaType.APPLICATION_OCTET_STREAM)
@@ -321,15 +321,15 @@ public class RunnerController {
 	}
 
 	/**
-	 * getBinaryJSON converts the uploaded json file based on the default.proto
+	 * getBinaryJSON converts the uploaded JSON file based on the default.proto
 	 * 
 	 * @param jsonFile
 	 *            JSON file
 	 * @param proto
-	 *            Protobuf file
+	 *            The .proto file
 	 * @param operation
-	 *            one of the operations matching service structure in protofile
-	 * @return binary stream in protobuf format as inputs for the predictor
+	 *            One of the operations of service structure in the .proto file
+	 * @return Serialized input binary stream in protocol buffer format as inputs for the predictor
 	 */
 	@ApiOperation(value = "Converts the JSON file to a binary stream in protobuf format using default.proto.")
 	@RequestMapping(value = "/getBinaryJSON", method = RequestMethod.POST, produces = "application/octet-stream")
@@ -340,14 +340,14 @@ public class RunnerController {
 	}
 
 	/**
-	 * Serialize the json file based on the proto file into binary protobuf format
+	 * Serialize the JSON file based on the .proto file into binary protocol buffer format
 	 * 
 	 * @param file
-	 *            json file containing headers
+	 *            JSON input file file
 	 * @param proto
-	 *            proto file
+	 *            The .proto file
 	 * @param operation
-	 *            name of operation specified in the service structure of the proto
+	 *            name of operation specified in the service structure of the .proto file
 	 *            file
 	 * @return
 	 */
@@ -473,18 +473,16 @@ public class RunnerController {
 		}
 	}
 	
-	////
 	/**
-	 * Serialize the csv file based on the proto file into binary protobuf format
+	 * Serialize the CSV input file based on the .proto file into binary protocol buffer format
 	 * 
 	 * @param file
-	 *            csv file containing headers
+	 *            The CSV input file containing headers
 	 * @param proto
-	 *            proto file
+	 *            The .proto file
 	 * @param operation
-	 *            name of operation specified in the service structure of the proto
-	 *            file
-	 * @return
+	 *            One of operation specified in the service structure of the .proto file
+	 * @return Serialized input binary stream in protocol buffer format as inputs for the predictor
 	 */
 	private byte[] getNewBinary_(MultipartFile file, MultipartFile proto, String operation) {
 		try {
@@ -512,11 +510,11 @@ public class RunnerController {
 	/**
 	 * 
 	 * @param csvFile
-	 *            input dataset in CSV format
+	 *            Input data set in CSV format
 	 * @param operation
-	 *            one of the operations from proto file
+	 *            One of the operations from the .proto file
 	 * @return 
-	 *            prediction binary stream in protobuf format
+	 *            The prediction in binary stream in protobuf format            
 	 */
 	@ApiOperation(value = "Gets a prediction binary stream in protobuf format for the training data in the provided csv file using default .proto file")
 	@RequestMapping(value = "/transformCSVDefault", method = RequestMethod.POST)
@@ -526,13 +524,16 @@ public class RunnerController {
 	}
 
 	/**
+	 * 
 	 * @param csvFile
-	 *            CSV File
+	 *            Input CSV File for the ML model
 	 * @param model
-	 *            an ML model
+	 *            An ML model
 	 * @param proto
-	 *            Protobuf file
-	 * @return prediction binary stream in protobuf format
+	 *            The protobuf file defining the input and output format of the ML model
+	 * @param operation
+	 *            One of the operations in the protobuf file
+	 * @return The prediction in binary stream in protobuf format
 	 */
 	@ApiOperation(value = "Gets a prediction binary stream in protobuf format for the training data in the provided csv file using the ML model and .proto file provided here")
 	@RequestMapping(value = "/transformCSV", method = RequestMethod.POST)
@@ -547,8 +548,8 @@ public class RunnerController {
 	 * @param jsonFile
 	 *            JSON file
 	 * @param operation
-	 *            operation specified in the Service structure of the protofile            
-	 * @return prediction binary stream in protobuf format
+	 *            Operation specified in the Service structure of the .proto file            
+	 * @return The Prediction in binary stream in protocol buffers format
 	 */
 	@ApiOperation(value = "Gets the output of the model in protobuf format.")
 	@RequestMapping(value = "/transformJSONDefault", method = RequestMethod.POST)
@@ -561,12 +562,12 @@ public class RunnerController {
 	 * @param jsonFile
 	 *            JSON File
 	 * @param model
-	 *            an ML model
+	 *            An ML model
 	 * @param proto
-	 *            Protobuf file
+	 *            An .proto file that defines input/output messages corresponding to input/output of the ML model 
 	 * @param operation
-	 *            operation specified in the Service structure of the protofile
-	 * @return prediction binary stream in protobuf format
+	 *            Operation specified in the Service structure of the .proto file
+	 * @return The prediction in binary stream in protocol buffers format
 	 */
 	@ApiOperation(value = "Gets the output of the model in protobuf format.")
 	@RequestMapping(value = "/transformJSON", method = RequestMethod.POST)
@@ -578,16 +579,15 @@ public class RunnerController {
 
 
 	/**
-	 * 
 	 * @param file
-	 *            Data
+	 *            Input Data
 	 * @param model
-	 *            Model
+	 *            An ML Model
 	 * @param proto
-	 *            Protofile
+	 *            An .proto file that defines input/output messages corresponding to input/output of the ML model
 	 * @param operation
-	 *            one of the operation(s) in the service structure of the protofile
-	 * @return prediction binary stream in protobuf format
+	 *            One of the operation(s) in the service structure of the .proto file
+	 * @return The prediction in binary stream in protocol buffers format
 	 */
 	private byte[] transform_(MultipartFile file, MultipartFile model, MultipartFile proto, String operation) {
 		try {
