@@ -77,7 +77,7 @@ Launch Prerequisites
 1. Java version 1.8
 2. A valid application.properties file.
 3. protoc compiler for JAVA
-4. protobuf JAVA Runtime Library 3.4.0
+4. protobuf JAVA Runtime Library > 3.4.0
 
 Launch Instructions
 ===================

@@ -2977,7 +2977,7 @@ public class RunnerController {
 	private void downloadProtoJavaRuntime() {
 		logger.info("downloadProtoJavaRuntime: The default protobuf runtime version is " + protoRTVersion);
 		try {
-			String cmdStr = "curl --silent https://repo1.maven.org/maven2/com/google/protobuf/protobuf-java/maven-metadata.xml | grep -Po '(?<=<version>)([0-9\\\\.]+(-SNAPSHOT)?)' | sort --version-sort -r | head -n 1";
+			String cmdStr = "curl --silent https://repo1.maven.org/maven2/com/google/protobuf/protobuf-java/maven-metadata.xml | grep -Po '(?<=<version>)([\\S]*?)(?=<\\/version>)' | sort --version-sort -r | head -n 1";
 
 			ImmutableList<String> cmd01 = ImmutableList.of("/bin/bash", "-c", cmdStr);
 			ProcessBuilder pb = new ProcessBuilder(cmd01);

@@ -22,6 +22,11 @@ Generic Model Runner Release Notes
 
 The server is deployed within a Docker image in the Docker registry.
 
+Version 2.2.4, 2 February 2019
+------------------------------
+
+* Tweak command that always downloads the latest protobuf JAVA runtime library 
+
 Version 2.2.3, 20 August 2018
 -----------------------------
 
