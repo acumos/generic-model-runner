@@ -243,6 +243,9 @@
 									<descriptorRef>artifact</descriptorRef>
 								</assembly>
 								<runCmds>
+									<!-- Ensure logs dir exists and is world writable -->
+									<runCmd>mkdir /maven/logs</runCmd>
+									<runCmd>chmod -R 777 /maven</runCmd>
 									<runCmd>
 										<!-- CDATA prevents Eclipse formatter from breaking line -->
 										<![CDATA[curl -OL https://github.com/google/protobuf/releases/download/v3.4.0/protoc-3.4.0-linux-x86_64.zip]]>
