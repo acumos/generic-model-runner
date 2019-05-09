@@ -100,6 +100,7 @@ import hex.ModelCategory;
 import io.swagger.annotations.ApiOperation;
 
 @RestController
+@RequestMapping(value = "/model")
 public class RunnerController {
 	@Value("${plugin_root}")
 	private String pluginRoot;
