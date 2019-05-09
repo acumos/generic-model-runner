@@ -3,7 +3,7 @@
 	<modelVersion>4.0.0</modelVersion>
 	<groupId>org.acumos.generic-model-runner</groupId>
 	<artifactId>h2o-genericjava-modelrunner</artifactId>
-	<version>2.2.4-SNAPSHOT</version>
+	<version>2.2.5-SNAPSHOT</version>
 
 	<name>Acumos H2O/Generic Java Model Runner</name>
 	<description>Acumos H2O/Generic Java Model Runner</description>
@@ -176,9 +176,9 @@
 					<fork>true</fork>
 				</configuration>
 			</plugin>
-			<!-- Add the build number to the jar manifest. Spring-Boot uses a complex 
-				packaging process that makes access to the original Manifest.MF very difficult. 
-				However, Java provides access to the implementation version for a package, 
+			<!-- Add the build number to the jar manifest. Spring-Boot uses a complex
+				packaging process that makes access to the original Manifest.MF very difficult.
+				However, Java provides access to the implementation version for a package,
 				so cram the build number into there. -->
 			<plugin>
 				<groupId>org.apache.maven.plugins</groupId>
@@ -215,7 +215,7 @@
 					</execution>
 				</executions>
 			</plugin>
-			<!-- No "skip" configuration for maven-deploy-plugin. Let the jar be deployed 
+			<!-- No "skip" configuration for maven-deploy-plugin. Let the jar be deployed
 				to LF Nexus repo, so that the final deploy step finds a jar then succeeds. -->
 			<!-- https://stackoverflow.com/questions/39126226/fabric8-springboot-full-example -->
 			<plugin>
