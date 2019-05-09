@@ -20,6 +20,7 @@
 Generic Model Runner Release Notes
 ==================================
 
+
 The server is deployed within a Docker image in the Docker registry.
 
 Version 2.2.5, 22 April 2019
