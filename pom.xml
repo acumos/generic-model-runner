@@ -3,7 +3,7 @@
 	<modelVersion>4.0.0</modelVersion>
 	<groupId>org.acumos.generic-model-runner</groupId>
 	<artifactId>h2o-genericjava-modelrunner</artifactId>
-	<version>2.2.4-SNAPSHOT</version>
+	<version>2.2.5-SNAPSHOT</version>
 
 	<name>Acumos H2O/Generic Java Model Runner</name>
 	<description>Acumos H2O/Generic Java Model Runner</description>

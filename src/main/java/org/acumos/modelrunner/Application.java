@@ -27,6 +27,7 @@ import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.ApplicationContextAware;
 import org.springframework.context.ConfigurableApplicationContext;
+import org.springframework.context.annotation.ComponentScan;
 import org.springframework.core.env.ConfigurableEnvironment;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -37,6 +38,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
  *
  */
 @SpringBootApplication
+//@ComponentScan("org.acumos.modelrunner")
 public class Application implements ApplicationContextAware {
 	private static final Logger logger = LoggerFactory.getLogger(Application.class);
 
