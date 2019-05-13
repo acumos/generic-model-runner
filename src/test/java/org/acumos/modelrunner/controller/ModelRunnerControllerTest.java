@@ -294,8 +294,8 @@ public class ModelRunnerControllerTest extends ModelRunnerTestApp {
 					.andExpect(status().isOk()).andReturn().getResponse().getContentAsByteArray();
 			logger.info("Done testing POST /getBinaryJSONDefault end point " + Arrays.toString(resultsBinDefaultJson));
 
-			// testing /{operation} end point, use predict in this case
-			logger.info("Testing /{operation} POST end point");
+			// testing /model/methods/{operation} end point, use predict in this case
+			logger.info("Testing /model/methods/{name} POST end point");
 			// first change configuration properties to use JSON inputs/outputs formats
 			byte[] configbytesJson1 = Files.readAllBytes(
 					new File(this.getClass().getResource("/sampleConfigJson1.properties").getFile()).toPath());
@@ -313,9 +313,9 @@ public class ModelRunnerControllerTest extends ModelRunnerTestApp {
 			mockMvc.perform(builderConfigJson1.file(sampleConfigJson1)).andExpect(status().isOk());
 
 			byte[] resultsPredictJSON = this.mockMvc
-					.perform(post("/predict").contentType(MediaType.TEXT_PLAIN).content(resultsBinDefaultJson))
+					.perform(post("/model/methods/predict").contentType(MediaType.TEXT_PLAIN).content(resultsBinDefaultJson))
 					.andExpect(status().isOk()).andReturn().getResponse().getContentAsByteArray();
-			logger.info("Done testing POST /{operation} end point " + Arrays.toString(resultsPredictJSON));
+			logger.info("Done testing POST /model/methods/{name} end point " + Arrays.toString(resultsPredictJSON));
 
 			logger.info("Testing /getBinary POST method");
 			// first change configuration properties to use multiplyAll method
@@ -390,12 +390,12 @@ public class ModelRunnerControllerTest extends ModelRunnerTestApp {
 					.getResponse().getContentAsByteArray();
 			logger.info("Done testing POST /getBinaryDefault end point " + Arrays.toString(resultsBinaryDefault));
 
-			// testing /{operation} end point, use transform in this case
-			logger.info("Testing /{operation} POST end point");
+			// testing /model/methods/{name} end point, use transform in this case
+			logger.info("Testing /model/methods/{name} POST end point");
 			byte[] resultsPredict = this.mockMvc
-					.perform(post("/transform").contentType(MediaType.TEXT_PLAIN).content(resultsBinaryDefault))
+					.perform(post("/model/methods/transform").contentType(MediaType.TEXT_PLAIN).content(resultsBinaryDefault))
 					.andExpect(status().isOk()).andReturn().getResponse().getContentAsByteArray();
-			logger.info("Done testing POST /{operation} end point " + Arrays.toString(resultsPredict));
+			logger.info("Done testing POST /model/methods/{name} end point " + Arrays.toString(resultsPredict));
 
 			// Use sampleConfig3.properties which calls the classify method of the silly
 			// model
@@ -437,11 +437,11 @@ public class ModelRunnerControllerTest extends ModelRunnerTestApp {
 					.getContentAsByteArray();
 
 			// testing /{operation} end point, use classify in this case
-			logger.info("Testing /operations/classify POST end point");
+			logger.info("Testing /model/methods/classify POST end point");
 			byte[] resultsPredict1 = this.mockMvc
-					.perform(post("/classify").contentType(MediaType.TEXT_PLAIN).content(resultsBinaryDefault1))
+					.perform(post("/model/methods/classify").contentType(MediaType.TEXT_PLAIN).content(resultsBinaryDefault1))
 					.andExpect(status().isOk()).andReturn().getResponse().getContentAsByteArray();
-			logger.info("Done testing POST /classify end point " + Arrays.toString(resultsPredict1));
+			logger.info("Done testing POST /model/methods/classify end point " + Arrays.toString(resultsPredict1));
 
 			// Use sampleConfig3_2.properties which calls the classify method of the silly
 			// model
@@ -467,12 +467,12 @@ public class ModelRunnerControllerTest extends ModelRunnerTestApp {
 					.file(csvfile4).param("operation", "aggregate")).andExpect(status().isOk()).andReturn()
 					.getResponse().getContentAsByteArray();
 
-			// testing /aggregate end point
-			logger.info("Testing /aggregate POST end point");
+			// testing /model/methods/aggregate end point
+			logger.info("Testing /model/methods/aggregate POST end point");
 			byte[] resultsPredict2 = this.mockMvc
-					.perform(post("/aggregate").contentType(MediaType.TEXT_PLAIN).content(resultsBinaryDefault2))
+					.perform(post("/model/methods/aggregate").contentType(MediaType.TEXT_PLAIN).content(resultsBinaryDefault2))
 					.andExpect(status().isOk()).andReturn().getResponse().getContentAsByteArray();
-			logger.info("Done testing POST /aggregate end point " + Arrays.toString(resultsPredict2));
+			logger.info("Done testing POST /model/methods/aggregate end point " + Arrays.toString(resultsPredict2));
 
 			// Use sample4.proto
 			byte[] protobytes4 = Files.readAllBytes(Paths.get("src", "test", "resources", "sample4.proto"));
@@ -511,12 +511,12 @@ public class ModelRunnerControllerTest extends ModelRunnerTestApp {
 					.file(csvMock4).param("operation", "testEnum")).andExpect(status().isOk()).andReturn().getResponse()
 					.getContentAsByteArray();
 
-			// testing /testEnum end point
-			logger.info("Testing /testEnum POST end point");
+			// testing /model/methods/testEnum end point
+			logger.info("Testing /model/methods/testEnum POST end point");
 			byte[] resultsPredict4 = this.mockMvc
-					.perform(post("/testEnum").contentType(MediaType.TEXT_PLAIN).content(resultsBinaryDefault4))
+					.perform(post("/model/methods/testEnum").contentType(MediaType.TEXT_PLAIN).content(resultsBinaryDefault4))
 					.andExpect(status().isOk()).andReturn().getResponse().getContentAsByteArray();
-			logger.info("Done testing POST /testEnum end point " + Arrays.toString(resultsPredict4));
+			logger.info("Done testing POST /model/methods/testEnum end point " + Arrays.toString(resultsPredict4));
 
 		} catch (HttpStatusCodeException ex) {
 			logger.error("predictTest failed", ex);

@@ -19,7 +19,7 @@
 		<project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
 		<!-- Stand-alone RESTFul application -->
 		<start-class>org.acumos.modelrunner.Application</start-class>
-		<springfox.version>2.8.0</springfox.version>
+		<springfox.version>2.9.2</springfox.version>
 		<!-- Jenkins invokes mvn with argument -Dbuild.number=${BUILD_NUMBER} -->
 		<build.number>0</build.number>
 		<!-- Not supplied to all jobs; e.g., Javadoc -->
