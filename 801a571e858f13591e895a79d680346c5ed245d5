@@ -1,0 +1,73 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "6f38601e_b3a3b2a7",
+        "filename": "docs/release-notes.rst",
+        "patchSetId": 2
+      },
+      "lineNbr": 28,
+      "author": {
+        "id": 4
+      },
+      "writtenOn": "2019-05-13T11:54:47Z",
+      "side": 1,
+      "message": "Please list the Jira issue here with link - 732",
+      "range": {
+        "startLine": 28,
+        "startChar": 0,
+        "endLine": 28,
+        "endChar": 46
+      },
+      "revId": "801a571e858f13591e895a79d680346c5ed245d5",
+      "serverId": "655300a2-7a56-4504-9153-881edd907bea",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "2526e8e4_38d4bec9",
+        "filename": "pom.xml",
+        "patchSetId": 2
+      },
+      "lineNbr": 6,
+      "author": {
+        "id": 4
+      },
+      "writtenOn": "2019-05-13T11:54:47Z",
+      "side": 1,
+      "message": "Renaming the paths is a breaking change.  I suggest you bump the version up to 2.3.0.",
+      "range": {
+        "startLine": 6,
+        "startChar": 10,
+        "endLine": 6,
+        "endChar": 16
+      },
+      "revId": "801a571e858f13591e895a79d680346c5ed245d5",
+      "serverId": "655300a2-7a56-4504-9153-881edd907bea",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "dff67b4b_c075ec33",
+        "filename": "src/main/java/org/acumos/modelrunner/controller/RunnerController.java",
+        "patchSetId": 2
+      },
+      "lineNbr": 2401,
+      "author": {
+        "id": 4
+      },
+      "writtenOn": "2019-05-13T11:54:47Z",
+      "side": 1,
+      "message": "MethodS plural or method singular?  Seems like it should be singular.",
+      "range": {
+        "startLine": 2401,
+        "startChar": 33,
+        "endLine": 2401,
+        "endChar": 40
+      },
+      "revId": "801a571e858f13591e895a79d680346c5ed245d5",
+      "serverId": "655300a2-7a56-4504-9153-881edd907bea",
+      "unresolved": false
+    }
+  ]
+}
