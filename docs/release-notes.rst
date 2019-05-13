@@ -22,6 +22,11 @@ Generic Model Runner Release Notes
 
 The server is deployed within a Docker image in the Docker registry.
 
+Version 2.2.6, 12 May 2019
+--------------------------
+
+* Rename /{operation} to /model/methods/{name}
+
 Version 2.2.5, 22 April 2019
 ----------------------------
 
