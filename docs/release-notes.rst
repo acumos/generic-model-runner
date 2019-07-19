@@ -22,6 +22,11 @@ Generic Model Runner Release Notes
 
 The server is deployed within a Docker image in the Docker registry.
 
+Version 2.3.1, 19 July 2019
+---------------------------
+
+* For Boreas Maintenance Release
+
 Version 2.3.0, 12 May 2019
 --------------------------
 
