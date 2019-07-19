@@ -61,4 +61,4 @@ To launch from Eclipse, run the class org.acumos.modelrunner.Application
  
 To launch from the command line with an external configuration file, type like this:
 
-	java -jar ./target/modelrunner-2.1.0-SNAPSHOT.jar --spring.config.location=./application.properties
+	java -jar ./target/modelrunner-2.3.0-SNAPSHOT.jar --spring.config.location=./application.properties
