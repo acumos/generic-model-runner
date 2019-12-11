@@ -22,10 +22,6 @@
 		<springfox.version>2.9.2</springfox.version>
 		<!-- Jenkins invokes mvn with argument -Dbuild.number=${BUILD_NUMBER} -->
 		<build.number>0</build.number>
-		<!-- Not supplied to all jobs; e.g., Javadoc -->
-		<docker.pull.registry>nexus3.acumos.org:10001</docker.pull.registry>
-		<!-- Supplied by Jenkins -->
-		<docker.push.registry>${env.CONTAINER_PUSH_REGISTRY}</docker.push.registry>
 	</properties>
 
 	<!-- No repositories section. -->
