@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "6d4a6c7a_d8e6e50e",
+        "filename": "pom.xml",
+        "patchSetId": 5
+      },
+      "lineNbr": 28,
+      "author": {
+        "id": 4
+      },
+      "writtenOn": "2019-12-11T16:10:13Z",
+      "side": 1,
+      "message": "These lines should be removed",
+      "range": {
+        "startLine": 25,
+        "startChar": 2,
+        "endLine": 28,
+        "endChar": 77
+      },
+      "revId": "27583412d8cdca91841aa4c9ffc3501b6abc912e",
+      "serverId": "655300a2-7a56-4504-9153-881edd907bea",
+      "unresolved": true
+    }
+  ]
+}
