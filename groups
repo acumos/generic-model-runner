@@ -1,4 +1,5 @@
 # UUID                                                                                 	Group Name
 #
 42f0c83244389e408b42fa668348002012ecba46                                               	GitHub Replication
+7198448f8aa5a7e43c68571a3490e5db18aa2115                                               	saml/acumos-gerrit-generic-model-runner-committers
 ldap:cn=acumos-gerrit-generic-model-runner-committers,ou=Groups,dc=freestandards,dc=org	ldap/acumos-gerrit-generic-model-runner-committers
